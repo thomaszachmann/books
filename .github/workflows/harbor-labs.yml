@@ -1,0 +1,91 @@
+name: harbor labs
+
+# Runs the Harbor labs weekly against the pinned versions and against
+# whatever is current. A failure against 'latest' is information, not a
+# regression: the book is written against the pin, so that job is allowed
+# to fail and an issue is opened instead.
+#
+# Known gap: Multipass needs nested virtualisation, which GitHub runners
+# do not have. The VM path is exercised by running the Harbor installer
+# directly on the runner. The VM itself is not tested here.
+
+on:
+  push:
+    branches: [harbor-in-practice, main]
+    paths: ['harbor-in-practice/**', '.github/workflows/harbor-labs.yml']
+  pull_request:
+    paths: ['harbor-in-practice/**']
+  schedule:
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: harbor-in-practice
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y shellcheck
+          shellcheck -S warning scripts/*.sh chapters/*/*.sh
+      - name: versions file parses
+        run: |
+          eval "$(grep -E '^[A-Z_]+=' VERSIONS.md)"
+          test -n "$HARBOR_VERSION"
+          test -n "$HARBOR_CHART_VERSION"
+          echo "pinned: $HARBOR_VERSION / $HARBOR_CHART_VERSION"
+
+  ch01:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: plain registry, push, read digest
+        run: ./chapters/ch01/plain-registry.sh
+      - name: moving a tag changes the digest
+        run: ./chapters/ch01/move-tag.sh
+
+  compose-labs:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        pin: [pinned, latest]
+    continue-on-error: ${{ matrix.pin == 'latest' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: resolve the version under test
+        id: v
+        run: |
+          eval "$(grep -E '^[A-Z_]+=' VERSIONS.md)"
+          if [ "${{ matrix.pin }}" = latest ]; then
+            V=$(curl -s \
+              https://api.github.com/repos/goharbor/harbor/releases/latest \
+              | jq -r .tag_name)
+          else
+            V="$HARBOR_VERSION"
+          fi
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "testing Harbor $V"
+      - name: placeholder
+        run: |
+          echo "Chapter 3 fills this in: fetch the offline installer for"
+          echo "${{ steps.v.outputs.version }}, verify its sigstore bundle,"
+          echo "render harbor.yml, run install.sh, wait for health."
+
+  k8s-labs:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [kind, minikube]
+    steps:
+      - uses: actions/checkout@v4
+      - name: placeholder
+        run: |
+          echo "Chapter 15 fills this in for ${{ matrix.distro }}:"
+          echo "cluster up, ingress, cert, helm install, push, pull."
