@@ -21,3 +21,4 @@ Thumbs.db
 **/cluster/init.json
 **/.unseal-token
 **/*.hcl.bak
+**/backups/
