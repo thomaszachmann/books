@@ -1,0 +1,51 @@
+# Vault in Practice - the lab environment.
+#
+# Chapter 2  starts vault
+# Chapter 10 adds postgres
+# Chapter 18 adds openbao
+#
+#   docker compose up -d vault
+#   docker compose up -d postgres
+#   docker compose up -d openbao
+
+services:
+  vault:
+    image: hashicorp/vault:1.18
+    container_name: vault
+    ports:
+      - "127.0.0.1:8200:8200"
+    cap_add:
+      - IPC_LOCK
+    volumes:
+      - ./config:/vault/config:ro
+      - ./data:/vault/data
+      - ./logs:/vault/logs
+      - ./tls:/vault/tls:ro
+    command: vault server -config=/vault/config/vault.hcl
+    restart: unless-stopped
+
+  # Chapter 10 - dynamic database credentials
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres-root
+      POSTGRES_DB: meridian
+    ports:
+      - "127.0.0.1:5432:5432"
+    restart: unless-stopped
+
+  # Chapter 18 - OpenBao side by side with Vault
+  openbao:
+    image: openbao/openbao:latest
+    container_name: openbao
+    ports:
+      - "127.0.0.1:8300:8200"
+    cap_add:
+      - IPC_LOCK
+    environment:
+      BAO_DEV_ROOT_TOKEN_ID: root
+      BAO_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+    command: bao server -dev
+    restart: unless-stopped
