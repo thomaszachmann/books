@@ -1,0 +1,54 @@
+# Harbor Helm values for the lab, Chapter 15.
+#
+# Read the comments before copying this anywhere real. Several settings
+# here are lab settings, and Chapter 17 says which ones and what to put
+# in their place.
+
+expose:
+  type: ingress
+  tls:
+    enabled: true
+    certSource: secret
+    secret:
+      secretName: harbor-tls
+  ingress:
+    hosts:
+      core: harbor.meridian.test
+    className: nginx
+
+externalURL: https://harbor.meridian.test
+
+# LAB ONLY. The chart's built-in PostgreSQL and Redis are single
+# replicas with no backup story. Chapter 21 moves both out, and Chapter
+# 17 explains why every production Harbor does the same.
+database:
+  type: internal
+redis:
+  type: internal
+
+# LAB ONLY. filesystem on a single PVC. Chapter 12 covers the object
+# store backends, Chapter 21 requires one.
+persistence:
+  enabled: true
+  persistentVolumeClaim:
+    registry:
+      size: 20Gi
+    jobservice:
+      jobLog:
+        size: 1Gi
+    database:
+      size: 2Gi
+    redis:
+      size: 1Gi
+  imageChartStorage:
+    type: filesystem
+
+trivy:
+  enabled: true
+
+# LAB ONLY. Chapter 18 replaces this with a secret that External Secrets
+# materialises from Vault, and this key disappears from the file.
+harborAdminPassword: Harbor12345
+
+updateStrategy:
+  type: Recreate

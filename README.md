@@ -9,6 +9,7 @@ from there.
 | Book | Directory | Status |
 |---|---|---|
 | *Vault in Practice* | [`vault-in-practice/`](vault-in-practice/) | in progress |
+| *Harbor in Practice* | [`harbor-in-practice/`](harbor-in-practice/) | in progress |
 
 ---
 
@@ -33,11 +34,35 @@ full instructions.
 
 ---
 
+## Harbor in Practice
+
+**A Hands-On Lab Guide to Running a Private Container Registry on Virtual
+Machines and Kubernetes**
+
+Twenty-four chapters. Harbor is installed twice — once on a virtual
+machine with the official installer, once on Kubernetes with the Helm
+chart, in both kind and minikube — and one chapter, with no lab at all,
+answers which of the two you should be running.
+
+```bash
+git clone https://github.com/thomaszachmann/books.git
+cd books/harbor-in-practice
+make check
+make ch01
+```
+
+See [`harbor-in-practice/README.md`](harbor-in-practice/README.md) and
+[`harbor-in-practice/VERSIONS.md`](harbor-in-practice/VERSIONS.md) for the
+pinned versions.
+
+---
+
 ## Licence
 
 Code in this repository is MIT licensed — see [`LICENSE`](LICENSE). The
 text of the books is not covered by that licence and is not included here.
 
-HashiCorp and Vault are trademarks of HashiCorp, Inc. OpenBao is a project
-of the Linux Foundation. This repository is an independent publication and
-is not affiliated with, authorized by, or endorsed by either.
+HashiCorp and Vault are trademarks of HashiCorp, Inc. OpenBao, Harbor and
+Kubernetes are projects and trademarks of the Linux Foundation. Docker is a
+trademark of Docker, Inc. This repository is an independent publication and
+is not affiliated with, authorized by, or endorsed by any of them.

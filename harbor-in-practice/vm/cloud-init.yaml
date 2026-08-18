@@ -1,0 +1,45 @@
+#cloud-config
+# The VM Harbor runs on. Chapter 2 builds it, Chapter 3 installs Harbor
+# into it. Everything here is what the official installer expects to find
+# already present, and nothing more.
+package_update: true
+package_upgrade: false
+
+packages:
+  - ca-certificates
+  - curl
+  - gnupg
+  - jq
+  - openssl
+
+write_files:
+  - path: /etc/sysctl.d/99-harbor.conf
+    content: |
+      # Harbor's registry and job service open a lot of files.
+      fs.file-max = 131072
+  - path: /etc/profile.d/harbor-lab.sh
+    content: |
+      export HARBOR_HOSTNAME=harbor.meridian.test
+      cd /opt/harbor 2>/dev/null || true
+
+runcmd:
+  # Docker from the official repository, not the distribution package -
+  # the distribution package lags and Harbor's installer checks the
+  # compose plugin version.
+  - install -m 0755 -d /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg
+      -o /etc/apt/keyrings/docker.asc
+  - chmod a+r /etc/apt/keyrings/docker.asc
+  - echo "deb [arch=$(dpkg --print-architecture)
+      signed-by=/etc/apt/keyrings/docker.asc]
+      https://download.docker.com/linux/ubuntu $(. /etc/os-release &&
+      echo $VERSION_CODENAME) stable" > /etc/apt/sources.list.d/docker.list
+  - apt-get update
+  - apt-get install -y docker-ce docker-ce-cli containerd.io
+      docker-buildx-plugin docker-compose-plugin
+  - usermod -aG docker ubuntu
+  - mkdir -p /opt/harbor /data
+  - chown ubuntu:ubuntu /opt/harbor
+  - sysctl --system
+
+final_message: "Harbor lab VM ready after $UPTIME seconds."
