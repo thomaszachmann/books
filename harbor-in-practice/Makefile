@@ -2,7 +2,8 @@
 SHELL := /bin/bash
 
 .PHONY: help check install diagnose teardown vm-up vm-shell vm-down \
-        ch01 kind-up kind-down mk-up mk-down harbor-up harbor-down \
+        ch01 ch02 reset kind-up kind-down mk-up mk-down harbor-up \
+        harbor-down \
         vault-up versions
 
 help:
@@ -16,6 +17,10 @@ help:
 	@echo ""
 	@echo "  Chapter 1"
 	@echo "  make ch01       the plain registry, and moving a tag"
+	@echo ""
+	@echo "  Chapter 2"
+	@echo "  make ch02       certificates for the registry"
+	@echo "  make reset      wipe Harbor data, keep VM and certs"
 	@echo ""
 	@echo "  Chapters 2 and 3 - the virtual machine"
 	@echo "  make vm-up      launch the Multipass VM"
@@ -47,6 +52,13 @@ teardown:
 
 ch01:
 	@cd chapters/ch01 && ./plain-registry.sh && ./move-tag.sh
+
+ch02:
+	@test -n "$(IP)" || (echo "usage: make ch02 IP=192.168.64.7"; exit 2)
+	@./chapters/ch02/make-certs.sh $(IP)
+
+reset:
+	@./scripts/reset-lab.sh
 
 vm-up:
 	@./scripts/vm-up.sh

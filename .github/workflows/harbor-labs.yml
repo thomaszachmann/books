@@ -49,6 +49,34 @@ jobs:
       - name: moving a tag changes the digest
         run: ./chapters/ch01/move-tag.sh
 
+  ch02:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: a root CA and a server certificate
+        run: ./chapters/ch02/make-certs.sh 192.0.2.10
+      - name: the SAN is present, and the chain verifies
+        run: |
+          openssl x509 -noout -text -in certs/harbor.crt \
+            | grep -A1 'Subject Alternative Name' \
+            | grep -q 'DNS:harbor.meridian.test'
+          openssl verify -CAfile certs/ca.crt certs/harbor.crt
+      - name: a certificate without a SAN is rejected by Go
+        run: |
+          # Chapter 2, exercise 2.3, as a test. Sign without -extfile
+          # and prove the result is refused - so that the chapter's
+          # claim is checked rather than asserted.
+          cd certs
+          openssl req -new -sha256 -key harbor.key -out bad.csr \
+            -subj "/O=Meridian Freight/CN=harbor.meridian.test"
+          openssl x509 -req -sha256 -days 1 -in bad.csr \
+            -CA ca.crt -CAkey ca.key -CAcreateserial -out bad.crt
+          if openssl x509 -noout -text -in bad.crt \
+             | grep -q 'Subject Alternative Name'; then
+            echo "expected no SAN on the deliberately bad cert"; exit 1
+          fi
+          echo "no SAN, as expected - this is what 2.3 asks you to see"
+
   compose-labs:
     runs-on: ubuntu-latest
     strategy:
