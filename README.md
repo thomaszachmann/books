@@ -14,7 +14,7 @@ Working code for every lab in **Vault in Practice** by Thomas Zachmann.
 Clone it to the path the book uses and work inside it:
 
 ```bash
-git clone <this-repo> ~/vault-lab
+git clone https://github.com/thomaszachmann/vault-in-practice-code.git ~/vault-lab
 cd ~/vault-lab
 ```
 
