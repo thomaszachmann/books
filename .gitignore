@@ -1,12 +1,16 @@
-# Generated at runtime - never commit
-data/
-logs/
-tls/*.pem
-tls/*.key
-tls/*.crt
-tls/*.srl
-init.json
+# Runtime state - never commit. Patterns match at any depth.
+**/data/
+**/logs/
+**/tls/*.pem
+**/tls/*.key
+**/tls/*.crt
+**/tls/*.srl
+**/init.json
+**/init-backup.json
+**/root-ca/
 *.snap
 *.log
-root-ca/
+
+# OS noise
 .DS_Store
+Thumbs.db
