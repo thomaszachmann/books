@@ -27,7 +27,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: shellcheck
         run: |
           sudo apt-get update -qq
@@ -43,7 +43,7 @@ jobs:
   ch01:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: plain registry, push, read digest
         run: ./chapters/ch01/plain-registry.sh
       - name: moving a tag changes the digest
@@ -57,7 +57,7 @@ jobs:
         pin: [pinned, latest]
     continue-on-error: ${{ matrix.pin == 'latest' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: resolve the version under test
         id: v
         run: |
@@ -84,7 +84,7 @@ jobs:
       matrix:
         distro: [kind, minikube]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: placeholder
         run: |
           echo "Chapter 15 fills this in for ${{ matrix.distro }}:"
