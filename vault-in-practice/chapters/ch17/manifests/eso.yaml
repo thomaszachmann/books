@@ -1,0 +1,41 @@
+# Chapter 17 - External Secrets Operator.
+#
+# remoteRef.key is the path BELOW the SecretStore's path. Writing the full
+# "secret/data/tracking" here produces an error naming a doubled path -
+# the most common ESO mistake, made by everyone who internalised the
+# data/ rule for policies.
+apiVersion: external-secrets.io/v1
+kind: SecretStore
+metadata:
+  name: vault
+  namespace: production
+spec:
+  provider:
+    vault:
+      server: "http://vault.vault.svc:8200"
+      path: "secret"
+      version: "v2"
+      auth:
+        kubernetes:
+          mountPath: "kubernetes"
+          role: "tracking"
+          serviceAccountRef:
+            name: tracking
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: tracking-db-eso
+  namespace: production
+spec:
+  refreshInterval: 30s
+  secretStoreRef:
+    name: vault
+    kind: SecretStore
+  target:
+    name: tracking-db-eso
+  data:
+    - secretKey: password
+      remoteRef:
+        key: tracking
+        property: db_password

@@ -1,0 +1,40 @@
+# Chapter 17 - Vault Secrets Operator.
+#
+# mount is the mount, path is the path below it, and type must say kv-v2.
+# Getting any of the three wrong produces no Secret and an event that
+# names the reason - kubectl describe vaultstaticsecret.
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultConnection
+metadata:
+  name: vault
+  namespace: production
+spec:
+  address: http://vault.vault.svc:8200
+---
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultAuth
+metadata:
+  name: vault-auth
+  namespace: production
+spec:
+  vaultConnectionRef: vault
+  method: kubernetes
+  mount: kubernetes
+  kubernetes:
+    role: tracking
+    serviceAccount: tracking
+---
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultStaticSecret
+metadata:
+  name: tracking-db
+  namespace: production
+spec:
+  vaultAuthRef: vault-auth
+  mount: secret
+  type: kv-v2
+  path: tracking
+  refreshAfter: 30s
+  destination:
+    create: true
+    name: tracking-db

@@ -1,0 +1,20 @@
+# Chapter 17, exercise 17.3 - dynamic credentials with a rollout.
+#
+# Consequence worth stating: the Deployment now restarts on the lease
+# schedule. With a one-hour TTL that is 24 restarts a day - fine for a
+# stateless service, unacceptable for one holding long-lived connections.
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultDynamicSecret
+metadata:
+  name: tracking-db-dynamic
+  namespace: production
+spec:
+  vaultAuthRef: vault-auth
+  mount: database
+  path: creds/tracking-ro
+  destination:
+    create: true
+    name: tracking-db-dynamic
+  rolloutRestartTargets:
+    - kind: Deployment
+      name: tracking
