@@ -1,5 +1,6 @@
 # Runtime state - never commit. Patterns match at any depth.
 **/data/
+**/raft/
 **/logs/
 **/tls/*.pem
 **/tls/*.key
