@@ -16,3 +16,6 @@
 .DS_Store
 Thumbs.db
 **/ssh-ca/*.pem
+**/cluster/data*/
+**/cluster/tls/*.pem
+**/cluster/init.json

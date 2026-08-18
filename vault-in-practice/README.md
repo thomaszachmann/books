@@ -66,6 +66,7 @@ chapters/
   ch18/  compat-report.sh + tf      OpenBao, measured not asserted
   ch19/  setup-ssh-ca.sh + sshd     SSH certificates, TOTP
   ch20/  migrate-to-raft.sh         file -> Integrated Storage
+  ch21/  cluster-up.sh              three nodes, break quorum, recover
 
 docker-compose.yml   the environment; grows as the book does
 config/vault.hcl     the configuration built in Chapter 2

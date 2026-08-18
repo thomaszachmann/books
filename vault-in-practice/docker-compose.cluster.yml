@@ -1,0 +1,39 @@
+# Chapter 21 - a three-node Raft cluster.
+#
+# Separate from docker-compose.yml so the single-node lab survives.
+# Each node gets its own data directory and its own config; the node_id
+# inside each config must be unique.
+
+services:
+  vault-1:
+    image: hashicorp/vault:1.18
+    container_name: vault-1
+    ports: ["127.0.0.1:8210:8200"]
+    cap_add: ["IPC_LOCK"]
+    volumes:
+      - ./cluster/config:/vault/config:ro
+      - ./cluster/tls:/vault/tls:ro
+      - ./cluster/data1:/vault/data
+    command: vault server -config=/vault/config/vault-1.hcl
+
+  vault-2:
+    image: hashicorp/vault:1.18
+    container_name: vault-2
+    ports: ["127.0.0.1:8220:8200"]
+    cap_add: ["IPC_LOCK"]
+    volumes:
+      - ./cluster/config:/vault/config:ro
+      - ./cluster/tls:/vault/tls:ro
+      - ./cluster/data2:/vault/data
+    command: vault server -config=/vault/config/vault-2.hcl
+
+  vault-3:
+    image: hashicorp/vault:1.18
+    container_name: vault-3
+    ports: ["127.0.0.1:8230:8200"]
+    cap_add: ["IPC_LOCK"]
+    volumes:
+      - ./cluster/config:/vault/config:ro
+      - ./cluster/tls:/vault/tls:ro
+      - ./cluster/data3:/vault/data
+    command: vault server -config=/vault/config/vault-3.hcl
