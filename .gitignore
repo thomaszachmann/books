@@ -19,3 +19,5 @@ Thumbs.db
 **/cluster/data*/
 **/cluster/tls/*.pem
 **/cluster/init.json
+**/.unseal-token
+**/*.hcl.bak
