@@ -49,3 +49,26 @@ services:
       BAO_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
     command: bao server -dev
     restart: unless-stopped
+
+  # Chapter 19 - a server that trusts the Vault SSH CA.
+  # ONE line of configuration: TrustedUserCAKeys. No key is ever copied
+  # here, and none has to be removed when somebody leaves.
+  sshd:
+    image: alpine:3.20
+    container_name: sshd
+    ports:
+      - "127.0.0.1:2222:22"
+    volumes:
+      - ./chapters/ch19/ssh-ca:/etc/ssh/ca:ro
+    command: >
+      sh -c "apk add --no-cache openssh >/dev/null &&
+             ssh-keygen -A &&
+             adduser -D ubuntu &&
+             passwd -u ubuntu &&
+             echo 'TrustedUserCAKeys /etc/ssh/ca/trusted-ca.pem'
+               >> /etc/ssh/sshd_config &&
+             echo 'PubkeyAuthentication yes'
+               >> /etc/ssh/sshd_config &&
+             echo 'LogLevel VERBOSE' >> /etc/ssh/sshd_config &&
+             /usr/sbin/sshd -D -e"
+    restart: unless-stopped

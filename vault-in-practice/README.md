@@ -64,6 +64,7 @@ chapters/
   ch16/  cluster-up.sh + manifests   kind and minikube, kubernetes auth
   ch17/  deploy-*.sh + manifests    injector, VSO, ESO, and compare.sh
   ch18/  compat-report.sh + tf      OpenBao, measured not asserted
+  ch19/  setup-ssh-ca.sh + sshd     SSH certificates, TOTP
 
 docker-compose.yml   the environment; grows as the book does
 config/vault.hcl     the configuration built in Chapter 2
@@ -105,6 +106,7 @@ jumping in, and ignore it if you are working straight through.
 | `vault` | 8200 | Chapter 2 |
 | `postgres` | 5432 | Chapter 10 |
 | `openbao` | 8300 | Chapter 18 |
+| `sshd` | 2222 | Chapter 19 |
 
 Start them individually — the book brings each one in when it is needed:
 
