@@ -61,6 +61,7 @@ chapters/
   ch13/  setup-pki.sh + renew-cert    your own certificate authority
   ch14/  deliver/consume scripts      wrapped SecretID delivery
   ch15/  setup-agent.sh + agent/      Vault Agent, templating, cache
+  ch16/  cluster-up.sh + manifests   kind and minikube, kubernetes auth
 
 docker-compose.yml   the environment; grows as the book does
 config/vault.hcl     the configuration built in Chapter 2
