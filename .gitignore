@@ -1,17 +1,12 @@
 # Generated at runtime - never commit
-lab/data/
-lab/logs/
-lab/tls/*.pem
-lab/tls/*.key
-lab/tls/*.crt
-lab/tls/*.srl
+data/
+logs/
+tls/*.pem
+tls/*.key
+tls/*.crt
+tls/*.srl
 init.json
 *.snap
 *.log
-
-# Root CA material - Chapter 13 generates this locally
 root-ca/
-
-# OS noise
 .DS_Store
-Thumbs.db

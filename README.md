@@ -1,13 +1,68 @@
 # Vault in Practice — Companion Code
 
-Working code for every lab in **Vault in Practice: A Hands-On Lab Guide to
-Secrets Management with HashiCorp Vault** by Thomas Zachmann.
+Working code for every lab in **Vault in Practice** by Thomas Zachmann.
 
-> **This repository is not a shortcut.** The labs in the book are written to
-> be typed. Typing is how the commands end up in your fingers instead of in
-> your bookmarks. Use this repository to check your work, to recover when
-> something is broken, and to skip the tedious parts — generating
-> certificates, waiting for containers — not to skip the labs.
+> **This repository is not a shortcut.** The labs are written to be typed.
+> Typing is how commands end up in your fingers instead of your bookmarks.
+> Use this to check your work, to recover when something is broken, and to
+> skip the tedious parts — generating certificates, waiting for containers.
+
+---
+
+## This repository *is* the lab
+
+Clone it to the path the book uses and work inside it:
+
+```bash
+git clone <this-repo> ~/vault-lab
+cd ~/vault-lab
+```
+
+Every path printed in the book — `config/vault.hcl`, `tls/vault-cert.pem`,
+`init.json` — is relative to this directory. Nothing else needs adjusting.
+
+---
+
+## Quick start
+
+```bash
+./scripts/check-prereqs.sh
+make tls          # generate the self-signed certificate
+make up           # start Vault
+make init         # initialise, writes init.json
+make unseal       # unseal from init.json
+make env          # print the exports to paste into your shell
+```
+
+Then follow Chapter 2.
+
+---
+
+## Layout — chapter first
+
+```
+chapters/
+  ch02/  README + setup.sh            build the lab
+  ch03/  README                       initialise, unseal, rekey
+  ch04/  README                       CLI, API, status codes
+  ch05/  README                       tokens
+  ch06/  README + policies/*.hcl      policies, including a broken one
+  ch07/  README                       userpass and AppRole
+  ch08/  README                       entities, aliases, groups
+  ch09/  README + policies/*.hcl      key/value v1 and v2
+  ch10/  README + setup-database.sh   PostgreSQL, dynamic credentials
+  ch11/  README                       lease lifecycle
+
+docker-compose.yml   the environment; grows as the book does
+config/vault.hcl     the configuration built in Chapter 2
+tls/                 certificate generation
+scripts/             shared helpers
+data/  logs/         runtime state, git-ignored
+```
+
+Each `chapters/chNN/README.md` states the state that chapter expects to
+start from and what it leaves behind. Read it before the chapter if you are
+jumping in, and ignore it if you are working straight through.
 
 ---
 
@@ -21,9 +76,9 @@ Secrets Management with HashiCorp Vault** by Thomas Zachmann.
 | `jq` | any | Chapter 3 |
 | `openssl` | any | Chapter 2 |
 | `kind` | 0.24+ | Chapter 16 |
+| `minikube` | 1.34+ | Chapter 16 |
 | `kubectl` | 1.30+ | Chapter 16 |
-
-Check everything at once:
+| `helm` | 3.15+ | Chapter 16 |
 
 ```bash
 ./scripts/check-prereqs.sh
@@ -31,97 +86,52 @@ Check everything at once:
 
 ---
 
-## Quick start
+## The services
+
+| Service | Port | From |
+|---|---|---|
+| `vault` | 8200 | Chapter 2 |
+| `postgres` | 5432 | Chapter 10 |
+| `openbao` | 8300 | Chapter 18 |
+
+Start them individually — the book brings each one in when it is needed:
 
 ```bash
-git clone <this-repo> vault-lab
-cd vault-lab
-
-./scripts/check-prereqs.sh
-make tls          # generate the self-signed certificate
-make up           # start Vault
-make init         # initialise, save keys to init.json
-make unseal       # unseal using init.json
-make env          # print the exports to paste into your shell
+docker compose up -d vault
+docker compose up -d postgres
+docker compose up -d openbao
 ```
-
-Then follow Chapter 2 onwards in the book.
-
-**The book refers to this directory as `~/vault-lab`.** Clone it there, or
-adjust the paths as you read — nothing depends on the location.
 
 ---
 
-## Layout
-
-```
-lab/                 The environment. It evolves as the book does.
-  docker-compose.yml Vault, plus PostgreSQL from Chapter 10
-  config/vault.hcl   The configuration built in Chapter 2
-  tls/               Certificate generation
-scripts/             Helpers used across chapters
-policies/            Every policy file the book writes, named by chapter
-chapters/            Per-chapter lab scripts and configuration
-```
-
-Each `chapters/chNN/` directory has its own `README.md` stating what the
-chapter builds and what state it expects to start from.
-
----
-
-## The rule about state
-
-Every chapter states its starting state. Most chapters continue from the
-previous one. When you are lost, or when a chapter asks you to break
-something and you want to move on:
+## When you are lost
 
 ```bash
 make reset
 ```
 
-This destroys all Vault data and starts again from an uninitialised server.
-It asks for confirmation, because you will eventually run it by accident.
+Destroys all Vault data and returns to an uninitialised server. It asks for
+confirmation, because you will eventually run it by accident.
 
 ---
 
 ## Safety
 
-Everything here is written for a laptop. It is **not** safe for production:
+This is written for a laptop and is **not** safe for production. TLS uses a
+self-signed certificate, unseal keys land in `init.json` in plain text,
+passwords appear on the command line, and everything binds to `127.0.0.1`.
+Keep it that way.
 
-- TLS uses a self-signed certificate
-- Unseal keys are written to `init.json` in plain text
-- Passwords appear on the command line
-- The lab binds to `127.0.0.1` only — keep it that way
-
-`init.json`, `lab/data/`, `lab/logs/` and the certificates are in
-`.gitignore`. If you fork this repository, check that they still are.
-
----
-
-## Chapter index
-
-| Chapter | Directory | Builds |
-|---|---|---|
-| 2 | `chapters/ch02` | The lab: TLS, config, Compose, reset |
-| 3 | `chapters/ch03` | Initialise, unseal, rekey, rotate |
-| 4 | `chapters/ch04` | CLI, API and status-code exercises |
-| 5 | `chapters/ch05` | Token types, TTL ceilings, accessors |
-| 6 | `chapters/ch06` | Policies, including the ones that fail |
-| 7 | `chapters/ch07` | userpass and AppRole |
-| 8 | `chapters/ch08` | Entities, aliases, groups |
-| 9 | `chapters/ch09` | Key/value v1 and v2, versions, CAS |
-| 10 | `chapters/ch10` | PostgreSQL and dynamic credentials |
-| 11 | `chapters/ch11` | Lease lifecycle, including orphans |
-
-Chapters 12 to 22 are added as the book is written.
+`init.json`, `data/`, `logs/` and the certificates are git-ignored. If you
+fork this, check that they still are.
 
 ---
 
 ## Licence
 
-Code is MIT licensed — see `LICENSE`. The text of the book is not covered by
-that licence and is not included here.
+Code is MIT — see `LICENSE`. The text of the book is not covered by it and
+is not included here.
 
-HashiCorp and Vault are trademarks of HashiCorp, Inc. This repository is an
-independent publication and is not affiliated with, authorized by, or
-endorsed by HashiCorp, Inc.
+HashiCorp and Vault are trademarks of HashiCorp, Inc. OpenBao is a project
+of the Linux Foundation. This repository is an independent publication and
+is not affiliated with, authorized by, or endorsed by either.

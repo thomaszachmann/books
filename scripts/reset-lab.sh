@@ -6,16 +6,16 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 echo "This deletes:"
-echo "  - all Vault data in lab/data/"
-echo "  - all audit logs in lab/logs/"
+echo "  - all Vault data in data/"
+echo "  - all audit logs in logs/"
 echo "  - init.json, including the unseal keys"
 echo
 read -r -p "Type RESET to continue: " confirm
 [ "$confirm" = "RESET" ] || { echo "Aborted."; exit 1; }
 
-docker compose -f lab/docker-compose.yml down
-rm -rf lab/data/* lab/logs/* init.json
-docker compose -f lab/docker-compose.yml up -d vault
+docker compose -f docker-compose.yml down
+rm -rf data/* logs/* init.json
+docker compose -f docker-compose.yml up -d vault
 "$ROOT/scripts/wait-for-vault.sh"
 
 echo

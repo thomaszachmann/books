@@ -4,7 +4,7 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 
 export VAULT_ADDR="${VAULT_ADDR:-https://127.0.0.1:8200}"
-export VAULT_CACERT="${VAULT_CACERT:-$PWD/lab/tls/vault-cert.pem}"
+export VAULT_CACERT="${VAULT_CACERT:-$PWD/tls/vault-cert.pem}"
 : "${VAULT_TOKEN:?export VAULT_TOKEN first - see: make env}"
 
 docker compose -f lab/docker-compose.yml up -d postgres

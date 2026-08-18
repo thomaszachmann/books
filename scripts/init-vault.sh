@@ -4,7 +4,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 export VAULT_ADDR="${VAULT_ADDR:-https://127.0.0.1:8200}"
-export VAULT_CACERT="${VAULT_CACERT:-$ROOT/lab/tls/vault-cert.pem}"
+export VAULT_CACERT="${VAULT_CACERT:-$ROOT/tls/vault-cert.pem}"
 
 if [ -f "$ROOT/init.json" ]; then
   echo "init.json already exists. Refusing to overwrite it." >&2

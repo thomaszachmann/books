@@ -1,6 +1,5 @@
 # Vault in Practice - companion lab
 SHELL := /bin/bash
-LAB   := lab
 
 .PHONY: help check tls up down restart reset init unseal env status db-up db-down clean
 
@@ -23,17 +22,17 @@ check:
 	@./scripts/check-prereqs.sh
 
 tls:
-	@./$(LAB)/tls/generate-certs.sh
+	@./tls/generate-certs.sh
 
 up:
-	@docker compose -f $(LAB)/docker-compose.yml up -d vault
+	@docker compose -f docker-compose.yml up -d vault
 	@./scripts/wait-for-vault.sh
 
 down:
-	@docker compose -f $(LAB)/docker-compose.yml down
+	@docker compose -f docker-compose.yml down
 
 restart:
-	@docker compose -f $(LAB)/docker-compose.yml restart vault
+	@docker compose -f docker-compose.yml restart vault
 	@./scripts/wait-for-vault.sh
 
 reset:
@@ -47,23 +46,23 @@ unseal:
 
 env:
 	@echo "export VAULT_ADDR='https://127.0.0.1:8200'"
-	@echo "export VAULT_CACERT='$(PWD)/$(LAB)/tls/vault-cert.pem'"
+	@echo "export VAULT_CACERT='$(PWD)/tls/vault-cert.pem'"
 	@if [ -f init.json ]; then \
 	  echo "export VAULT_TOKEN='$$(jq -r .root_token init.json)'"; \
 	fi
 
 status:
 	@VAULT_ADDR=https://127.0.0.1:8200 \
-	 VAULT_CACERT=$(PWD)/$(LAB)/tls/vault-cert.pem \
+	 VAULT_CACERT=$(PWD)/tls/vault-cert.pem \
 	 vault status || true
 
 db-up:
-	@docker compose -f $(LAB)/docker-compose.yml up -d postgres
+	@docker compose -f docker-compose.yml up -d postgres
 	@echo "PostgreSQL is starting. Chapter 10 continues from here."
 
 db-down:
-	@docker compose -f $(LAB)/docker-compose.yml stop postgres
+	@docker compose -f docker-compose.yml stop postgres
 
 clean: down
-	@rm -rf $(LAB)/data/* $(LAB)/logs/* init.json
+	@rm -rf data/* logs/* init.json
 	@echo "Cleaned."
