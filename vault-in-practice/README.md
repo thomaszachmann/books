@@ -63,6 +63,7 @@ chapters/
   ch15/  setup-agent.sh + agent/      Vault Agent, templating, cache
   ch16/  cluster-up.sh + manifests   kind and minikube, kubernetes auth
   ch17/  deploy-*.sh + manifests    injector, VSO, ESO, and compare.sh
+  ch18/  compat-report.sh + tf      OpenBao, measured not asserted
 
 docker-compose.yml   the environment; grows as the book does
 config/vault.hcl     the configuration built in Chapter 2
