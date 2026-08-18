@@ -28,9 +28,13 @@ data_volume: /data
 
 trivy:
   ignore_unfixed: false
+  # Trivy downloads its database from a registry, and gets rate limited
+  # doing it. Chapter 9 covers feeding it one by hand.
   skip_update: false
+  skip_java_db_update: false
   offline_scan: false
-  security_check: vuln
+  db_repository: ghcr.io/aquasecurity/trivy-db
+  java_db_repository: ghcr.io/aquasecurity/trivy-java-db
 
 jobservice:
   max_job_workers: 10

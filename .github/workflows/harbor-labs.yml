@@ -77,6 +77,43 @@ jobs:
           fi
           echo "no SAN, as expected - this is what 2.3 asks you to see"
 
+  ch03:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: sigstore/cosign-installer@v3
+      - name: verify the installer against its sigstore bundle
+        # The online installer is under a megabyte, so the whole
+        # verification runs here for real. The offline one is 696 MB and
+        # is verified by the same script with the same flags.
+        run: |
+          mkdir -p /tmp/hv
+          WORK_DIR=/tmp/hv ./chapters/ch03/verify-installer.sh online
+      - name: a bundle does not verify a different file
+        # Chapter 3, exercise 3.3. The check has to fail when it should.
+        run: |
+          cd /tmp/hv
+          echo "not the installer" > impostor.tgz
+          if cosign verify-blob \
+               --bundle harbor-online-installer-*.tgz.sigstore.json \
+               --certificate-identity-regexp \
+                 'https://github.com/goharbor/harbor/.github/workflows/.*' \
+               --certificate-oidc-issuer \
+                 'https://token.actions.githubusercontent.com' \
+               impostor.tgz 2>/dev/null; then
+            echo "verification passed on the wrong file"; exit 1
+          fi
+          echo "refused, as it must"
+      - name: harbor.yml renders and parses
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y gettext-base
+          HARBOR_HOSTNAME=harbor.meridian.test \
+            ./chapters/ch03/render-harbor-yml.sh /tmp/harbor.yml
+          python3 -c "import yaml,sys; d=yaml.safe_load(open('/tmp/harbor.yml')); \
+            assert d['hostname']=='harbor.meridian.test'; \
+            print('parsed, _version', d['_version'])"
+          test "$(stat -c '%a' /tmp/harbor.yml)" = 600
+
   compose-labs:
     runs-on: ubuntu-latest
     strategy:
