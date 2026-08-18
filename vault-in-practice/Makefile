@@ -1,12 +1,15 @@
 # Vault in Practice - companion lab
 SHELL := /bin/bash
 
-.PHONY: help check tls up down restart reset init unseal env status db-up db-down clean
+.PHONY: help check install diagnose teardown tls up down restart reset init unseal env status db-up db-down clean
 
 help:
 	@echo "Vault in Practice - lab targets"
 	@echo ""
 	@echo "  make check     verify required tools are installed"
+	@echo "  make install   show how to install what is missing"
+	@echo "  make diagnose  work out why the lab is misbehaving"
+	@echo "  make teardown  remove everything, including clusters"
 	@echo "  make tls       generate the self-signed certificate"
 	@echo "  make up        start Vault"
 	@echo "  make init      initialise (writes init.json)"
@@ -20,6 +23,15 @@ help:
 
 check:
 	@./scripts/check-prereqs.sh
+
+install:
+	@./scripts/install.sh
+
+diagnose:
+	@./scripts/diagnose.sh
+
+teardown:
+	@./scripts/teardown.sh
 
 tls:
 	@./tls/generate-certs.sh
