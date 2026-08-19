@@ -3,7 +3,7 @@ SHELL := /bin/bash
 
 .PHONY: help check install diagnose teardown vm-up vm-shell vm-down \
         ch01 ch02 ch03 ch04 ch05 ch06 ch07 ch08 ch09 ch10 ch11 ch12 \
-        ch13 ch14 ch15 ch16 ch17 ch18 ch19 \
+        ch13 ch14 ch15 ch16 ch17 ch18 ch19 ch20 \
         reset \
         kind-up \
         kind-down \
@@ -77,6 +77,9 @@ help:
 	@echo ""
 	@echo "  Chapter 19"
 	@echo "  make ch19 NS=apps   check a namespace pull secret"
+	@echo ""
+	@echo "  Chapter 20"
+	@echo "  make ch20 REF=hashivault://harbor-signing   check the reference"
 	@echo ""
 	@echo "  Chapters 2 and 3 - the virtual machine"
 	@echo "  make vm-up      launch the Multipass VM"
@@ -172,6 +175,12 @@ ch18:
 ch19:
 	@test -n "$(NS)" || (echo "usage: make ch19 NS=apps"; exit 2)
 	@./chapters/ch19/dockerconfig.sh check $(NS)
+
+ch20:
+	@./chapters/ch20/vault-signing.sh ref \
+	  $(if $(REF),$(REF),hashivault://harbor-signing)
+	@echo ""
+	@./chapters/ch20/vault-signing.sh env || true
 
 reset:
 	@./scripts/reset-lab.sh

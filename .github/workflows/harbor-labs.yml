@@ -796,3 +796,71 @@ jobs:
             echo "expected a refusal"; exit 1
           fi
           echo "refused, as it must"
+
+  ch20:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: openbao is the same provider, and the mount is not in the URI
+        # sigstore's hashivault provider matches
+        # ^(?:hashivault|openbao)://<name>$ - the part after the scheme
+        # is a key name and may not contain a slash. Both claims are in
+        # the chapter, so both are asserted here.
+        run: |
+          for R in hashivault://harbor-signing openbao://harbor-signing; do
+            ./chapters/ch20/vault-signing.sh ref "$R" >/dev/null \
+              || { echo "$R must be accepted"; exit 1; }
+          done
+          echo "both schemes accepted"
+          if ./chapters/ch20/vault-signing.sh ref \
+               hashivault://transit/harbor-signing >/dev/null 2>&1; then
+            echo "a mount in the reference must be refused"; exit 1
+          fi
+          if ./chapters/ch20/vault-signing.sh ref \
+               vault://harbor-signing >/dev/null 2>&1; then
+            echo "vault:// is not the scheme cosign takes"; exit 1
+          fi
+          echo "a path and the wrong scheme are both refused"
+      - name: the mount comes from the environment, default transit
+        run: |
+          ./chapters/ch20/vault-signing.sh ref hashivault://harbor-signing \
+            | grep -q 'transit/sign/harbor-signing' \
+            || { echo "the default mount must be transit"; exit 1; }
+          TRANSIT_SECRET_ENGINE_PATH=pki-signing \
+            ./chapters/ch20/vault-signing.sh ref hashivault://harbor-signing \
+            | grep -q 'pki-signing/sign/harbor-signing' \
+            || { echo "the mount override is ignored"; exit 1; }
+          echo "default and override both resolve"
+      - name: a missing address fails, a missing token does not
+        # cosign falls back to a token helper before giving up, so an
+        # unset token is not by itself an error. An unset address is.
+        run: |
+          if env -u VAULT_ADDR -u BAO_ADDR \
+                 ./chapters/ch20/vault-signing.sh env >/dev/null 2>&1; then
+            echo "no address must fail"; exit 1
+          fi
+          BAO_ADDR=http://127.0.0.1:8200 \
+            env -u VAULT_TOKEN -u BAO_TOKEN \
+            ./chapters/ch20/vault-signing.sh env >/dev/null \
+            || { echo "BAO_ADDR alone must be enough"; exit 1; }
+          echo "address required, token optional - as cosign has it"
+      - name: the signature carries the key version
+        run: |
+          V=$(./chapters/ch20/vault-signing.sh version 'vault:v2:MEUCIQD')
+          test "$V" = "key version 2" \
+            || { echo "expected version 2, got: $V"; exit 1; }
+          if ./chapters/ch20/vault-signing.sh version 'MEUCIQD' \
+               >/dev/null 2>&1; then
+            echo "an unprefixed signature is not from transit"; exit 1
+          fi
+          echo "$V, and an unprefixed signature is rejected"
+      - name: the policy grants signing without export
+        run: |
+          P=chapters/ch20/signing-policy.hcl
+          grep -q 'transit/sign/harbor-signing' "$P" \
+            || { echo "no signing path"; exit 1; }
+          grep -qE 'transit/export' "$P" \
+            || { echo "export must be addressed"; exit 1; }
+          grep -q 'capabilities = \["update"\]' "$P" \
+            || { echo "signing needs update"; exit 1; }
+          echo "sign yes, export no"
