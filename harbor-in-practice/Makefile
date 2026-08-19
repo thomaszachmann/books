@@ -3,7 +3,7 @@ SHELL := /bin/bash
 
 .PHONY: help check install diagnose teardown vm-up vm-shell vm-down \
         ch01 ch02 ch03 ch04 ch05 ch06 ch07 ch08 ch09 ch10 ch11 ch12 \
-        ch13 ch14 ch15 ch16 ch17 ch18 ch19 ch20 \
+        ch13 ch14 ch15 ch16 ch17 ch18 ch19 ch20 ch21 \
         reset \
         kind-up \
         kind-down \
@@ -80,6 +80,9 @@ help:
 	@echo ""
 	@echo "  Chapter 20"
 	@echo "  make ch20 REF=hashivault://harbor-signing   check the reference"
+	@echo ""
+	@echo "  Chapter 21"
+	@echo "  make ch21       render k8s/values-ha.yaml and check it"
 	@echo ""
 	@echo "  Chapters 2 and 3 - the virtual machine"
 	@echo "  make vm-up      launch the Multipass VM"
@@ -181,6 +184,13 @@ ch20:
 	  $(if $(REF),$(REF),hashivault://harbor-signing)
 	@echo ""
 	@./chapters/ch20/vault-signing.sh env || true
+
+ch21:
+	@. ./scripts/versions.sh; \
+	  helm template harbor harbor/harbor \
+	    --version "$${HARBOR_CHART_VERSION#v}" \
+	    -f k8s/values-ha.yaml > /tmp/harbor-release.yaml
+	@./chapters/ch21/render-check.sh /tmp/harbor-release.yaml
 
 reset:
 	@./scripts/reset-lab.sh

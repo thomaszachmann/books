@@ -864,3 +864,102 @@ jobs:
           grep -q 'capabilities = \["update"\]' "$P" \
             || { echo "signing needs update"; exit 1; }
           echo "sign yes, export no"
+
+  ch21:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: helm
+        run: |
+          command -v helm >/dev/null || {
+            curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash; }
+          helm version --short
+          helm repo add harbor https://helm.goharbor.io >/dev/null
+      - name: the chapter's claims about the chart still hold
+        # Every one of these is printed in Chapter 21. If the chart
+        # changes, this job is how the book finds out.
+        run: |
+          . ./scripts/versions.sh
+          V="${HARBOR_CHART_VERSION#v}"
+          T() { helm template harbor harbor/harbor --version "$V" "$@"; }
+          # the file logger renders a claim; the database logger does not
+          T -s templates/jobservice/jobservice-dpl.yaml \
+            | grep -A1 '^      - name: job-logs' | grep -q persistentVolumeClaim \
+            || { echo "the default job logger must use a PVC"; exit 1; }
+          T --set 'jobservice.jobLoggers[0]=database' \
+            -s templates/jobservice/jobservice-dpl.yaml \
+            | grep -A1 '^      - name: job-logs' | grep -q emptyDir \
+            || { echo "the database logger must drop the PVC"; exit 1; }
+          echo "jobLoggers: file -> PVC, database -> emptyDir"
+      - name: the documented value names do nothing
+        # The website HA doc says jobservice.jobLogger and omits the
+        # jobLog level. Helm accepts both without a word.
+        run: |
+          . ./scripts/versions.sh
+          V="${HARBOR_CHART_VERSION#v}"
+          T() { helm template harbor harbor/harbor --version "$V" "$@"; }
+          T --set jobservice.jobLogger=database \
+            -s templates/jobservice/jobservice-dpl.yaml \
+            | grep -A1 '^      - name: job-logs' | grep -q persistentVolumeClaim \
+            || { echo "the singular spelling appears to work now"; exit 1; }
+          P=persistence.persistentVolumeClaim.jobservice
+          T --set "$P.accessMode=ReadWriteMany" \
+            -s templates/jobservice/jobservice-pvc.yaml \
+            | grep -q ReadWriteOnce \
+            || { echo "the documented path appears to work now"; exit 1; }
+          T --set "$P.jobLog.accessMode=ReadWriteMany" \
+            -s templates/jobservice/jobservice-pvc.yaml \
+            | grep -q ReadWriteMany \
+            || { echo "the real path stopped working"; exit 1; }
+          echo "both documented paths are still ignored, as the book says"
+      - name: two emptyDirs that mean opposite things
+        run: |
+          . ./scripts/versions.sh
+          V="${HARBOR_CHART_VERSION#v}"
+          T() { helm template harbor harbor/harbor --version "$V" "$@"; }
+          A=$(T --set persistence.imageChartStorage.type=s3 \
+                -s templates/registry/registry-dpl.yaml \
+              | grep -A1 '^      - name: registry-data')
+          B=$(T --set persistence.enabled=false \
+                -s templates/registry/registry-dpl.yaml \
+              | grep -A1 '^      - name: registry-data')
+          test "$A" = "$B" \
+            || { echo "the two renders differ; the book says they do not"; exit 1; }
+          echo "$A" | grep -q emptyDir || { echo "expected emptyDir"; exit 1; }
+          echo "identical renders, opposite meanings"
+      - name: the numbers the sizing rests on
+        run: |
+          . ./scripts/versions.sh
+          V="${HARBOR_CHART_VERSION#v}"
+          T() { helm template harbor harbor/harbor --version "$V" "$@"; }
+          T --set metrics.enabled=true \
+            | grep -qE 'POSTGRESQL_MAX_OPEN_CONNS: "900"' \
+            || { echo "maxOpenConns is no longer 900"; exit 1; }
+          T --set metrics.enabled=true \
+            | grep -qE 'HARBOR_DATABASE_MAX_OPEN_CONNS: "900"' \
+            || { echo "the exporter no longer shares the value"; exit 1; }
+          T -s templates/trivy/trivy-sts.yaml | grep -q 'kind: StatefulSet' \
+            || { echo "trivy is no longer a StatefulSet"; exit 1; }
+          T -s templates/trivy/trivy-sts.yaml | grep -q volumeClaimTemplates \
+            || { echo "trivy no longer has a claim template"; exit 1; }
+          echo "900 per pod, both names; trivy is a StatefulSet with a claim template"
+      - name: render-check passes a good release and fails a bad one
+        run: |
+          . ./scripts/versions.sh
+          V="${HARBOR_CHART_VERSION#v}"
+          helm template harbor harbor/harbor --version "$V" \
+            -f k8s/values-ha.yaml > /tmp/good.yaml
+          MAX_CONNS=1024 ./chapters/ch21/render-check.sh /tmp/good.yaml \
+            || { echo "the book's own HA values must pass"; exit 1; }
+          helm template harbor harbor/harbor --version "$V" \
+            --set registry.replicas=3 --set jobservice.replicas=3 \
+            --set core.replicas=3 > /tmp/bad.yaml
+          if ./chapters/ch21/render-check.sh /tmp/bad.yaml; then
+            echo "replicas without shared storage must fail"; exit 1
+          fi
+          helm template harbor harbor/harbor --version "$V" \
+            --set persistence.enabled=false > /tmp/ephemeral.yaml
+          if ./chapters/ch21/render-check.sh /tmp/ephemeral.yaml; then
+            echo "an ephemeral registry must fail"; exit 1
+          fi
+          echo "good passes, both bad releases fail"

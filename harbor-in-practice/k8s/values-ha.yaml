@@ -1,0 +1,91 @@
+# A starting point for a highly available Harbor, Chapter 21.
+#
+# Nothing here is a default you can adopt unread: every value below is a
+# decision, and three of them require infrastructure this file does not
+# create. Render it and run chapters/ch21/render-check.sh before you
+# install it anywhere.
+#
+#   helm template harbor harbor/harbor --version 1.19.2 \
+#     -f k8s/values-ha.yaml > release.yaml
+#   MAX_CONNS=1024 ./chapters/ch21/render-check.sh release.yaml
+
+expose:
+  type: ingress
+  ingress:
+    hosts:
+      core: harbor.meridian.test
+
+externalURL: https://harbor.meridian.test
+
+# --- the three stores that must live outside the chart ----------------
+
+database:
+  type: external
+  external:
+    host: postgres.meridian.test
+    port: "5432"
+    username: harbor
+    coreDatabase: registry
+    existingSecret: harbor-database        # key must be: password
+    sslmode: verify-full
+  # Per pod, and it covers core and exporter. Multiply by the pod count
+  # and compare with the server's max_connections before raising it.
+  maxIdleConns: 50
+  maxOpenConns: 200
+
+redis:
+  type: external
+  external:
+    # For Sentinel, addr holds the SENTINELS, comma-separated, and
+    # sentinelMasterSet names the monitored set.
+    addr: "redis-0:26379,redis-1:26379,redis-2:26379"
+    sentinelMasterSet: harbor
+    existingSecret: harbor-redis           # key must be: REDIS_PASSWORD
+    # Server authentication only. mTLS to Redis is not supported.
+    tlsOptions:
+      enable: true
+
+persistence:
+  enabled: true
+  imageChartStorage:
+    type: s3
+    s3:
+      region: us-east-1
+      bucket: harbor-registry
+      regionendpoint: https://minio.meridian.test
+      existingSecret: harbor-s3
+      # keys: REGISTRY_STORAGE_S3_ACCESSKEY, REGISTRY_STORAGE_S3_SECRETKEY
+
+# --- replicas ---------------------------------------------------------
+
+portal:
+  replicas: 2
+core:
+  replicas: 2
+registry:
+  replicas: 2
+  # Signs upload state. It MUST be identical across replicas; the chart
+  # generates one into a Secret if you do not supply it. See Chapter 18.
+  existingSecret: harbor-registry-http     # key: REGISTRY_HTTP_SECRET
+jobservice:
+  replicas: 2
+  # Without this the file logger writes to a ReadWriteOnce volume and
+  # the second replica cannot start.
+  jobLoggers:
+    - database
+trivy:
+  replicas: 4
+  # The adapter's queue worker defaults to 1 and the chart does not
+  # expose it. 4 replicas x 2 = 8 concurrent scans.
+  extraEnvVars:
+    - name: SCANNER_JOB_QUEUE_WORKER_CONCURRENCY
+      value: "2"                           # a string, deliberately
+
+# Redis-backed manifest cache. Off by default; worth having once more
+# than one node pulls the same images.
+cache:
+  enabled: true
+  expireHours: 24
+
+metrics:
+  enabled: true
