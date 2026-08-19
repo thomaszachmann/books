@@ -72,6 +72,18 @@ k8s/             kind config, minikube notes, Helm values
 vault/           Part VI. Empty until Chapter 18.
 chapters/        one directory per chapter
 scripts/         check-prereqs, install, diagnose, teardown, harbor-api
+scripts/versions.sh
+                 sourced by the rest; reads VERSIONS.md so that no
+                 version is written down twice
+```
+
+Nothing hard-codes a version. `scripts/versions.sh` extracts the pins
+from `VERSIONS.md` and every other script sources it, which is why
+changing a version is one edit in one file:
+
+```bash
+. ./scripts/versions.sh
+echo "$HARBOR_VERSION $HARBOR_CHART_VERSION"
 ```
 
 ---
