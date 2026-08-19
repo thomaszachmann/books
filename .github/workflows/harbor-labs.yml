@@ -505,6 +505,46 @@ jobs:
             *) echo "unexpected shape"; exit 1 ;;
           esac
 
+  ch14:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: an unhealthy upstream is reported, a healthy one is not
+        # The chapter's central claim: a proxy cache refuses rather than
+        # degrading. cache-health.sh exists to surface that state, so it
+        # has to detect it.
+        run: |
+          P=$(jq -n '[{name:"dockerhub",registry_id:1},
+                      {name:"platform",registry_id:0},
+                      {name:"quay-cache",registry_id:2}]')
+          G=$(jq -n '[{id:1,name:"dockerhub",status:"healthy"},
+                      {id:2,name:"quay",status:"unhealthy"}]')
+          if OUT=$(PROJECTS_JSON="$P" REGISTRIES_JSON="$G" \
+                   ./chapters/ch14/cache-health.sh); then
+            echo "an unhealthy upstream must fail the check"; exit 1
+          fi
+          echo "$OUT"
+          echo "$OUT" | grep -q 'quay-cache' || exit 1
+          echo "$OUT" | grep -q 'platform' && {
+            echo "an ordinary project is not a proxy cache"; exit 1; }
+
+          G2=$(jq -n '[{id:1,name:"dockerhub",status:"healthy"},
+                       {id:2,name:"quay",status:"healthy"}]')
+          PROJECTS_JSON="$P" REGISTRIES_JSON="$G2" \
+            ./chapters/ch14/cache-health.sh >/dev/null \
+            || { echo "all healthy should pass"; exit 1; }
+          echo "detected and not over-detected"
+      - name: the library/ rewrite rule is the slash
+        run: |
+          for n in alpine nginx; do
+            case "$n" in */*) echo "unexpected"; exit 1 ;;
+              *) echo "$n -> library/$n" ;; esac
+          done
+          for n in bitnami/nginx library/alpine; do
+            case "$n" in */*) echo "$n -> taken literally" ;;
+              *) echo "unexpected"; exit 1 ;; esac
+          done
+
   compose-labs:
     runs-on: ubuntu-latest
     strategy:
