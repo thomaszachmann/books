@@ -1089,3 +1089,81 @@ jobs:
           echo "$OUT" | grep -qi 'restore' \
             || { echo "the rollback text must point at Chapter 22"; exit 1; }
           echo "ok"
+
+  ch24:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: helm
+        run: |
+          command -v helm >/dev/null || {
+            curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash; }
+          helm repo add harbor https://helm.goharbor.io >/dev/null
+      - name: ten webhook events, and the nine topics without one
+        # Computed from Harbor's source at the pinned tag. If Harbor adds
+        # a webhook for DELETE_PROJECT, this fails and the chapter gets
+        # rewritten instead of quietly going stale.
+        run: |
+          OUT=$(./chapters/ch24/observe.sh events)
+          echo "$OUT"
+          echo "$OUT" | grep -q 'webhook events:  10' \
+            || { echo "the webhook event count changed"; exit 1; }
+          for E in DELETE_PROJECT DELETE_REPOSITORY DELETE_TAG DELETE_ROBOT \
+                   CREATE_PROJECT CREATE_ROBOT CREATE_TAG \
+                   ARTIFACT_LABELED COMMON_API; do
+            echo "$OUT" | sed -n '/audit log only/,$p' | grep -qw "$E" \
+              || { echo "$E is no longer webhook-less"; exit 1; }
+          done
+          for E in PUSH_ARTIFACT PULL_ARTIFACT DELETE_ARTIFACT REPLICATION \
+                   TAG_RETENTION QUOTA_EXCEED QUOTA_WARNING \
+                   SCANNING_FAILED SCANNING_STOPPED SCANNING_COMPLETED; do
+            echo "$OUT" | sed -n '1,/audit log only/p' | grep -qw "$E" \
+              || { echo "$E lost its webhook"; exit 1; }
+          done
+          echo "10 hooked, 9 not, exactly as the chapter prints"
+      - name: four metrics endpoints on 8001, off by default
+        run: |
+          OUT=$(./chapters/ch24/observe.sh endpoints)
+          echo "$OUT"
+          echo "$OUT" | grep -q 'METRIC_PORT: "8001"' \
+            || { echo "the metrics port changed"; exit 1; }
+          for S in core jobservice exporter; do
+            echo "$OUT" | grep -q "SUBSYSTEM: $S" \
+              || { echo "$S no longer exposes metrics"; exit 1; }
+          done
+          helm template harbor harbor/harbor \
+            --version "$(. ./scripts/versions.sh; echo "${HARBOR_CHART_VERSION#v}")" \
+            | grep -q 'METRIC_ENABLE' \
+            && { echo "metrics must be off by default"; exit 1; }
+          echo "four endpoints on 8001, and off unless asked for"
+      - name: the receiver answers inside the three-second budget
+        # Harbor allows 3s and 3 attempts. A receiver that works before
+        # it responds gets dropped, so the shape is what is tested here.
+        run: |
+          ./chapters/ch24/webhook-listen.sh 9877 >/tmp/wh.log 2>&1 &
+          for _ in $(seq 1 20); do
+            curl -fsS -o /dev/null localhost:9877 -d '{}' 2>/dev/null && break
+            sleep 0.5
+          done
+          START=$(date +%s%N)
+          curl -fsS -o /dev/null -X POST localhost:9877 \
+            -H 'Content-Type: application/json' \
+            -d '{"type":"harbor.artifact.pushed","operator":"alice"}'
+          END=$(date +%s%N)
+          MS=$(( (END - START) / 1000000 ))
+          echo "acknowledged in ${MS}ms, budget is 3000ms"
+          test "$MS" -lt 3000 || { echo "too slow for Harbor"; exit 1; }
+          grep -q 'harbor.artifact.pushed' /tmp/wh.log \
+            || { echo "the payload was not printed"; exit 1; }
+          kill %1 2>/dev/null || true
+      - name: the handover has all eight questions and runs without Harbor
+        run: |
+          HARBOR_PASS=x HARBOR_URL=http://127.0.0.1:1 \
+            ./chapters/ch24/handover.sh > /tmp/HANDOVER.md
+          N=$(grep -c '^## ' /tmp/HANDOVER.md)
+          test "$N" = 8 || { echo "expected 8 sections, got $N"; exit 1; }
+          grep -q 'Last verified restore' /tmp/HANDOVER.md \
+            || { echo "the restore date must be asked for"; exit 1; }
+          grep -q 'frozen once users exist' /tmp/HANDOVER.md \
+            || { echo "auth_mode must carry its warning"; exit 1; }
+          echo "eight questions, and it degrades to blanks without Harbor"

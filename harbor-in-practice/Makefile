@@ -1,9 +1,9 @@
 # Harbor in Practice - companion lab
 SHELL := /bin/bash
 
-.PHONY: help check install diagnose teardown vm-up vm-shell vm-down \
+.PHONY: help check install diagnose teardown vm-up vm-shell vm-down handover \
         ch01 ch02 ch03 ch04 ch05 ch06 ch07 ch08 ch09 ch10 ch11 ch12 \
-        ch13 ch14 ch15 ch16 ch17 ch18 ch19 ch20 ch21 ch22 ch23 \
+        ch13 ch14 ch15 ch16 ch17 ch18 ch19 ch20 ch21 ch22 ch23 ch24 \
         reset \
         kind-up \
         kind-down \
@@ -90,6 +90,10 @@ help:
 	@echo ""
 	@echo "  Chapter 23"
 	@echo "  make ch23       what an upgrade would do"
+	@echo ""
+	@echo "  Chapter 24"
+	@echo "  make ch24       the ten webhook events, and the nine without"
+	@echo "  make handover   write HANDOVER.md from the live config"
 	@echo ""
 	@echo "  Chapters 2 and 3 - the virtual machine"
 	@echo "  make vm-up      launch the Multipass VM"
@@ -210,6 +214,13 @@ ch23:
 	@./chapters/ch23/upgrade-check.sh migrations
 	@echo ""
 	@./chapters/ch23/upgrade-check.sh rollback
+
+ch24:
+	@./chapters/ch24/observe.sh events
+
+handover:
+	@./chapters/ch24/handover.sh > HANDOVER.md
+	@echo "wrote HANDOVER.md - the blanks are the deliverable"
 
 reset:
 	@./scripts/reset-lab.sh
