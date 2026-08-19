@@ -36,7 +36,15 @@ printf '%s' "$json" | jq -r '.[]
 tot=$(printf '%s' "$json" | jq '[.[].total] | add // 0')
 ret=$(printf '%s' "$json" | jq '[.[].retained] | add // 0')
 echo
-echo "$(( tot - ret )) of $tot artifact(s) would be removed."
-echo
-echo "Removing them frees no disk. Blobs go when garbage collection"
-echo "runs - see ./gc-status.sh and Chapter 11, step 5."
+echo "$(( tot - ret )) of $tot artifact(s) are not retained."
+cat <<'TXT'
+
+That is an UPPER BOUND, not a count of deletions. An immutable artifact
+is retained by no rule, so it appears in the difference - and is then
+not deleted, because immutability blocks at the point of deletion and
+the run records an immutable error against it. Read the task errors as
+well as the counts.
+
+Whatever is removed frees no disk. Blobs go when garbage collection
+runs - see ./gc-status.sh and Chapter 11, step 5.
+TXT

@@ -40,6 +40,12 @@ There is no delete action. **Whatever no rule retains is removed** —
 including the release from March that is running in production and has
 not been pushed since. Read every policy that way round.
 
+One exception, and it is the reason `retention-preview.sh` calls its
+number an upper bound: an immutable artifact is retained by no rule, so
+it appears in the difference, and is then not deleted. Immutability is
+checked at the point of deletion and the run records an immutable error
+against that candidate.
+
 ## Garbage collection defaults
 
 | Parameter | Default |

@@ -437,8 +437,10 @@ jobs:
           echo "$OUT"
           echo "$OUT" | grep -qE 'platform/app +9 +2 +7' || {
             echo "expected 7 to be removed from platform/app"; exit 1; }
-          echo "$OUT" | grep -q '7 of 13 artifact(s) would be removed' || {
+          echo "$OUT" | grep -q '7 of 13 artifact(s) are not retained' || {
             echo "expected a 7 of 13 total"; exit 1; }
+          echo "$OUT" | grep -q 'UPPER BOUND' || {
+            echo "the immutability caveat must be printed"; exit 1; }
       - name: gc-status separates refusals from deletions
         run: |
           LOG=$'delete blob sha256:aa\ndelete blob sha256:bb\nfailed to delete untagged:1 artifact in DB\nthe deleting artifact is referenced by others\nthe deleting artifact is referenced by others'
