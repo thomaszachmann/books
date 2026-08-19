@@ -3,7 +3,7 @@ SHELL := /bin/bash
 
 .PHONY: help check install diagnose teardown vm-up vm-shell vm-down \
         ch01 ch02 ch03 ch04 ch05 ch06 ch07 ch08 ch09 ch10 ch11 ch12 \
-        ch13 ch14 ch15 ch16 \
+        ch13 ch14 ch15 ch16 ch17 \
         reset \
         kind-up \
         kind-down \
@@ -68,6 +68,9 @@ help:
 	@echo "  Chapters 15 and 16"
 	@echo "  make ch15       trust the CA on every node"
 	@echo "  make ch16       which namespaces hold a pull secret"
+	@echo ""
+	@echo "  Chapter 17"
+	@echo "  make ch17       is this installation actually HA-ready?"
 	@echo ""
 	@echo "  Chapters 2 and 3 - the virtual machine"
 	@echo "  make vm-up      launch the Multipass VM"
@@ -153,6 +156,9 @@ ch15:
 
 ch16:
 	@./chapters/ch16/find-pull-secrets.sh
+
+ch17:
+	@./chapters/ch17/ha-readiness.sh k8s/values-harbor.yaml
 
 reset:
 	@./scripts/reset-lab.sh

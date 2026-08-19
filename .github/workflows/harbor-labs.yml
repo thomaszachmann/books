@@ -594,6 +594,41 @@ jobs:
             echo "a non-Harbor secret was counted"; exit 1; }
           echo "counted correctly"
 
+  ch17:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: the lab values are honestly not HA-ready
+        # The chapter's claim, checked against this repo's own values:
+        # bundled database, bundled redis, filesystem storage. If any of
+        # those ever changes, this turns red and the chapter needs a
+        # second look.
+        run: |
+          if ./chapters/ch17/ha-readiness.sh k8s/values-harbor.yaml; then
+            echo "the lab values claim HA readiness - they should not"
+            exit 1
+          fi
+          OUT=$(./chapters/ch17/ha-readiness.sh k8s/values-harbor.yaml || true)
+          echo "$OUT"
+          for want in "external database" "external redis" "object storage"; do
+            echo "$OUT" | grep -q "NO   $want" \
+              || { echo "expected $want to be flagged"; exit 1; }
+          done
+      - name: external state passes
+        run: |
+          cat > /tmp/ha.yaml <<'YAML'
+          database:
+            type: external
+          redis:
+            type: external
+          persistence:
+            imageChartStorage:
+              type: s3
+          YAML
+          sed -i 's/^          //' /tmp/ha.yaml
+          ./chapters/ch17/ha-readiness.sh /tmp/ha.yaml \
+            || { echo "external state should pass"; exit 1; }
+
   compose-labs:
     runs-on: ubuntu-latest
     strategy:
