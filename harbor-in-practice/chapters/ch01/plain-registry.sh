@@ -11,8 +11,15 @@ OCI='application/vnd.oci.image.manifest.v1+json'
 V2='application/vnd.docker.distribution.manifest.v2+json'
 
 echo "== step 2: start a registry"
+# REGISTRY_STORAGE_DELETE_ENABLED is not the default. The reference
+# registry ships config-example.yml, which has no delete section; only
+# config-dev.yml turns deletion on. Without this variable the DELETE in
+# step 8 returns 405 UNSUPPORTED rather than 202 - which is worth
+# knowing in its own right, and is why the book now sets it explicitly.
 docker rm -f plain-registry >/dev/null 2>&1 || true
-docker run -d --rm --name plain-registry -p 5000:5000 registry:2
+docker run -d --rm --name plain-registry -p 5000:5000 \
+  -e REGISTRY_STORAGE_DELETE_ENABLED=true \
+  registry:2
 until curl -sf "http://$REG/v2/" >/dev/null; do sleep 1; done
 echo "registry up on $REG"
 

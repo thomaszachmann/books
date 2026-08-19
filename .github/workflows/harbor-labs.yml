@@ -48,6 +48,34 @@ jobs:
         run: ./chapters/ch01/plain-registry.sh
       - name: moving a tag changes the digest
         run: ./chapters/ch01/move-tag.sh
+      - name: the printed manifest sizes, measured
+        # The book prints "size: NNN" beside each digest. Those numbers
+        # were carried over from a first draft and never measured. Print
+        # the real ones so the manuscript can quote observed output.
+        run: |
+          docker rm -f plain-registry >/dev/null 2>&1 || true
+          docker run -d --rm --name plain-registry -p 5000:5000 \
+            -e REGISTRY_STORAGE_DELETE_ENABLED=true registry:2
+          until curl -sf http://localhost:5000/v2/ >/dev/null; do sleep 1; done
+          for img in alpine:3.20 busybox:1.36; do
+            docker pull -q "$img" >/dev/null
+            docker tag "$img" localhost:5000/meridian/tracking:2.4.1
+            echo "MEASURED $img $(docker push localhost:5000/meridian/tracking:2.4.1 | tail -1)"
+          done
+      - name: step 8 - an unauthenticated delete
+        # The book claims 202. Measure it rather than claim it.
+        run: |
+          OCI='application/vnd.oci.image.manifest.v1+json'
+          V2='application/vnd.docker.distribution.manifest.v2+json'
+          D=$(curl -sI -H "Accept: $OCI" -H "Accept: $V2" \
+                http://localhost:5000/v2/meridian/tracking/manifests/2.4.1 \
+              | tr -d '\r' \
+              | awk -F': ' 'tolower($1)=="docker-content-digest"{print $2}')
+          echo "MEASURED delete-code $(curl -s -X DELETE \
+            "http://localhost:5000/v2/meridian/tracking/manifests/$D" \
+            -o /dev/null -w '%{http_code}')"
+          echo "MEASURED tags-after $(curl -s \
+            http://localhost:5000/v2/meridian/tracking/tags/list)"
 
   ch02:
     runs-on: ubuntu-latest
