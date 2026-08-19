@@ -30,10 +30,10 @@ staticClients:
 enablePasswordDB: true
 
 # Generate a hash with:
-#   htpasswd -bnBC 10 "" 'Lab-Passw0rd!ana' | tr -d ':\n'
+#   htpasswd -bnBC 10 "" 'Lab-Passw0rd!alice' | tr -d ':\n'
 staticPasswords:
-  - email: ana@meridian.test
-    username: ana
+  - email: alice@meridian.test
+    username: alice
     userID: "1"
     hash: "REPLACE-ME"
 

@@ -9,7 +9,7 @@ API="$ROOT/scripts/harbor-api.sh"
 PROJECT="${PROJECT:-platform}"
 
 # username role_id
-MEMBERS="ana:1 bruno:4 cleo:2 dieter:5"
+MEMBERS="alice:1 bruno:4 cleo:2 dieter:5"
 
 for m in $MEMBERS; do
   u="${m%%:*}"; r="${m##*:}"

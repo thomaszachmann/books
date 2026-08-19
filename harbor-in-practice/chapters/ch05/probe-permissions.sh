@@ -15,7 +15,7 @@ probe() {   # user, method, path
 }
 
 printf '%-8s %-8s %-8s %-8s %-8s\n' user delete scan members logs
-for u in ana bruno cleo dieter; do
+for u in alice bruno cleo dieter; do
   printf '%-8s %-8s %-8s %-8s %-8s\n' "$u" \
     "$(probe "$u" DELETE "/projects/$P/repositories/$REPO/artifacts/$TAG")" \
     "$(probe "$u" POST "/projects/$P/repositories/$REPO/artifacts/$TAG/scan")" \
