@@ -114,6 +114,31 @@ jobs:
             print('parsed, _version', d['_version'])"
           test "$(stat -c '%a' /tmp/harbor.yml)" = 600
 
+  ch04:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: decode an unpadded base64url JWT payload
+        run: |
+          PAY=$(printf '%s' '{"access":[{"type":"repository","name":"platform/base","actions":["pull"]}],"iat":1,"exp":1801}' \
+                | base64 -w0 | tr '+/' '-_' | tr -d '=')
+          test $(( ${#PAY} % 4 )) -ne 0   # the padding really is missing
+          TOK="eyJhbGciOiJSUzI1NiJ9.$PAY.c2ln"
+          OUT=$(./chapters/ch04/jwt-decode.sh "$TOK")
+          echo "$OUT" | jq -e '.access[0].actions[0] == "pull"'
+          echo "$OUT" | jq -e '.exp - .iat == 1800'
+      - name: raw base64 -d does not survive base64url
+        # Chapter 4 claims this fails, and that hiding the error is worse
+        # than the error. Assert it rather than asserting it in prose.
+        run: |
+          PAY=$(printf '%s' '{"access":[{"type":"repository","name":"platform/base","actions":["pull"]}],"iat":1,"exp":1801}' \
+                | base64 -w0 | tr '+/' '-_' | tr -d '=')
+          if printf '%s' "$PAY" | base64 -d 2>/dev/null | jq -e . >/dev/null 2>&1; then
+            echo "raw decode produced valid JSON - the claim is wrong"
+            exit 1
+          fi
+          echo "refused or truncated, as the chapter says"
+
   compose-labs:
     runs-on: ubuntu-latest
     strategy:

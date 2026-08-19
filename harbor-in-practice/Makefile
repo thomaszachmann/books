@@ -2,7 +2,8 @@
 SHELL := /bin/bash
 
 .PHONY: help check install diagnose teardown vm-up vm-shell vm-down \
-        ch01 ch02 ch03 reset kind-up kind-down mk-up mk-down harbor-up \
+        ch01 ch02 ch03 ch04 reset kind-up kind-down mk-up mk-down \
+        harbor-up \
         harbor-down \
         vault-up versions
 
@@ -24,6 +25,9 @@ help:
 	@echo ""
 	@echo "  Chapter 3"
 	@echo "  make ch03       verify the installer before running it"
+	@echo ""
+	@echo "  Chapter 4"
+	@echo "  make ch04       walk the token dance by hand"
 	@echo ""
 	@echo "  Chapters 2 and 3 - the virtual machine"
 	@echo "  make vm-up      launch the Multipass VM"
@@ -62,6 +66,9 @@ ch02:
 
 ch03:
 	@./chapters/ch03/verify-installer.sh offline
+
+ch04:
+	@./chapters/ch04/token-dance.sh
 
 reset:
 	@./scripts/reset-lab.sh
