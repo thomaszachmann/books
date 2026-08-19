@@ -183,6 +183,39 @@ jobs:
           may_push 4 || { echo "maintainer must be able to push"; exit 1; }
           echo "role 4 outranks role 2 and has the higher number"
 
+  ch06:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: expiry check treats -1 as never, not as overdue
+        # Harbor writes -1 for "never expires". It is smaller than any
+        # threshold, so a check without select(.expires_at > 0) reports
+        # every permanent robot as due, fires constantly, gets switched
+        # off, and takes the real alert with it.
+        run: |
+          NOW=$(date +%s)
+          FIX=$(jq -n --argjson now "$NOW" '[
+            {name:"robot$platform+ci-push", expires_at: ($now + 29*86400)},
+            {name:"robot$platform+soon",    expires_at: ($now +  3*86400)},
+            {name:"robot$system+scanner",   expires_at: -1},
+            {name:"robot$platform+old",     expires_at: ($now + 200*86400)}
+          ]')
+
+          # 14 days: the 3-day robot is due, so this must fail
+          if ROBOTS_JSON="$FIX" ./chapters/ch06/expiring-robots.sh 14; then
+            echo "expected a non-zero exit for the 3-day robot"; exit 1
+          fi
+
+          # 1 day: nothing is due, and -1 must not count
+          ROBOTS_JSON="$FIX" ./chapters/ch06/expiring-robots.sh 1 \
+            || { echo "-1 was counted as overdue"; exit 1; }
+
+          # and prove the trap is real without the filter
+          bad=$(printf '%s' "$FIX" | jq --argjson now "$NOW" \
+            '[ .[] | select(.expires_at - $now < 86400) ] | length')
+          test "$bad" -eq 1 || { echo "the trap did not reproduce"; exit 1; }
+          echo "without the filter, 1 permanent robot reports as overdue"
+
   compose-labs:
     runs-on: ubuntu-latest
     strategy:

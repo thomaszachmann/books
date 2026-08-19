@@ -2,7 +2,8 @@
 SHELL := /bin/bash
 
 .PHONY: help check install diagnose teardown vm-up vm-shell vm-down \
-        ch01 ch02 ch03 ch04 ch05 reset kind-up kind-down mk-up mk-down \
+        ch01 ch02 ch03 ch04 ch05 ch06 reset kind-up kind-down mk-up \
+        mk-down \
         harbor-up \
         harbor-down \
         vault-up versions
@@ -31,6 +32,9 @@ help:
 	@echo ""
 	@echo "  Chapter 5"
 	@echo "  make ch05       seed members, then probe the boundaries"
+	@echo ""
+	@echo "  Chapter 6"
+	@echo "  make ch06       list robots expiring within 14 days"
 	@echo ""
 	@echo "  Chapters 2 and 3 - the virtual machine"
 	@echo "  make vm-up      launch the Multipass VM"
@@ -76,6 +80,9 @@ ch04:
 ch05:
 	@./chapters/ch05/seed-members.sh
 	@./chapters/ch05/probe-permissions.sh
+
+ch06:
+	@./chapters/ch06/expiring-robots.sh 14
 
 reset:
 	@./scripts/reset-lab.sh
