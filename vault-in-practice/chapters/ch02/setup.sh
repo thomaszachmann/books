@@ -5,7 +5,7 @@ cd "$(dirname "$0")/../.."
 
 ./scripts/check-prereqs.sh
 ./tls/generate-certs.sh
-docker compose -f lab/docker-compose.yml up -d vault
+docker compose -f docker-compose.yml up -d vault
 ./scripts/wait-for-vault.sh
 
 echo

@@ -7,10 +7,10 @@ export VAULT_ADDR="${VAULT_ADDR:-https://127.0.0.1:8200}"
 export VAULT_CACERT="${VAULT_CACERT:-$PWD/tls/vault-cert.pem}"
 : "${VAULT_TOKEN:?export VAULT_TOKEN first - see: make env}"
 
-docker compose -f lab/docker-compose.yml up -d postgres
+docker compose -f docker-compose.yml up -d postgres
 sleep 5
 
-PSQL="docker compose -f lab/docker-compose.yml exec -T postgres psql"
+PSQL="docker compose -f docker-compose.yml exec -T postgres psql"
 
 $PSQL -U postgres -d meridian -c \
   "CREATE TABLE IF NOT EXISTS shipments (id int, dest text);"
