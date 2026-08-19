@@ -374,6 +374,55 @@ jobs:
             { echo "a successfully scanned artifact was listed"; exit 1; }
           echo "counted correctly"
 
+  ch10:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: sigstore/cosign-installer@v3
+      - name: a signature satisfies the check, and only one key verifies
+        # Chapter 10 step 4 claims that any key produces a signature
+        # Harbor's policy accepts, and step 5 that cosign verify tells
+        # the two apart. Both run here for real against a plain
+        # registry - no Harbor needed, because the claim is about
+        # cosign and about what a signature is.
+        run: |
+          docker run -d --rm --name sigreg -p 5000:5000 registry:2
+          until curl -sf http://localhost:5000/v2/ >/dev/null; do sleep 1; done
+          docker pull -q alpine:3.20
+          REF=localhost:5000/platform/signed:1.0
+          docker tag alpine:3.20 "$REF"
+          docker push "$REF"
+
+          export COSIGN_PASSWORD=lab
+          mkdir -p /tmp/real /tmp/impostor
+          (cd /tmp/real     && cosign generate-key-pair)
+          (cd /tmp/impostor && cosign generate-key-pair)
+
+          cosign sign --yes --allow-insecure-registry --allow-http-registry \
+            --key /tmp/real/cosign.key "$REF"
+
+          echo "== the real key verifies"
+          cosign verify --allow-insecure-registry --allow-http-registry \
+            --key /tmp/real/cosign.pub "$REF" >/dev/null \
+            || { echo "the signing key should verify"; exit 1; }
+
+          echo "== an unrelated key does not"
+          if cosign verify --allow-insecure-registry --allow-http-registry \
+               --key /tmp/impostor/cosign.pub "$REF" >/dev/null 2>&1; then
+            echo "an unrelated key verified - the chapter is wrong"; exit 1
+          fi
+          echo "refused, as step 5 says"
+
+          echo "== but the impostor can still produce a signature"
+          REF2=localhost:5000/platform/single:1.0
+          docker tag alpine:3.20 "$REF2" && docker push "$REF2"
+          cosign sign --yes --allow-insecure-registry --allow-http-registry \
+            --key /tmp/impostor/cosign.key "$REF2"
+          cosign verify --allow-insecure-registry --allow-http-registry \
+            --key /tmp/impostor/cosign.pub "$REF2" >/dev/null \
+            || { echo "the impostor's own key should verify"; exit 1; }
+          echo "a made-up key produces a valid signature - step 4"
+
   compose-labs:
     runs-on: ubuntu-latest
     strategy:
