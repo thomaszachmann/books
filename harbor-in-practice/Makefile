@@ -3,7 +3,7 @@ SHELL := /bin/bash
 
 .PHONY: help check install diagnose teardown vm-up vm-shell vm-down \
         ch01 ch02 ch03 ch04 ch05 ch06 ch07 ch08 ch09 ch10 ch11 ch12 \
-        ch13 ch14 \
+        ch13 ch14 ch15 ch16 \
         reset \
         kind-up \
         kind-down \
@@ -64,6 +64,10 @@ help:
 	@echo ""
 	@echo "  Chapter 14"
 	@echo "  make ch14       can the proxy caches actually serve?"
+	@echo ""
+	@echo "  Chapters 15 and 16"
+	@echo "  make ch15       trust the CA on every node"
+	@echo "  make ch16       which namespaces hold a pull secret"
 	@echo ""
 	@echo "  Chapters 2 and 3 - the virtual machine"
 	@echo "  make vm-up      launch the Multipass VM"
@@ -143,6 +147,12 @@ ch13:
 
 ch14:
 	@./chapters/ch14/cache-health.sh
+
+ch15:
+	@./chapters/ch15/node-trust.sh kind harbor-lab
+
+ch16:
+	@./chapters/ch16/find-pull-secrets.sh
 
 reset:
 	@./scripts/reset-lab.sh

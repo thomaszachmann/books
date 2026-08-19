@@ -555,6 +555,45 @@ jobs:
               *) echo "unexpected"; exit 1 ;; esac
           done
 
+  ch16:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: the shell really does eat the robot name
+        # Chapter 16 prints exactly this. Measure it rather than
+        # asserting it, and pin the two failure shapes apart.
+        run: |
+          unset platform
+          A=$(eval 'echo "robot$platform+cluster-pull"')
+          test "$A" = "robot+cluster-pull" || { echo "got $A"; exit 1; }
+          platform=XYZ
+          B=$(eval 'echo "robot$platform+cluster-pull"')
+          test "$B" = "robotXYZ+cluster-pull" || { echo "got $B"; exit 1; }
+          C=$(eval "echo 'robot\$platform+cluster-pull'")
+          test "$C" = 'robot$platform+cluster-pull' || { echo "got $C"; exit 1; }
+          echo "unset -> $A"
+          echo "set   -> $B"
+          echo "quoted-> $C"
+      - name: find-pull-secrets counts only Harbor secrets
+        run: |
+          DOC=$(printf '{"auths":{"harbor.meridian.test":{"username":"r"}}}' \
+                | base64 -w0)
+          OTHER=$(printf '{"auths":{"registry.example.com":{"username":"x"}}}' \
+                | base64 -w0)
+          FIX=$(jq -n --arg a "$DOC" --arg b "$OTHER" '{items:[
+            {metadata:{namespace:"apps",name:"harbor"},
+             data:{".dockerconfigjson":$a}},
+            {metadata:{namespace:"apps2",name:"harbor"},
+             data:{".dockerconfigjson":$a}},
+            {metadata:{namespace:"other",name:"elsewhere"},
+             data:{".dockerconfigjson":$b}}]}')
+          OUT=$(SECRETS_JSON="$FIX" ./chapters/ch16/find-pull-secrets.sh)
+          echo "$OUT"
+          echo "$OUT" | grep -q '2 namespace(s)' || exit 1
+          echo "$OUT" | grep -q 'other' && {
+            echo "a non-Harbor secret was counted"; exit 1; }
+          echo "counted correctly"
+
   compose-labs:
     runs-on: ubuntu-latest
     strategy:
