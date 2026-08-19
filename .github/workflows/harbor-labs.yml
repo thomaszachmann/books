@@ -1167,3 +1167,77 @@ jobs:
           grep -q 'frozen once users exist' /tmp/HANDOVER.md \
             || { echo "auth_mode must carry its warning"; exit 1; }
           echo "eight questions, and it degrades to blanks without Harbor"
+
+  readiness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: helm
+        run: |
+          command -v helm >/dev/null || {
+            curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash; }
+          helm repo add harbor https://helm.goharbor.io >/dev/null
+      - name: it runs with nothing configured and skips rather than crashes
+        run: |
+          OUT=$(./scripts/readiness.sh || true)
+          echo "$OUT" | tail -8
+          echo "$OUT" | grep -q '^skip ' \
+            || { echo "unconfigured checks must skip, not fail"; exit 1; }
+      - name: the counts match Appendix F
+        # Appendix F prints 54 items, 32 of them automated. If the
+        # script and the appendix drift apart, one of them is lying.
+        run: |
+          OUT=$(./scripts/readiness.sh || true)
+          echo "$OUT" | grep -q 'automated   32 checked' \
+            || { echo "automated count changed; update Appendix F"; exit 1; }
+          echo "$OUT" | grep -q 'decide      14 items' \
+            || { echo "decide count changed; update Appendix F"; exit 1; }
+          echo "$OUT" | grep -q 'rehearse     8 items' \
+            || { echo "rehearse count changed; update Appendix F"; exit 1; }
+          echo "32 + 14 + 8 = 54, as the appendix says"
+      - name: the backup section reflects the backup it is given
+        run: |
+          mk() {
+            D=$1; DE=$2; BS=$3; KEY=$4
+            mkdir -p "$D"; echo dump > "$D/database.sql"; echo cfg > "$D/harbor.yml"
+            mkdir -p "$D/t/registry" && echo b > "$D/t/registry/blob"
+            tar -C "$D/t" -cf "$D/registry.tar" registry
+            mkdir -p "$D/s/secret/keys"
+            [ "$KEY" = yes ] && echo k > "$D/s/secret/keys/secretkey"
+            mkdir -p "$D/s/secret/core" && echo c > "$D/s/secret/core/private_key.pem"
+            tar -C "$D/s" -cf "$D/secret.tar" secret; rm -rf "$D/t" "$D/s"
+            jq -n --arg de "$DE" --arg bs "$BS" \
+              '{database:{file:"database.sql",started_at:$de,finished_at:$de},
+                blobs:{file:"registry.tar",started_at:$bs,finished_at:$bs},
+                secrets:{file:"secret.tar"}}' > "$D/manifest.json"
+          }
+          mk /tmp/good  2026-08-19T10:00:00Z 2026-08-19T10:05:00Z yes
+          mk /tmp/wrong 2026-08-19T10:05:00Z 2026-08-19T10:00:00Z yes
+          BACKUP_DIR=/tmp/good ./scripts/readiness.sh --section backup \
+            || { echo "a good backup must pass the backup section"; exit 1; }
+          if BACKUP_DIR=/tmp/wrong ./scripts/readiness.sh --section backup >/dev/null; then
+            echo "a wrongly ordered backup must fail"; exit 1
+          fi
+          echo "backup section tracks the backup"
+      - name: the storage section reflects the rendered release
+        run: |
+          V="$(. ./scripts/versions.sh; echo "${HARBOR_CHART_VERSION#v}")"
+          helm template harbor harbor/harbor --version "$V" \
+            -f k8s/values-ha.yaml > /tmp/ha.yaml
+          helm template harbor harbor/harbor --version "$V" \
+            --set persistence.enabled=false > /tmp/ephemeral.yaml
+          RELEASE_YAML=/tmp/ha.yaml ./scripts/readiness.sh --section storage \
+            || { echo "the book's own HA values must pass 5.5"; exit 1; }
+          if RELEASE_YAML=/tmp/ephemeral.yaml \
+             ./scripts/readiness.sh --section storage >/dev/null; then
+            echo "an ephemeral registry must fail 5.5"; exit 1
+          fi
+          echo "storage section tracks the release"
+      - name: markdown output is markdown
+        run: |
+          OUT=$(BACKUP_DIR=/tmp/good ./scripts/readiness.sh --markdown || true)
+          echo "$OUT" | grep -q '^## 6 · Backup and restore' \
+            || { echo "no section heading"; exit 1; }
+          echo "$OUT" | grep -q '^- \[x\] \*\*6.1\*\*' \
+            || { echo "no checkbox item"; exit 1; }
+          echo "ok"

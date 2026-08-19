@@ -1,7 +1,7 @@
 # Harbor in Practice - companion lab
 SHELL := /bin/bash
 
-.PHONY: help check install diagnose teardown vm-up vm-shell vm-down handover \
+.PHONY: help check install diagnose teardown vm-up vm-shell vm-down handover readiness \
         ch01 ch02 ch03 ch04 ch05 ch06 ch07 ch08 ch09 ch10 ch11 ch12 \
         ch13 ch14 ch15 ch16 ch17 ch18 ch19 ch20 ch21 ch22 ch23 ch24 \
         reset \
@@ -94,6 +94,9 @@ help:
 	@echo "  Chapter 24"
 	@echo "  make ch24       the ten webhook events, and the nine without"
 	@echo "  make handover   write HANDOVER.md from the live config"
+	@echo ""
+	@echo "  Appendix F"
+	@echo "  make readiness  the production readiness review, executed"
 	@echo ""
 	@echo "  Chapters 2 and 3 - the virtual machine"
 	@echo "  make vm-up      launch the Multipass VM"
@@ -217,6 +220,13 @@ ch23:
 
 ch24:
 	@./chapters/ch24/observe.sh events
+
+readiness:
+	@./scripts/readiness.sh || { \
+	  echo; \
+	  echo "Automated checks failed. That is the review working, not"; \
+	  echo "the script breaking - fix the items above and re-run."; \
+	  exit 1; }
 
 handover:
 	@./chapters/ch24/handover.sh > HANDOVER.md
