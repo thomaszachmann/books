@@ -10,6 +10,7 @@ SHELL := /bin/bash
         mk-up \
         mk-down \
         harbor-up \
+        vault-down \
         harbor-down \
         vault-up versions
 
@@ -112,7 +113,9 @@ help:
 	@echo "  make harbor-down  uninstall it"
 	@echo ""
 	@echo "  Part VI"
-	@echo "  make vault-up   bring up Vault beside Harbor"
+	@echo "  make vault-up   bring up Vault and bootstrap Part VI"
+	@echo "                  VAULT_PORT=8210 if Book One's Vault has 8200"
+	@echo "  make vault-down stop it"
 
 check:
 	@./scripts/check-prereqs.sh
@@ -266,5 +269,12 @@ harbor-down:
 	@helm uninstall harbor -n harbor || true
 
 vault-up:
-	@echo "Arrives with Chapter 18. See vault/README.md."
-	@false
+	@docker compose -f vault/docker-compose.yml up -d
+	@printf "waiting for vault"
+	@until docker exec -e VAULT_ADDR=http://127.0.0.1:8200 \
+	    harbor-lab-vault vault status >/dev/null 2>&1; do \
+	  printf "."; sleep 1; done; echo
+	@./vault/bootstrap.sh
+
+vault-down:
+	@docker compose -f vault/docker-compose.yml down

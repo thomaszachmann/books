@@ -1241,3 +1241,62 @@ jobs:
           echo "$OUT" | grep -q '^- \[x\] \*\*6.1\*\*' \
             || { echo "no checkbox item"; exit 1; }
           echo "ok"
+
+  vault-lab:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: bring up the Part VI Vault and bootstrap it
+        run: |
+          make vault-up
+      - name: bootstrap is idempotent
+        # It runs on every vault-up. A second run that regenerates the
+        # root CA would leave the first one validating nothing.
+        run: |
+          OUT=$(./vault/bootstrap.sh)
+          echo "$OUT"
+          echo "$OUT" | grep -q 'root CA already present' \
+            || { echo "the PKI step is not idempotent"; exit 1; }
+          echo "$OUT" | grep -q 'transit/keys/harbor-signing already exists' \
+            || { echo "the transit step is not idempotent"; exit 1; }
+      - name: the signing key cannot be exported
+        # Chapter 20's central claim, against a real Vault rather than
+        # against the source.
+        run: |
+          V() { docker exec -e VAULT_ADDR=http://127.0.0.1:8200 \
+                  -e VAULT_TOKEN=root harbor-lab-vault vault "$@"; }
+          V read transit/keys/harbor-signing | grep -q 'exportable *false' \
+            || { echo "the key is exportable"; exit 1; }
+          if V read transit/export/signing-key/harbor-signing 2>&1 \
+             | grep -q 'not exportable'; then
+            echo "export refused, as Chapter 20 says"
+          else
+            echo "the export path did not refuse"; exit 1
+          fi
+      - name: the signature carries the key version, and rotation keeps v1
+        run: |
+          V() { docker exec -e VAULT_ADDR=http://127.0.0.1:8200 \
+                  -e VAULT_TOKEN=root harbor-lab-vault vault "$@"; }
+          P=$(printf 'hello' | base64)
+          S1=$(V write -field=signature transit/sign/harbor-signing input="$P")
+          case "$S1" in vault:v1:*) echo "v1 ok" ;;
+                        *) echo "expected vault:v1:, got ${S1%%:*}"; exit 1 ;; esac
+          V write -f transit/keys/harbor-signing/rotate >/dev/null
+          S2=$(V write -field=signature transit/sign/harbor-signing input="$P")
+          case "$S2" in vault:v2:*) echo "v2 after rotation ok" ;;
+                        *) echo "expected vault:v2:"; exit 1 ;; esac
+          S1B=$(V write -field=signature transit/sign/harbor-signing \
+                  input="$P" key_version=1)
+          case "$S1B" in vault:v1:*) echo "v1 still available after rotation" ;;
+                         *) echo "the old version is gone"; exit 1 ;; esac
+      - name: the kv policies use the data/ path kv v2 actually needs
+        # A policy granting secret/harbor grants nothing, silently.
+        run: |
+          for f in vault/policies/harbor-secrets.hcl vault/policies/harbor-pull.hcl; do
+            grep -q 'secret/data/' "$f" \
+              || { echo "$f is missing the data/ path"; exit 1; }
+          done
+          echo "both kv policies use secret/data/"
+      - name: teardown
+        if: always()
+        run: make vault-down || true

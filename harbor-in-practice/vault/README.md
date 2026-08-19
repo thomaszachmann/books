@@ -16,8 +16,26 @@ materialises a secret.
 | 20 | holds the Cosign signing key, which never leaves Vault |
 
 ```bash
-make vault-up     # development mode, in memory, known root token
+make vault-up                  # dev mode, in memory, root token 'root'
+VAULT_PORT=8210 make vault-up  # if Book One's Vault holds 8200
+make vault-down
 ```
+
+`vault-up` starts the container and runs `bootstrap.sh`, which is
+idempotent: it enables `pki` and `transit`, generates a root CA **only
+if there is not one already**, creates the `harbor-signing` transit key
+with `exportable=false`, writes the three policies below, and seeds two
+placeholder secrets that Chapters 18 and 19 overwrite.
+
+| Policy | Grants | Chapter |
+|---|---|---|
+| `harbor-secrets` | read `secret/data/harbor`, issue from `pki/harbor` | 18 |
+| `harbor-pull` | read `secret/data/harbor-pull` | 19 |
+| `harbor-signing` | `update` on `transit/sign/harbor-signing`, `read` on the key | 20 |
+
+Note the `data/` in those kv paths. kv v2 splits the path — the value is
+at `secret/data/harbor` even though you write it as `secret/harbor` — so
+a policy granting `secret/harbor` grants nothing at all, silently.
 
 That Vault exists so this part can run. It is not one you would keep,
 and Book One is about the one you would.

@@ -1,0 +1,19 @@
+# A development Vault for Part VI. In memory, one known root token, no
+# TLS, no unseal. It exists so that Chapters 18 to 20 can run.
+#
+# This is not a Vault you would keep. Book One is about that one - and
+# if you still have Book One's lab running, its Vault already holds
+# port 8200. Set VAULT_PORT to something else rather than stopping it:
+#
+#   VAULT_PORT=8210 make vault-up
+services:
+  vault:
+    image: hashicorp/vault:1.20
+    container_name: harbor-lab-vault
+    cap_add: [IPC_LOCK]
+    ports:
+      - "127.0.0.1:${VAULT_PORT:-8200}:8200"
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: root
+      VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
+    command: server -dev
