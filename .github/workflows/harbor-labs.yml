@@ -285,6 +285,55 @@ jobs:
             HARBOR_PASS=x ./chapters/ch07/check-auth-mode.sh 2>/dev/null \
             | grep -q 'CANNOT be changed' && echo "frozen case detected"
 
+  ch08:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: the index the book describes still looks like that
+        # Chapter 8 prints "children: 16" and "8 platforms" for
+        # alpine:3.20, and names three child digests. Upstream can
+        # rebuild that tag. If it does, the book is wrong and this
+        # should say so rather than the reader discovering it.
+        run: |
+          TOK=$(curl -s "https://auth.docker.io/token?service=registry.docker.io&scope=repository:library/alpine:pull" | jq -r .token)
+          IDX=$(curl -s -H "Authorization: Bearer $TOK" \
+            -H 'Accept: application/vnd.oci.image.index.v1+json' \
+            https://registry-1.docker.io/v2/library/alpine/manifests/3.20)
+          FIX=$(printf '%s' "$IDX" | jq '{
+            manifest_media_type: .mediaType,
+            references: [ .manifests[]
+              | {child_digest: .digest, platform: .platform} ] }')
+          OUT=$(INDEX_JSON="$FIX" ./chapters/ch08/index-children.sh)
+          echo "$OUT"
+          echo "$OUT" | grep -q 'children             16' \
+            || { echo "the book prints 16 children"; exit 1; }
+          echo "$OUT" | grep -q 'of those, platforms  8' \
+            || { echo "the book prints 8 platforms"; exit 1; }
+          printf '%s' "$IDX" | jq -e '.mediaType ==
+            "application/vnd.oci.image.index.v1+json"'
+          printf '%s' "$IDX" | jq -e '[.manifests[]
+            | select(.platform.architecture=="amd64" and .platform.os=="linux")
+            | .digest] == ["sha256:c64c687cbea9300178b30c95835354e34c4e4febc4badfe27102879de0483b5e"]' \
+            || { echo "the amd64 digest printed in step 2 has changed"; exit 1; }
+      - name: untagged.sh separates index children from orphans
+        run: |
+          ART=$(jq -n '[
+            {repository_name:"platform/multi",
+             digest:"sha256:aaaa111122223333", tags:[{name:"1.0"}],
+             references:[{child_digest:"sha256:bbbb111122223333"}]},
+            {repository_name:"platform/multi",
+             digest:"sha256:bbbb111122223333", tags:null, references:null},
+            {repository_name:"platform/old",
+             digest:"sha256:dddd111122223333", tags:null, references:null}
+          ]')
+          OUT=$(ARTIFACTS_JSON="$ART" ./chapters/ch08/untagged.sh)
+          echo "$OUT"
+          echo "$OUT" | grep -q 'child .*bbbb1111' || exit 1
+          echo "$OUT" | grep -q 'ORPHAN .*dddd1111' || exit 1
+          echo "$OUT" | grep -q 'ORPHAN .*bbbb1111' \
+            && { echo "an index child was reported as an orphan"; exit 1; }
+          echo "separated correctly"
+
   compose-labs:
     runs-on: ubuntu-latest
     strategy:

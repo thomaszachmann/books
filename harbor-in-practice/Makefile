@@ -2,7 +2,8 @@
 SHELL := /bin/bash
 
 .PHONY: help check install diagnose teardown vm-up vm-shell vm-down \
-        ch01 ch02 ch03 ch04 ch05 ch06 ch07 reset kind-up kind-down \
+        ch01 ch02 ch03 ch04 ch05 ch06 ch07 ch08 reset kind-up \
+        kind-down \
         mk-up \
         mk-down \
         harbor-up \
@@ -39,6 +40,9 @@ help:
 	@echo ""
 	@echo "  Chapter 7"
 	@echo "  make ch07       can auth_mode still be changed?"
+	@echo ""
+	@echo "  Chapter 8"
+	@echo "  make ch08       what a tag actually serves"
 	@echo ""
 	@echo "  Chapters 2 and 3 - the virtual machine"
 	@echo "  make vm-up      launch the Multipass VM"
@@ -90,6 +94,10 @@ ch06:
 
 ch07:
 	@./chapters/ch07/check-auth-mode.sh
+
+ch08:
+	@./chapters/ch08/index-children.sh
+	@./chapters/ch08/untagged.sh
 
 reset:
 	@./scripts/reset-lab.sh
