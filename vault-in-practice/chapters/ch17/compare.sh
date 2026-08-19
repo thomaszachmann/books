@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Chapter 17 - Marek's question: where did the secret end up, and who can
+# Chapter 17 - the sorting question: where did the secret end up, and who can
 # read it there?
 set -uo pipefail
 

@@ -1,4 +1,4 @@
-# Chapter 03 — Initialize, Seal, Unseal
+# Chapter 03 — Initialise, Seal, Unseal
 
 **Starting state:** Vault running, uninitialised, sealed
 

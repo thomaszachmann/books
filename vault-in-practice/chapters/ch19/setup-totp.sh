@@ -9,7 +9,7 @@ export VAULT_CACERT="${VAULT_CACERT:-$PWD/tls/vault-cert.pem}"
 
 vault secrets enable totp 2>/dev/null || true
 vault write totp/keys/meridian generate=true \
-  issuer=Meridian account_name=priya@meridian.example >/dev/null
+  issuer=Meridian account_name=alice@meridian.example >/dev/null
 
 echo "code now: $(vault read -field=code totp/code/meridian)"
 CODE=$(vault read -field=code totp/code/meridian)
