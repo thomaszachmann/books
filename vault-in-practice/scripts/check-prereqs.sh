@@ -4,10 +4,25 @@ set -uo pipefail
 
 ok=0; missing=0
 
+# Not every tool understands --version. kubectl, minikube and helm do not,
+# and printing their error message as a version number is worse than
+# printing nothing.
+version_of() {
+  case "$1" in
+    vault)    vault version ;;
+    openssl)  openssl version ;;
+    kubectl)  kubectl version --client ;;
+    minikube) minikube version ;;
+    helm)     helm version --short ;;
+    kind)     kind --version ;;
+    *)        "$1" --version ;;
+  esac 2>&1 | head -1
+}
+
 check() {
   local cmd="$1" chapter="$2"
   if command -v "$cmd" >/dev/null 2>&1; then
-    printf "  ok       %-10s %s\n" "$cmd" "$($cmd --version 2>&1 | head -1 | cut -c1-40)"
+    printf "  ok       %-10s %s\n" "$cmd" "$(version_of "$cmd" | cut -c1-40)"
     ok=$((ok+1))
   else
     printf "  MISSING  %-10s needed from %s\n" "$cmd" "$chapter"
@@ -36,6 +51,7 @@ if ! docker compose version >/dev/null 2>&1; then
   missing=$((missing+1))
 else
   echo "  ok       docker compose $(docker compose version --short)"
+  ok=$((ok+1))
 fi
 echo
 echo "$ok present, $missing missing."

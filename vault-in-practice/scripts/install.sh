@@ -10,10 +10,25 @@ set -uo pipefail
 MISSING=()
 have() { command -v "$1" >/dev/null 2>&1; }
 
+# Not every tool understands --version. kubectl, minikube and helm do not,
+# and printing their error message as a version number is worse than
+# printing nothing.
+version_of() {
+  case "$1" in
+    vault)    vault version ;;
+    openssl)  openssl version ;;
+    kubectl)  kubectl version --client ;;
+    minikube) minikube version ;;
+    helm)     helm version --short ;;
+    kind)     kind --version ;;
+    *)        "$1" --version ;;
+  esac 2>&1 | head -1
+}
+
 need() {
   if have "$1"; then
     printf "  ok       %-10s %s\n" "$1" \
-      "$($1 --version 2>&1 | head -1 | cut -c1-38)"
+      "$(version_of "$1" | cut -c1-38)"
   else
     printf "  missing  %-10s (%s)\n" "$1" "$2"
     MISSING+=("$1")
