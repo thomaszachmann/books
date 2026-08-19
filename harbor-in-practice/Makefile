@@ -75,7 +75,7 @@ help:
 	@echo "  make kind-down  remove it"
 	@echo "  make mk-up      minikube profile (needs 'minikube tunnel')"
 	@echo "  make mk-down    remove it"
-	@echo "  make harbor-up  install the Harbor chart"
+	@echo "  make harbor-up  install the chart with your own cert"
 	@echo "  make harbor-down  uninstall it"
 	@echo ""
 	@echo "  Part VI"
@@ -172,8 +172,7 @@ mk-down:
 	@minikube delete -p harbor-lab
 
 harbor-up:
-	@echo "Arrives with Chapter 15."
-	@false
+	@./chapters/ch15/install-chart.sh
 
 harbor-down:
 	@helm uninstall harbor -n harbor || true

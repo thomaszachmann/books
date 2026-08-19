@@ -40,6 +40,15 @@ rather than a convenience.
 itself. Confusing the two is the most common Harbor upgrade mistake, and
 Chapter 23 is about not making it.
 
+Note the form. The chart's own `Chart.yaml` reads `version: 1.19.2` and
+`appVersion: 2.15.2` — no `v` on either. The `v` here is the Git tag
+convention, and `helm --version v1.19.2` finds nothing. Scripts that
+pass this value to Helm must strip it:
+
+```sh
+helm install harbor harbor/harbor --version "${HARBOR_CHART_VERSION#v}"
+```
+
 **Helm v4.x.** Note the major version. Chapter 15 says where the commands
 differ from Helm 3, because most Harbor material online predates it.
 

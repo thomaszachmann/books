@@ -575,13 +575,37 @@ jobs:
 
   k8s-labs:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        distro: [kind, minikube]
     steps:
       - uses: actions/checkout@v5
-      - name: placeholder
+      - name: the chart version Helm wants carries no v
+        # Chart.yaml reads version 1.19.2, appVersion 2.15.2. The v in
+        # VERSIONS.md is the Git tag convention and 'helm --version
+        # v1.19.2' finds nothing.
         run: |
-          echo "Chapter 15 fills this in for ${{ matrix.distro }}:"
-          echo "cluster up, ingress, cert, helm install, push, pull."
+          . ./scripts/versions.sh
+          case "$HARBOR_CHART_VERSION" in
+            v*) echo "VERSIONS.md carries the tag form, as intended" ;;
+            *)  echo "expected the tag form in VERSIONS.md"; exit 1 ;;
+          esac
+          STRIPPED="${HARBOR_CHART_VERSION#v}"
+          case "$STRIPPED" in
+            v*) echo "the v was not stripped"; exit 1 ;;
+            *)  echo "helm form: $STRIPPED" ;;
+          esac
+          grep -q 'HARBOR_CHART_VERSION#v' ./chapters/ch15/install-chart.sh \
+            || { echo "install-chart.sh must strip the v"; exit 1; }
+      - name: the chart values this repo overrides are the risky defaults
+        run: |
+          for k in certSource secretKey; do
+            grep -q "$k" ./chapters/ch15/install-chart.sh \
+              || { echo "$k is not addressed"; exit 1; }
+          done
+          grep -qE 'size: *[0-9]+Gi' ./k8s/values-harbor.yaml \
+            || { echo "the registry volume size must be set"; exit 1; }
+          echo "certSource, secretKey and the volume size are all set"
+      - name: node-trust refuses an unknown distribution
+        run: |
+          if ./chapters/ch15/node-trust.sh nonsense 2>/dev/null; then
+            echo "expected a refusal"; exit 1
+          fi
+          echo "refused, as it must"
