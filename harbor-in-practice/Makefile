@@ -2,7 +2,7 @@
 SHELL := /bin/bash
 
 .PHONY: help check install diagnose teardown vm-up vm-shell vm-down \
-        ch01 ch02 ch03 ch04 ch05 ch06 ch07 ch08 reset kind-up \
+        ch01 ch02 ch03 ch04 ch05 ch06 ch07 ch08 ch09 reset kind-up \
         kind-down \
         mk-up \
         mk-down \
@@ -43,6 +43,9 @@ help:
 	@echo ""
 	@echo "  Chapter 8"
 	@echo "  make ch08       what a tag actually serves"
+	@echo ""
+	@echo "  Chapter 9"
+	@echo "  make ch09       what would be refused under prevent_vul"
 	@echo ""
 	@echo "  Chapters 2 and 3 - the virtual machine"
 	@echo "  make vm-up      launch the Multipass VM"
@@ -98,6 +101,10 @@ ch07:
 ch08:
 	@./chapters/ch08/index-children.sh
 	@./chapters/ch08/untagged.sh
+
+ch09:
+	@./chapters/ch09/severity.sh
+	@./chapters/ch09/unscanned.sh
 
 reset:
 	@./scripts/reset-lab.sh

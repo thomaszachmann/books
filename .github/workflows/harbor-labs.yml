@@ -334,6 +334,46 @@ jobs:
             && { echo "an index child was reported as an orphan"; exit 1; }
           echo "separated correctly"
 
+  ch09:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: the threshold is inclusive, as the chapter's table says
+        # vulnerable.go compares Severity.Code() >= projectSeverity.Code().
+        # The book prints a table of that. Assert every cell of it.
+        run: |
+          . ./chapters/ch09/severity.sh
+          fail=0
+          chk() { if would_block "$1" "$2"; then r=block; else r=-; fi
+                  [ "$r" = "$3" ] || { echo "$1 vs $2: $r, want $3"; fail=1; }; }
+          chk high     high     block     # inclusive, the whole point
+          chk critical high     block
+          chk medium   high     -
+          chk low      high     -
+          chk low      low      block
+          chk critical critical block
+          chk high     critical -
+          for f in low medium high critical; do chk $f none -; done
+          exit $fail
+      - name: unscanned.sh counts no-report and not-Success alike
+        run: |
+          FIX=$(jq -n '[
+            {repository_name:"platform/ok",   digest:"sha256:1111222233334444",
+             scan_overview:{"s":{scan_status:"Success"}}},
+            {repository_name:"platform/none", digest:"sha256:5555666677778888",
+             scan_overview:null},
+            {repository_name:"platform/busy", digest:"sha256:9999aaaabbbbcccc",
+             scan_overview:{"s":{scan_status:"Running"}}}
+          ]')
+          if OUT=$(ARTIFACTS_JSON="$FIX" ./chapters/ch09/unscanned.sh); then
+            echo "expected a non-zero exit"; exit 1
+          fi
+          echo "$OUT"
+          echo "$OUT" | grep -q '2 artifact(s) would be refused' || exit 1
+          echo "$OUT" | grep -q 'platform/ok' && \
+            { echo "a successfully scanned artifact was listed"; exit 1; }
+          echo "counted correctly"
+
   compose-labs:
     runs-on: ubuntu-latest
     strategy:
