@@ -29,9 +29,13 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - name: shellcheck
+        # The runner image ships shellcheck. Installing it again cost
+        # six minutes on one run when an apt mirror was slow, for a tool
+        # that was already there.
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y shellcheck
+          command -v shellcheck >/dev/null || {
+            sudo apt-get update -qq && sudo apt-get install -y shellcheck; }
+          shellcheck --version | head -2
           shellcheck -S warning scripts/*.sh chapters/*/*.sh
       - name: versions file parses
         run: |
@@ -45,9 +49,11 @@ jobs:
         # failed with "parameter not set", which under set -u in the
         # caller takes the session with it.
         run: |
-          sudo apt-get update -qq && sudo apt-get install -y zsh
           bash -c 'set -u; . ./scripts/versions.sh; test -n "$HARBOR_VERSION"'
-          zsh  -c 'set -u; . ./scripts/versions.sh; test -n "$HARBOR_VERSION"'
+          if ! command -v zsh >/dev/null; then
+            sudo apt-get update -qq && sudo apt-get install -y zsh
+          fi
+          zsh -c 'set -u; . ./scripts/versions.sh; test -n "$HARBOR_VERSION"'
           echo "sourceable in both"
 
   ch01:
