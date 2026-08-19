@@ -689,6 +689,49 @@ jobs:
             || { echo "correct lengths must pass"; exit 1; }
           echo "the check can fail, and does not fail wrongly"
 
+  ch19:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: the built dockerconfig carries auth, and it matches
+        run: |
+          OUT=$(./chapters/ch19/dockerconfig.sh build \
+                'robot$platform+cluster-pull' 'sYb3cret')
+          echo "$OUT" | jq -e '.auths["harbor.meridian.test"].auth' >/dev/null
+          DEC=$(echo "$OUT" \
+            | jq -r '.auths["harbor.meridian.test"].auth' | base64 -d)
+          test "$DEC" = 'robot$platform+cluster-pull:sYb3cret' \
+            || { echo "auth is not user:pass, got $DEC"; exit 1; }
+          echo "auth = $DEC"
+          echo "$OUT" | jq -e '.auths["harbor.meridian.test"].username
+            | contains("$")' >/dev/null \
+            || { echo "the dollar did not survive"; exit 1; }
+      - name: a missing auth field fails the check
+        # containerd reads auth; Docker's client does not. Emit only
+        # username/password and a laptop keeps working while the cluster
+        # stops - so the check has to catch it.
+        run: |
+          OUT=$(./chapters/ch19/dockerconfig.sh build \
+                'robot$platform+cluster-pull' 'sYb3cret')
+          if DOCKERCONFIG_JSON="$OUT" \
+             ./chapters/ch19/dockerconfig.sh check dummy >/dev/null; then
+            echo "a correct config must pass"
+          else
+            echo "a correct config failed"; exit 1
+          fi
+          NOAUTH=$(printf '%s' "$OUT" | jq 'del(.auths[].auth)')
+          if DOCKERCONFIG_JSON="$NOAUTH" \
+             ./chapters/ch19/dockerconfig.sh check dummy >/dev/null; then
+            echo "a config with no auth must fail"; exit 1
+          fi
+          BADAUTH=$(printf '%s' "$OUT" \
+            | jq '.auths[].auth = "bm90LXJpZ2h0"')
+          if DOCKERCONFIG_JSON="$BADAUTH" \
+             ./chapters/ch19/dockerconfig.sh check dummy >/dev/null; then
+            echo "a mismatched auth must fail"; exit 1
+          fi
+          echo "missing and mismatched auth both caught"
+
   compose-labs:
     runs-on: ubuntu-latest
     strategy:

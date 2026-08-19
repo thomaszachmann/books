@@ -3,7 +3,7 @@ SHELL := /bin/bash
 
 .PHONY: help check install diagnose teardown vm-up vm-shell vm-down \
         ch01 ch02 ch03 ch04 ch05 ch06 ch07 ch08 ch09 ch10 ch11 ch12 \
-        ch13 ch14 ch15 ch16 ch17 ch18 \
+        ch13 ch14 ch15 ch16 ch17 ch18 ch19 \
         reset \
         kind-up \
         kind-down \
@@ -74,6 +74,9 @@ help:
 	@echo ""
 	@echo "  Chapter 18"
 	@echo "  make ch18       the chart secret hooks and their key names"
+	@echo ""
+	@echo "  Chapter 19"
+	@echo "  make ch19 NS=apps   check a namespace pull secret"
 	@echo ""
 	@echo "  Chapters 2 and 3 - the virtual machine"
 	@echo "  make vm-up      launch the Multipass VM"
@@ -165,6 +168,10 @@ ch17:
 
 ch18:
 	@./chapters/ch18/secret-keys.sh
+
+ch19:
+	@test -n "$(NS)" || (echo "usage: make ch19 NS=apps"; exit 2)
+	@./chapters/ch19/dockerconfig.sh check $(NS)
 
 reset:
 	@./scripts/reset-lab.sh
