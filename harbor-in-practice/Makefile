@@ -2,7 +2,7 @@
 SHELL := /bin/bash
 
 .PHONY: help check install diagnose teardown vm-up vm-shell vm-down \
-        ch01 ch02 ch03 ch04 ch05 ch06 ch07 ch08 ch09 ch10 reset \
+        ch01 ch02 ch03 ch04 ch05 ch06 ch07 ch08 ch09 ch10 ch11 reset \
         kind-up \
         kind-down \
         mk-up \
@@ -51,6 +51,9 @@ help:
 	@echo "  Chapter 10"
 	@echo "  make ch10       which artifacts carry a signature"
 	@echo ""
+	@echo "  Chapter 11"
+	@echo "  make ch11       what the last garbage collection did"
+	@echo ""
 	@echo "  Chapters 2 and 3 - the virtual machine"
 	@echo "  make vm-up      launch the Multipass VM"
 	@echo "  make vm-shell   shell into it"
@@ -58,8 +61,11 @@ help:
 	@echo ""
 	@echo "  Chapter 15 - Kubernetes"
 	@echo "  make kind-up    kind cluster with ingress ports mapped"
+	@echo "  make kind-down  remove it"
 	@echo "  make mk-up      minikube profile (needs 'minikube tunnel')"
+	@echo "  make mk-down    remove it"
 	@echo "  make harbor-up  install the Harbor chart"
+	@echo "  make harbor-down  uninstall it"
 	@echo ""
 	@echo "  Part VI"
 	@echo "  make vault-up   bring up Vault beside Harbor"
@@ -112,6 +118,9 @@ ch09:
 
 ch10:
 	@./chapters/ch10/signed-artifacts.sh
+
+ch11:
+	@./chapters/ch11/gc-status.sh
 
 reset:
 	@./scripts/reset-lab.sh

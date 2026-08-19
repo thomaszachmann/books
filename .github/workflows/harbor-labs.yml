@@ -423,6 +423,31 @@ jobs:
             || { echo "the impostor's own key should verify"; exit 1; }
           echo "a made-up key produces a valid signature - step 4"
 
+  ch11:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: retention preview reports what is NOT retained
+        # The arithmetic that matters: a policy deletes total - retained,
+        # because every rule template only ever retains.
+        run: |
+          T=$(jq -n '[{repository:"platform/app",total:9,retained:2},
+                      {repository:"platform/base",total:4,retained:4}]')
+          OUT=$(TASKS_JSON="$T" ./chapters/ch11/retention-preview.sh)
+          echo "$OUT"
+          echo "$OUT" | grep -qE 'platform/app +9 +2 +7' || {
+            echo "expected 7 to be removed from platform/app"; exit 1; }
+          echo "$OUT" | grep -q '7 of 13 artifact(s) would be removed' || {
+            echo "expected a 7 of 13 total"; exit 1; }
+      - name: gc-status separates refusals from deletions
+        run: |
+          LOG=$'delete blob sha256:aa\ndelete blob sha256:bb\nfailed to delete untagged:1 artifact in DB\nthe deleting artifact is referenced by others\nthe deleting artifact is referenced by others'
+          OUT=$(GC_LOG="$LOG" ./chapters/ch11/gc-status.sh)
+          echo "$OUT"
+          echo "$OUT" | grep -qE 'blobs deleted +2' || exit 1
+          echo "$OUT" | grep -qE 'artifacts refused +2' || exit 1
+          echo "$OUT" | grep -q 'The refusals are correct' || exit 1
+
   compose-labs:
     runs-on: ubuntu-latest
     strategy:
