@@ -1038,3 +1038,54 @@ jobs:
           ./chapters/ch22/backup.sh plan | grep -q 'secret/keys/secretkey\|/data/secret' \
             || { echo "the plan must mention the secret directory"; exit 1; }
           echo "plan still names both"
+
+  ch23:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: helm
+        run: |
+          command -v helm >/dev/null || {
+            curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash; }
+          helm repo add harbor https://helm.goharbor.io >/dev/null
+      - name: forward only - there are still no down migrations
+        # The whole rollback story rests on this. If a down migration
+        # ever appears, the chapter is wrong and this job says so.
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          ./chapters/ch23/upgrade-check.sh migrations
+          ./chapters/ch23/upgrade-check.sh migrations | grep -q 'down migrations: 0' \
+            || { echo "down migrations exist; rewrite Chapter 23"; exit 1; }
+      - name: a patch upgrade carries no schema change, but check anyway
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          . ./scripts/versions.sh
+          FROM=180 ./chapters/ch23/upgrade-check.sh pending "$HARBOR_VERSION" \
+            | grep -q 'No change in schema' \
+            || { echo "v2.15.x gained a migration above 0180"; exit 1; }
+          # 0171_2.14.1 is the counter-example the chapter prints: a
+          # patch release that did carry one.
+          FROM=170 ./chapters/ch23/upgrade-check.sh pending "$HARBOR_VERSION" \
+            | grep -q '0171_2.14.1' \
+            || { echo "the patch-with-a-migration example is gone"; exit 1; }
+          echo "no schema change for the pinned patch; 2.14.1 still proves the exception"
+      - name: helm upgrade regenerates certificates and not secretKey
+        # Two identical renders. What differs is what an upgrade
+        # replaces in the cluster.
+        run: |
+          OUT=$(./chapters/ch23/upgrade-check.sh certs)
+          echo "$OUT"
+          echo "$OUT" | grep -qE '^tls.crt +REPLACED' \
+            || { echo "certificates no longer regenerate"; exit 1; }
+          echo "$OUT" | grep -qE '^secretKey +same' \
+            || { echo "secretKey no longer comes from values"; exit 1; }
+      - name: the rollback text says restore, not downgrade
+        run: |
+          OUT=$(./chapters/ch23/upgrade-check.sh rollback)
+          echo "$OUT" | grep -qi 'does not support downgrades' \
+            || { echo "the rollback text must say so"; exit 1; }
+          echo "$OUT" | grep -qi 'restore' \
+            || { echo "the rollback text must point at Chapter 22"; exit 1; }
+          echo "ok"

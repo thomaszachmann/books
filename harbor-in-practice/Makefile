@@ -3,7 +3,7 @@ SHELL := /bin/bash
 
 .PHONY: help check install diagnose teardown vm-up vm-shell vm-down \
         ch01 ch02 ch03 ch04 ch05 ch06 ch07 ch08 ch09 ch10 ch11 ch12 \
-        ch13 ch14 ch15 ch16 ch17 ch18 ch19 ch20 ch21 ch22 \
+        ch13 ch14 ch15 ch16 ch17 ch18 ch19 ch20 ch21 ch22 ch23 \
         reset \
         kind-up \
         kind-down \
@@ -87,6 +87,9 @@ help:
 	@echo "  Chapter 22"
 	@echo "  make ch22            the backup plan"
 	@echo "  make ch22 DIR=/backup/today   verify a backup"
+	@echo ""
+	@echo "  Chapter 23"
+	@echo "  make ch23       what an upgrade would do"
 	@echo ""
 	@echo "  Chapters 2 and 3 - the virtual machine"
 	@echo "  make vm-up      launch the Multipass VM"
@@ -202,6 +205,11 @@ ch22:
 	else \
 	  ./chapters/ch22/backup.sh plan; \
 	fi
+
+ch23:
+	@./chapters/ch23/upgrade-check.sh migrations
+	@echo ""
+	@./chapters/ch23/upgrade-check.sh rollback
 
 reset:
 	@./scripts/reset-lab.sh
