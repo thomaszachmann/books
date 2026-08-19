@@ -3,6 +3,7 @@ SHELL := /bin/bash
 
 .PHONY: help check install diagnose teardown vm-up vm-shell vm-down \
         ch01 ch02 ch03 ch04 ch05 ch06 ch07 ch08 ch09 ch10 ch11 ch12 \
+        ch13 \
         reset \
         kind-up \
         kind-down \
@@ -57,6 +58,9 @@ help:
 	@echo ""
 	@echo "  Chapter 12"
 	@echo "  make ch12       quota usage, and what the numbers hide"
+	@echo ""
+	@echo "  Chapter 13"
+	@echo "  make ch13 SRC=.. DST=..   what replication did not copy"
 	@echo ""
 	@echo "  Chapters 2 and 3 - the virtual machine"
 	@echo "  make vm-up      launch the Multipass VM"
@@ -128,6 +132,11 @@ ch11:
 
 ch12:
 	@./chapters/ch12/quota-report.sh
+
+ch13:
+	@test -n "$(SRC)" -a -n "$(DST)" || \
+	  (echo "usage: make ch13 SRC=platform DST=mirror"; exit 2)
+	@./chapters/ch13/replication-gap.sh $(SRC) $(DST)
 
 reset:
 	@./scripts/reset-lab.sh

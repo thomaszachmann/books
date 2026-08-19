@@ -481,6 +481,30 @@ jobs:
             echo "at 95% nothing should be over"; exit 1; }
           echo "unlimited handled, threshold respected"
 
+  ch13:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: replication-gap refuses without both projects
+        run: |
+          if ./chapters/ch13/replication-gap.sh 2>/dev/null; then
+            echo "expected a refusal without arguments"; exit 1
+          fi
+          echo "refused, as it must"
+      - name: the chapter's filter claim, stated where it is checkable
+        # A cosign signature's tag is derived from the digest it signs,
+        # so a release-shaped tag filter cannot match it. Assert the
+        # shape rather than the prose.
+        run: |
+          DIGEST=sha256:6c2a9711b0a9f32b0239d9222eb1072309cf46c6431d319ae249186d811a987c
+          SIGTAG="$(printf '%s' "$DIGEST" | tr ':' '-').sig"
+          echo "signature tag: $SIGTAG"
+          case "$SIGTAG" in
+            release-*) echo "a release filter would match it"; exit 1 ;;
+            sha256-*.sig) echo "no release-* filter matches this" ;;
+            *) echo "unexpected shape"; exit 1 ;;
+          esac
+
   compose-labs:
     runs-on: ubuntu-latest
     strategy:
