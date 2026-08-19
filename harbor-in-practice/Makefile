@@ -2,7 +2,7 @@
 SHELL := /bin/bash
 
 .PHONY: help check install diagnose teardown vm-up vm-shell vm-down \
-        ch01 ch02 ch03 ch04 reset kind-up kind-down mk-up mk-down \
+        ch01 ch02 ch03 ch04 ch05 reset kind-up kind-down mk-up mk-down \
         harbor-up \
         harbor-down \
         vault-up versions
@@ -28,6 +28,9 @@ help:
 	@echo ""
 	@echo "  Chapter 4"
 	@echo "  make ch04       walk the token dance by hand"
+	@echo ""
+	@echo "  Chapter 5"
+	@echo "  make ch05       seed members, then probe the boundaries"
 	@echo ""
 	@echo "  Chapters 2 and 3 - the virtual machine"
 	@echo "  make vm-up      launch the Multipass VM"
@@ -69,6 +72,10 @@ ch03:
 
 ch04:
 	@./chapters/ch04/token-dance.sh
+
+ch05:
+	@./chapters/ch05/seed-members.sh
+	@./chapters/ch05/probe-permissions.sh
 
 reset:
 	@./scripts/reset-lab.sh

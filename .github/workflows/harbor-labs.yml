@@ -145,6 +145,44 @@ jobs:
           echo "$OUT" | jq -e '.access[0].actions == ["pull"]'
           echo "$OUT" | jq -e '.exp - .iat == 1800'
 
+  ch05:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: the role table matches the pinned source
+        # Transcribed tables rot. This asserts the values the chapter
+        # prints, so that a Harbor release which changes them turns the
+        # latest column red rather than leaving the book wrong.
+        run: |
+          . ./chapters/ch05/roles.sh
+          fail=0
+          chk() { if "$1" "$2"; then r=yes; else r=no; fi
+                  [ "$r" = "$3" ] || { echo "$1 $2: $r, expected $3"; fail=1; }; }
+          # push: projectAdmin, developer, maintainer
+          for r in 1 2 4; do chk may_push $r yes; done
+          for r in 3 5;   do chk may_push $r no;  done
+          # delete: projectAdmin and maintainer only
+          for r in 1 4;     do chk may_delete $r yes; done
+          for r in 2 3 5;   do chk may_delete $r no;  done
+          # starting a scan is not a developer right
+          chk may_start_scan 2 no
+          chk may_read_scan  2 yes
+          # only projectAdmin edits members, makes robots, reads logs
+          for f in may_edit_members may_make_robots may_read_logs; do
+            chk $f 1 yes; for r in 2 3 4 5; do chk $f $r no; done
+          done
+          # limitedGuest is the only role that cannot see members
+          for r in 1 2 3 4; do chk may_see_members $r yes; done
+          chk may_see_members 5 no
+          exit $fail
+      - name: role_id is not a ranking
+        # The bug the chapter asks the reader to build on purpose.
+        run: |
+          . ./chapters/ch05/roles.sh
+          if [ 4 -le 2 ]; then echo unreachable; fi
+          may_push 4 || { echo "maintainer must be able to push"; exit 1; }
+          echo "role 4 outranks role 2 and has the higher number"
+
   compose-labs:
     runs-on: ubuntu-latest
     strategy:
