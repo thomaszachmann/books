@@ -49,12 +49,31 @@ jobs:
         # failed with "parameter not set", which under set -u in the
         # caller takes the session with it.
         run: |
+          # bash first: this must always pass, and a package mirror
+          # cannot excuse it.
           bash -c 'set -u; . ./scripts/versions.sh; test -n "$HARBOR_VERSION"'
+          echo "bash: ok"
+
+          # zsh is not preinstalled. Give apt two minutes; a slow mirror
+          # should not block every run, but it must not silently turn
+          # the test off either - so the fallback asserts the guard
+          # statically and says which check actually ran.
           if ! command -v zsh >/dev/null; then
-            sudo apt-get update -qq && sudo apt-get install -y zsh
+            timeout 120 sudo apt-get update -qq && \
+              timeout 120 sudo apt-get install -y zsh || true
           fi
-          zsh -c 'set -u; . ./scripts/versions.sh; test -n "$HARBOR_VERSION"'
-          echo "sourceable in both"
+
+          if command -v zsh >/dev/null; then
+            zsh -c 'set -u; . ./scripts/versions.sh; test -n "$HARBOR_VERSION"'
+            echo "zsh: ok, sourced for real"
+          else
+            echo "zsh unavailable - falling back to a static check"
+            grep -q 'ZSH_VERSION' scripts/versions.sh \
+              || { echo "versions.sh has no zsh branch"; exit 1; }
+            grep -q 'BASH_SOURCE\[0\]:-' scripts/versions.sh \
+              || { echo "BASH_SOURCE is unguarded"; exit 1; }
+            echo "zsh: guard present, not executed"
+          fi
 
   ch01:
     runs-on: ubuntu-latest
