@@ -39,6 +39,16 @@ jobs:
           test -n "$HARBOR_VERSION"
           test -n "$HARBOR_CHART_VERSION"
           echo "pinned: $HARBOR_VERSION / $HARBOR_CHART_VERSION"
+      - name: versions.sh can be sourced from bash AND zsh
+        # The README tells readers to source it, and zsh is the default
+        # shell on macOS. zsh has no BASH_SOURCE; the unguarded form
+        # failed with "parameter not set", which under set -u in the
+        # caller takes the session with it.
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y zsh
+          bash -c 'set -u; . ./scripts/versions.sh; test -n "$HARBOR_VERSION"'
+          zsh  -c 'set -u; . ./scripts/versions.sh; test -n "$HARBOR_VERSION"'
+          echo "sourceable in both"
 
   ch01:
     runs-on: ubuntu-latest
