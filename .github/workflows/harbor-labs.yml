@@ -963,3 +963,78 @@ jobs:
             echo "an ephemeral registry must fail"; exit 1
           fi
           echo "good passes, both bad releases fail"
+
+  ch22:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: build three backup fixtures
+        # No Harbor needed: verify reads a backup directory and a
+        # manifest, which is the point of it being offline.
+        run: |
+          mk() {
+            D=$1; DE=$2; BS=$3; KEY=$4
+            mkdir -p "$D"
+            echo dump > "$D/database.sql"
+            echo cfg  > "$D/harbor.yml"
+            mkdir -p "$D/t/registry" && echo b > "$D/t/registry/blob"
+            tar -C "$D/t" -cf "$D/registry.tar" registry
+            mkdir -p "$D/s/secret/keys" "$D/s/secret/core"
+            echo c > "$D/s/secret/core/private_key.pem"
+            [ "$KEY" = yes ] && echo k > "$D/s/secret/keys/secretkey"
+            tar -C "$D/s" -cf "$D/secret.tar" secret
+            rm -rf "$D/t" "$D/s"
+            jq -n --arg de "$DE" --arg bs "$BS" \
+              '{database:{file:"database.sql",started_at:$de,finished_at:$de},
+                blobs:{file:"registry.tar",started_at:$bs,finished_at:$bs},
+                secrets:{file:"secret.tar"}}' > "$D/manifest.json"
+          }
+          mk /tmp/good  2026-08-19T10:00:00Z 2026-08-19T10:05:00Z yes
+          mk /tmp/wrong 2026-08-19T10:05:00Z 2026-08-19T10:00:00Z yes
+          mk /tmp/nokey 2026-08-19T10:00:00Z 2026-08-19T10:05:00Z no
+      - name: a complete backup in the right order verifies
+        run: |
+          ./chapters/ch22/backup.sh verify /tmp/good
+      - name: the wrong order is caught
+        # Blobs older than the database is the failure this whole
+        # chapter exists to prevent, and it is invisible until a pull.
+        run: |
+          if ./chapters/ch22/backup.sh verify /tmp/wrong; then
+            echo "blobs before the database must fail"; exit 1
+          fi
+          ./chapters/ch22/backup.sh verify /tmp/wrong 2>&1 \
+            | grep -q 'order:' || { echo "no ordering message"; exit 1; }
+          echo "caught, with a message that names the order"
+      - name: a missing secret key is caught
+        # Harbor starts without it. Replication, proxy cache, LDAP bind
+        # and OIDC credentials never decrypt again.
+        run: |
+          if ./chapters/ch22/backup.sh verify /tmp/nokey; then
+            echo "a backup without the AES key must fail"; exit 1
+          fi
+          ./chapters/ch22/backup.sh verify /tmp/nokey 2>&1 \
+            | grep -q 'secretkey missing' \
+            || { echo "the message must name the key"; exit 1; }
+          echo "caught"
+      - name: run refuses the wrong order without an explicit override
+        run: |
+          if ./chapters/ch22/backup.sh run /tmp/out --order blobs-first; then
+            echo "blobs-first must be refused"; exit 1
+          fi
+          echo "refused"
+      - name: restore refuses a backup that does not verify
+        run: |
+          if ./chapters/ch22/restore.sh /tmp/wrong; then
+            echo "restore must refuse an unverifiable backup"; exit 1
+          fi
+          echo "refused"
+      - name: the plan names garbage collection
+        # read_only does not stop GC - job callbacks are on the
+        # middleware's skip list. If the plan stops saying so, the
+        # chapter's central warning has gone missing.
+        run: |
+          ./chapters/ch22/backup.sh plan | grep -qi 'garbage collection' \
+            || { echo "the plan must mention GC"; exit 1; }
+          ./chapters/ch22/backup.sh plan | grep -q 'secret/keys/secretkey\|/data/secret' \
+            || { echo "the plan must mention the secret directory"; exit 1; }
+          echo "plan still names both"
