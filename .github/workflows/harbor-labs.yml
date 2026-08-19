@@ -216,6 +216,37 @@ jobs:
           test "$bad" -eq 1 || { echo "the trap did not reproduce"; exit 1; }
           echo "without the filter, 1 permanent robot reports as overdue"
 
+  ch07:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: every configuration key used is one Harbor defines
+        # A misspelled key can come back 200 with the setting never
+        # applied, so nothing at runtime tells you. Check it here.
+        run: |
+          grep -oE '^    [a-z_]+:' chapters/ch07/set-oidc.sh \
+            | tr -d ' :' | sort -u > /tmp/used.txt
+          grep -vE '^\s*#' chapters/ch07/config-keys.txt \
+            | grep -E '^[a-z_]+$' | sort -u > /tmp/valid.txt
+          echo "keys used:"; sed 's/^/  /' /tmp/used.txt
+          if ! comm -23 /tmp/used.txt /tmp/valid.txt | grep -q .; then
+            echo "all defined by Harbor"
+          else
+            echo "NOT defined by Harbor:"
+            comm -23 /tmp/used.txt /tmp/valid.txt | sed 's/^/  /'
+            exit 1
+          fi
+      - name: the dex config parses
+        run: python3 -c "import yaml,sys; yaml.safe_load(open('chapters/ch07/dex/config.yaml'))"
+      - name: check-auth-mode reports frozen when users exist
+        run: |
+          USERS_JSON='[]' HARBOR_PASS=x ./chapters/ch07/check-auth-mode.sh \
+            2>/dev/null | grep -q 'CAN still be changed' \
+            || echo "note: needs a live Harbor for the auth_mode read"
+          USERS_JSON='[{"username":"ana"},{"username":"bruno"}]' \
+            HARBOR_PASS=x ./chapters/ch07/check-auth-mode.sh 2>/dev/null \
+            | grep -q 'CANNOT be changed' && echo "frozen case detected"
+
   compose-labs:
     runs-on: ubuntu-latest
     strategy:

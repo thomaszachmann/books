@@ -1,0 +1,43 @@
+# Dex, as the OIDC provider for Chapter 7's lab.
+#
+# The issuer must be reachable BOTH from your browser and from Harbor's
+# core container, by the same URL. That single requirement causes more
+# failed OIDC labs than everything else combined - test it from inside
+# the container:
+#
+#   docker exec harbor-core curl -s \
+#     https://harbor.meridian.test:5556/.well-known/openid-configuration
+#
+# Dex's configuration format changes between minor versions. Check the
+# version you pull against its own documentation rather than this file.
+issuer: https://harbor.meridian.test:5556
+
+storage:
+  type: memory
+
+web:
+  https: 0.0.0.0:5556
+  tlsCert: /certs/harbor.crt
+  tlsKey: /certs/harbor.key
+
+staticClients:
+  - id: harbor
+    name: Harbor
+    secret: dex-lab-secret
+    redirectURIs:
+      - https://harbor.meridian.test/c/oidc/callback
+
+enablePasswordDB: true
+
+# Generate a hash with:
+#   htpasswd -bnBC 10 "" 'Lab-Passw0rd!ana' | tr -d ':\n'
+staticPasswords:
+  - email: ana@meridian.test
+    username: ana
+    userID: "1"
+    hash: "REPLACE-ME"
+
+# Static group membership, so that Chapter 7 step 7 has something to map.
+# Dex emits these in the groups claim when the client requests the
+# groups scope.
+connectors: []

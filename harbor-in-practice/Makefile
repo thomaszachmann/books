@@ -2,7 +2,8 @@
 SHELL := /bin/bash
 
 .PHONY: help check install diagnose teardown vm-up vm-shell vm-down \
-        ch01 ch02 ch03 ch04 ch05 ch06 reset kind-up kind-down mk-up \
+        ch01 ch02 ch03 ch04 ch05 ch06 ch07 reset kind-up kind-down \
+        mk-up \
         mk-down \
         harbor-up \
         harbor-down \
@@ -35,6 +36,9 @@ help:
 	@echo ""
 	@echo "  Chapter 6"
 	@echo "  make ch06       list robots expiring within 14 days"
+	@echo ""
+	@echo "  Chapter 7"
+	@echo "  make ch07       can auth_mode still be changed?"
 	@echo ""
 	@echo "  Chapters 2 and 3 - the virtual machine"
 	@echo "  make vm-up      launch the Multipass VM"
@@ -83,6 +87,9 @@ ch05:
 
 ch06:
 	@./chapters/ch06/expiring-robots.sh 14
+
+ch07:
+	@./chapters/ch07/check-auth-mode.sh
 
 reset:
 	@./scripts/reset-lab.sh
