@@ -450,6 +450,37 @@ jobs:
           echo "$OUT" | grep -qE 'artifacts refused +2' || exit 1
           echo "$OUT" | grep -q 'The refusals are correct' || exit 1
 
+  ch12:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: unlimited is -1, and -1 beats every threshold
+        # Same trap as robot expiry in Chapter 6: unlimited is negative,
+        # so a naive percentage comparison reports every unlimited
+        # project as over quota, the alert fires always and gets
+        # switched off.
+        run: |
+          FIX=$(jq -n '[
+            {ref:{name:"platform"}, used:{storage:41203847},
+             hard:{storage:45000000}},
+            {ref:{name:"meridian"}, used:{storage:3623807},
+             hard:{storage:-1}},
+            {ref:{name:"quiet"},    used:{storage:1000},
+             hard:{storage:100000}}]')
+          if OUT=$(QUOTAS_JSON="$FIX" ./chapters/ch12/quota-report.sh 80); then
+            echo "platform is at 91%, expected a non-zero exit"; exit 1
+          fi
+          echo "$OUT"
+          echo "$OUT" | grep -q '1 project(s) above 80%' || {
+            echo "expected exactly one project over threshold"; exit 1; }
+          echo "$OUT" | grep -qE 'meridian .*unlimited .* -' || {
+            echo "unlimited must print as unlimited, not as a percentage"
+            exit 1; }
+          # and below the threshold nothing is reported
+          QUOTAS_JSON="$FIX" ./chapters/ch12/quota-report.sh 95 >/dev/null || {
+            echo "at 95% nothing should be over"; exit 1; }
+          echo "unlimited handled, threshold respected"
+
   compose-labs:
     runs-on: ubuntu-latest
     strategy:

@@ -2,7 +2,8 @@
 SHELL := /bin/bash
 
 .PHONY: help check install diagnose teardown vm-up vm-shell vm-down \
-        ch01 ch02 ch03 ch04 ch05 ch06 ch07 ch08 ch09 ch10 ch11 reset \
+        ch01 ch02 ch03 ch04 ch05 ch06 ch07 ch08 ch09 ch10 ch11 ch12 \
+        reset \
         kind-up \
         kind-down \
         mk-up \
@@ -53,6 +54,9 @@ help:
 	@echo ""
 	@echo "  Chapter 11"
 	@echo "  make ch11       what the last garbage collection did"
+	@echo ""
+	@echo "  Chapter 12"
+	@echo "  make ch12       quota usage, and what the numbers hide"
 	@echo ""
 	@echo "  Chapters 2 and 3 - the virtual machine"
 	@echo "  make vm-up      launch the Multipass VM"
@@ -121,6 +125,9 @@ ch10:
 
 ch11:
 	@./chapters/ch11/gc-status.sh
+
+ch12:
+	@./chapters/ch12/quota-report.sh
 
 reset:
 	@./scripts/reset-lab.sh
