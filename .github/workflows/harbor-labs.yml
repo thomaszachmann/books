@@ -179,7 +179,10 @@ jobs:
           echo "refused, as it must"
       - name: harbor.yml renders and parses
         run: |
-          sudo apt-get update -qq && sudo apt-get install -y gettext-base
+          # envsubst ships with the runner image; installing it again
+          # cost minutes on a slow mirror, for a tool already present.
+          command -v envsubst >/dev/null || {
+            sudo apt-get update -qq && sudo apt-get install -y gettext-base; }
           HARBOR_HOSTNAME=harbor.meridian.test \
             ./chapters/ch03/render-harbor-yml.sh /tmp/harbor.yml
           python3 -c "import yaml,sys; d=yaml.safe_load(open('/tmp/harbor.yml')); \
