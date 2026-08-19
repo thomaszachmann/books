@@ -118,26 +118,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - name: decode an unpadded base64url JWT payload
+      - name: the decoder round-trips every padding residue
+        # An earlier version of this job asserted that raw 'base64 -d'
+        # fails on unpadded input. It does not - GNU coreutils decodes
+        # it correctly, and only BSD base64 on macOS truncates. The
+        # chapter was wrong and this job caught it. What is asserted
+        # here instead is the property that actually has to hold: the
+        # decoder returns the payload unchanged, whatever the residue.
         run: |
-          PAY=$(printf '%s' '{"access":[{"type":"repository","name":"platform/base","actions":["pull"]}],"iat":1,"exp":1801}' \
-                | base64 -w0 | tr '+/' '-_' | tr -d '=')
-          test $(( ${#PAY} % 4 )) -ne 0   # the padding really is missing
-          TOK="eyJhbGciOiJSUzI1NiJ9.$PAY.c2ln"
-          OUT=$(./chapters/ch04/jwt-decode.sh "$TOK")
-          echo "$OUT" | jq -e '.access[0].actions[0] == "pull"'
+          for pad in 0 1 2; do
+            JSON=$(printf '{"access":[{"type":"repository","name":"platform/base","actions":["pull"]}],"iat":1,"exp":1801,"p":"%s"}' \
+                   "$(printf '%*s' "$pad" '' | tr ' ' 'x')")
+            PAY=$(printf '%s' "$JSON" | base64 -w0 | tr '+/' '-_' | tr -d '=')
+            OUT=$(./chapters/ch04/jwt-decode.sh "eyJhIjoxfQ.$PAY.c2ln")
+            test "$OUT" = "$JSON" || {
+              echo "residue $(( ${#PAY} % 4 )): round-trip failed"
+              echo "  in : $JSON"; echo "  out: $OUT"; exit 1; }
+            echo "residue $(( ${#PAY} % 4 )): ok"
+          done
+      - name: the scope really is readable out of the token
+        run: |
+          JSON='{"access":[{"type":"repository","name":"platform/base","actions":["pull"]}],"iat":1,"exp":1801}'
+          PAY=$(printf '%s' "$JSON" | base64 -w0 | tr '+/' '-_' | tr -d '=')
+          OUT=$(./chapters/ch04/jwt-decode.sh "eyJhIjoxfQ.$PAY.c2ln")
+          echo "$OUT" | jq -e '.access[0].name == "platform/base"'
+          echo "$OUT" | jq -e '.access[0].actions == ["pull"]'
           echo "$OUT" | jq -e '.exp - .iat == 1800'
-      - name: raw base64 -d does not survive base64url
-        # Chapter 4 claims this fails, and that hiding the error is worse
-        # than the error. Assert it rather than asserting it in prose.
-        run: |
-          PAY=$(printf '%s' '{"access":[{"type":"repository","name":"platform/base","actions":["pull"]}],"iat":1,"exp":1801}' \
-                | base64 -w0 | tr '+/' '-_' | tr -d '=')
-          if printf '%s' "$PAY" | base64 -d 2>/dev/null | jq -e . >/dev/null 2>&1; then
-            echo "raw decode produced valid JSON - the claim is wrong"
-            exit 1
-          fi
-          echo "refused or truncated, as the chapter says"
 
   compose-labs:
     runs-on: ubuntu-latest
