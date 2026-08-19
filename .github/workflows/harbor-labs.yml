@@ -657,6 +657,38 @@ jobs:
           ./chapters/ch17/ha-readiness.sh /tmp/ha.yaml \
             || { echo "external state should pass"; exit 1; }
 
+  ch18:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: the key mapping is complete and the lengths are enforced
+        run: |
+          OUT=$(./chapters/ch18/secret-keys.sh)
+          echo "$OUT"
+          for k in HARBOR_ADMIN_PASSWORD secretKey secret CSRF_KEY \
+                   JOBSERVICE_SECRET REGISTRY_HTTP_SECRET password; do
+            echo "$OUT" | grep -q "$k" || { echo "$k missing"; exit 1; }
+          done
+      - name: a wrong length fails, a correct one passes
+        # The first version of this script set a flag inside a while
+        # loop on the right of a pipe. That runs in a subshell, so the
+        # flag was lost and the script exited 0 whatever it found - a
+        # check that cannot fail. Assert that it can.
+        run: |
+          G=$(printf '%s' "$(openssl rand -hex 8)" | base64 -w0)
+          B=$(printf '%s' short | base64 -w0)
+          BAD=$(jq -n --arg g "$G" --arg b "$B" \
+                '{data:{"secretKey":$g,"secret":$b}}')
+          if SECRET_JSON="$BAD" ./chapters/ch18/secret-keys.sh \
+               check dummy >/dev/null; then
+            echo "a 5-character core secret must fail"; exit 1
+          fi
+          OK=$(jq -n --arg g "$G" '{data:{"secretKey":$g,"secret":$g}}')
+          SECRET_JSON="$OK" ./chapters/ch18/secret-keys.sh \
+            check dummy >/dev/null \
+            || { echo "correct lengths must pass"; exit 1; }
+          echo "the check can fail, and does not fail wrongly"
+
   compose-labs:
     runs-on: ubuntu-latest
     strategy:
