@@ -14,8 +14,9 @@ USER="${HARBOR_USER:-admin}"
 PASS="${HARBOR_PASS:-}"
 
 if [ -z "$PASS" ]; then
-  echo "Set HARBOR_PASS. Use the CLI secret, not the password, when" >&2
-  echo "Harbor is behind OIDC or LDAP - see Chapter 7." >&2
+  echo "Set HARBOR_PASS." >&2
+  echo "Under OIDC that is the CLI secret, not the password;" >&2
+  echo "under LDAP and db_auth it is the password. Chapter 7." >&2
   exit 2
 fi
 
