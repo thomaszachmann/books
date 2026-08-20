@@ -61,6 +61,16 @@ make kind-up          # or: make mk-up
 
 ---
 
+## Apple silicon
+
+`make vm-up` refuses, on purpose. Harbor's released images are amd64
+only — a single manifest, not an index — so the arm64 machine Multipass
+builds on an M-series Mac cannot run them, and qemu user-mode emulation
+does not rescue it: Valkey segfaults under it. Colima with Rosetta does
+work. The refusal prints the recipe; Appendix A has the long version.
+
+`ALLOW_ARM64=1 make vm-up` overrides it if you want to watch it fail.
+
 ## Layout
 
 ```

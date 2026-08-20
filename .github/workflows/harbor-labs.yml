@@ -1300,3 +1300,48 @@ jobs:
       - name: teardown
         if: always()
         run: make vault-down || true
+
+  architecture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: the released images are still amd64 only
+        # Chapter 2 and Appendix A tell Apple silicon readers not to use
+        # Multipass because of this. The day Harbor ships a multi-arch
+        # release, that advice becomes wrong and this job says so.
+        run: |
+          . ./scripts/versions.sh
+          IMG=goharbor/harbor-core
+          TOKEN=$(curl -fsS "https://auth.docker.io/token?service=registry.docker.io&scope=repository:$IMG:pull" | jq -r .token)
+          ACCEPT='Accept: application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.v2+json'
+          M=$(curl -fsS -H "Authorization: Bearer $TOKEN" -H "$ACCEPT" \
+                "https://registry-1.docker.io/v2/$IMG/manifests/$HARBOR_VERSION")
+          TYPE=$(echo "$M" | jq -r '.mediaType')
+          echo "mediaType: $TYPE"
+          case "$TYPE" in
+            *manifest.list*|*image.index*)
+              echo "$M" | jq -r '.manifests[].platform | "\(.os)/\(.architecture)"'
+              echo "Harbor now ships a multi-arch release."
+              echo "Chapter 2 and Appendix A must be rewritten."
+              exit 1 ;;
+          esac
+          CFG=$(echo "$M" | jq -r '.config.digest')
+          ARCH=$(curl -fsSL -H "Authorization: Bearer $TOKEN" \
+                   "https://registry-1.docker.io/v2/$IMG/blobs/$CFG" \
+                 | jq -r '"\(.os)/\(.architecture)"')
+          echo "single manifest: $ARCH"
+          test "$ARCH" = "linux/amd64" \
+            || { echo "expected linux/amd64, got $ARCH"; exit 1; }
+          echo "still amd64 only, as the book says"
+      - name: vm-up refuses on Apple silicon
+        # The runner is amd64 Linux, so the refusal cannot be triggered
+        # for real. Assert the guard and its escape hatch are present.
+        run: |
+          grep -q 'uname -m.*arm64\|arm64.*uname -m' scripts/vm-up.sh \
+            || { echo "the arm64 guard is gone"; exit 1; }
+          grep -q 'ALLOW_ARM64' scripts/vm-up.sh \
+            || { echo "the override is gone"; exit 1; }
+          grep -q 'vz-rosetta' scripts/vm-up.sh \
+            || { echo "the refusal must name the alternative"; exit 1; }
+          ./scripts/vm-up.sh >/dev/null 2>&1 || true
+          echo "guard, override and alternative all present"
