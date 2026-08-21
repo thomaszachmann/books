@@ -1,0 +1,13 @@
+# Private keys and certificates. Chapter 2 creates these; they are yours.
+pki/
+
+# Local configuration
+.env
+
+# Chapter 4 and 5 leave these behind
+tokens.json
+assertion.xml
+authn.xml
+req.enc
+
+.DS_Store

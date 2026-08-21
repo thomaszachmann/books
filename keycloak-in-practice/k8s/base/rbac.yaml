@@ -1,0 +1,19 @@
+# RBAC binds to the GROUP from the token, not to a person.
+#
+# The name here must match exactly what arrives in the groups claim,
+# including the prefix from authn-config.yaml. Change either side and
+# every binding is wrong at the same moment, with everybody
+# authenticated and nobody authorised.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: logistics-view
+  namespace: default
+subjects:
+  - kind: Group
+    name: "oidc:logistics"
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: view
+  apiGroup: rbac.authorization.k8s.io

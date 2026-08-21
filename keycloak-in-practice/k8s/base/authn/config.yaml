@@ -1,0 +1,28 @@
+# Structured authentication configuration. Chapter 16.
+#
+# This replaces the --oidc-* flags, which are still what nearly every
+# tutorial on the internet shows. The flags accept one issuer and no
+# expressions; this accepts several and lets claims be mapped with CEL.
+#
+# Two fields decide whether this works at all:
+#   url        must be reachable FROM THE API SERVER, and its
+#              certificate must be trusted by the API server
+#   audiences  must contain the client id, and the ID token's aud must
+#              match - Chapter 8's argument, in a new place
+apiVersion: apiserver.config.k8s.io/v1beta1
+kind: AuthenticationConfiguration
+jwt:
+  - issuer:
+      url: https://sso.meridian.test/realms/meridian
+      audiences:
+        - kubernetes
+    claimMappings:
+      username:
+        claim: preferred_username
+        prefix: "oidc:"
+      groups:
+        claim: groups
+        prefix: "oidc:"
+    claimValidationRules:
+      - claim: typ
+        requiredValue: ID

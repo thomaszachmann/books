@@ -1,0 +1,171 @@
+# Keycloak in Practice - the lab.
+#
+# Chapters 1 to 11 need nothing but this file. Chapter 12 adds the
+# directory server, which is behind the "ad" profile so that it is not
+# running for the ten chapters that do not use it.
+#
+# The network alias on keycloak is the whole of Chapter 2's argument:
+# sso.meridian.test resolves to 127.0.0.1 from your laptop through your
+# hosts file, and to this container from inside the network. One name,
+# two paths, one issuer.
+
+name: keycloak-in-practice
+
+services:
+
+  db:
+    image: postgres:${POSTGRES_VERSION:-17}
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:${KEYCLOAK_VERSION}
+    depends_on:
+      db:
+        condition: service_healthy
+    command:
+      - start
+      - --hostname=${KC_HOSTNAME}
+      - --https-certificate-file=/opt/keycloak/conf/sso.crt
+      - --https-certificate-key-file=/opt/keycloak/conf/sso.key
+      - --http-enabled=false
+      - --health-enabled=true
+      - --metrics-enabled=true
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD}
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB}
+      KC_DB_USERNAME: ${POSTGRES_USER}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./pki/sso.crt:/opt/keycloak/conf/sso.crt:ro
+      - ./pki/sso.key:/opt/keycloak/conf/sso.key:ro
+      - ./pki/ca.crt:/opt/keycloak/conf/ca.crt:ro
+      # Chapter 13. Absent until make-keytab.sh has run; the mount is
+      # optional so that Chapters 1 to 12 start without it.
+      - ./pki:/opt/keycloak/conf/pki:ro
+      - kc-conf:/opt/keycloak/conf/local
+    ports:
+      - "${KC_HTTPS_PORT:-443}:8443"
+      - "${KC_MGMT_PORT:-9000}:9000"
+    networks:
+      default:
+        aliases:
+          - sso.meridian.test
+
+  # A Linux box with curl, kinit and jq. Chapter 3 uses it to prove the
+  # issuer is the same from inside the network; Chapter 13 uses it to
+  # hold a Kerberos ticket.
+  client:
+    build:
+      context: ./chapters/ch02
+      dockerfile: client.Dockerfile
+      args:
+        UBUNTU_SERIES: ${UBUNTU_SERIES:-24.04}
+    depends_on:
+      - keycloak
+    volumes:
+      - ./pki/ca.crt:/usr/local/share/ca-certificates/meridian.crt:ro
+    command: ["sleep", "infinity"]
+
+  dc:
+    profiles: ["ad"]
+    build:
+      context: ./chapters/ch02/ad
+      args:
+        UBUNTU_SERIES: ${UBUNTU_SERIES:-24.04}
+    environment:
+      AD_REALM: ${AD_REALM:-MERIDIAN.TEST}
+      AD_DOMAIN: ${AD_DOMAIN:-MERIDIAN}
+      AD_ADMIN_PASSWORD: ${AD_ADMIN_PASSWORD}
+    volumes:
+      - dc-data:/var/lib/samba
+      - dc-etc:/etc/samba
+    networks:
+      default:
+        aliases:
+          - dc.meridian.test
+    # Samba needs to set its own hostname and manage its own DNS.
+    hostname: dc
+
+  # Chapter 9 only: somewhere for Keycloak to POST a logout token.
+  # It must be reachable from the Keycloak container, not from your
+  # laptop - back-channel means server to server.
+  logout-sink:
+    profiles: ["ch09"]
+    image: python:3.12-alpine
+    volumes:
+      - ./chapters/ch09/sink.py:/sink.py:ro
+    command: ["python3", "/sink.py"]
+    ports: ["8000:8000"]
+
+  # Part V. Development mode: in-memory, unsealed, root token known.
+  # That is indefensible for secrets and exactly right for a lab whose
+  # subject is the connection between two systems rather than Vault's
+  # own storage. Book One of this series is the other half.
+  vault:
+    profiles: ["vault"]
+    image: hashicorp/vault:${VAULT_VERSION}
+    cap_add: ["IPC_LOCK"]
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: root
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+      VAULT_ADDR: http://127.0.0.1:8200
+    volumes:
+      - ./pki/ca.crt:/etc/ssl/certs/meridian-ca.pem:ro
+    ports: ["8200:8200"]
+    networks:
+      default:
+        aliases:
+          - vault.meridian.test
+
+  # Chapter 8 only: a proxy with an ordinary header limit, so that an
+  # inflated token fails here rather than in production.
+  proxy:
+    profiles: ["ch08"]
+    image: nginx:1.27-alpine
+    depends_on: [keycloak]
+    ports: ["8090:80"]
+    volumes:
+      - ./chapters/ch08/nginx.conf:/etc/nginx/nginx.conf:ro
+
+  # Chapter 1 only: three applications, three user databases.
+  wiki:
+    profiles: ["ch01"]
+    image: httpd:2.4
+    ports: ["8081:80"]
+    volumes:
+      - ./chapters/ch01/httpd.conf:/usr/local/apache2/conf/httpd.conf:ro
+    command: ["sh", "-c", "touch /etc/httpd-users && httpd-foreground"]
+
+  tickets:
+    profiles: ["ch01"]
+    image: httpd:2.4
+    ports: ["8082:80"]
+    volumes:
+      - ./chapters/ch01/httpd.conf:/usr/local/apache2/conf/httpd.conf:ro
+    command: ["sh", "-c", "touch /etc/httpd-users && httpd-foreground"]
+
+  dashboard:
+    profiles: ["ch01"]
+    image: httpd:2.4
+    ports: ["8083:80"]
+    volumes:
+      - ./chapters/ch01/httpd.conf:/usr/local/apache2/conf/httpd.conf:ro
+    command: ["sh", "-c", "touch /etc/httpd-users && httpd-foreground"]
+
+volumes:
+  db-data:
+  kc-conf:
+  dc-data:
+  dc-etc:

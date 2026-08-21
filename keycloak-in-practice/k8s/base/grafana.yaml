@@ -1,0 +1,84 @@
+# Grafana, which speaks OIDC natively. Chapter 17.
+#
+# Four things, and they are the same four for every application that
+# speaks the protocol properly:
+#   1. the issuer
+#   2. a client id and secret
+#   3. which scopes to ask for
+#   4. how a claim becomes a role INSIDE the application
+#
+# The fourth is where the work is. Grafana calls it role_attribute_path
+# and it is a JMESPath expression over the claims; ArgoCD calls it a
+# policy; Harbor calls it a group claim name. Same idea, three spellings.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: grafana-oidc
+type: Opaque
+stringData:
+  client-secret: grafana-secret-change-me
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: grafana }
+  template:
+    metadata:
+      labels: { app: grafana }
+    spec:
+      containers:
+        - name: grafana
+          image: grafana/grafana:11.6.0
+          ports: [{ containerPort: 3000 }]
+          env:
+            - name: GF_SERVER_ROOT_URL
+              value: https://grafana.meridian.test
+            - name: GF_AUTH_GENERIC_OAUTH_ENABLED
+              value: "true"
+            - name: GF_AUTH_GENERIC_OAUTH_NAME
+              value: Meridian
+            - name: GF_AUTH_GENERIC_OAUTH_CLIENT_ID
+              value: grafana
+            - name: GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-oidc
+                  key: client-secret
+            - name: GF_AUTH_GENERIC_OAUTH_SCOPES
+              value: openid profile email groups
+            - name: GF_AUTH_GENERIC_OAUTH_AUTH_URL
+              value: https://sso.meridian.test/realms/meridian/protocol/openid-connect/auth
+            - name: GF_AUTH_GENERIC_OAUTH_TOKEN_URL
+              value: https://sso.meridian.test/realms/meridian/protocol/openid-connect/token
+            - name: GF_AUTH_GENERIC_OAUTH_API_URL
+              value: https://sso.meridian.test/realms/meridian/protocol/openid-connect/userinfo
+            # The claim-to-role mapping. Read it as: if the groups claim
+            # contains finance, this person is an Admin here; if it
+            # contains logistics, an Editor; otherwise a Viewer.
+            - name: GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH
+              value: >-
+                contains(groups[*], 'finance') && 'Admin' ||
+                contains(groups[*], 'logistics') && 'Editor' ||
+                'Viewer'
+            - name: GF_AUTH_GENERIC_OAUTH_TLS_CLIENT_CA
+              value: /etc/ssl/meridian/ca.crt
+          volumeMounts:
+            - name: ca
+              mountPath: /etc/ssl/meridian
+              readOnly: true
+      volumes:
+        - name: ca
+          secret:
+            secretName: meridian-ca
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+spec:
+  selector: { app: grafana }
+  ports: [{ port: 3000 }]
