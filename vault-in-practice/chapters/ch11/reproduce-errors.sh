@@ -30,10 +30,17 @@ L=$(vault read -field=lease_id database/creds/wwr11-ro)
 for i in 1 2 3 4; do
   sleep 12
   d=$(vault lease renew -format=json "$L" 2>/dev/null | jq -r .lease_duration)
-  printf '  after %2ss, renewal %s granted: %s s\n' "$((i*12))" "$i" "${d:-refused}"
+  if [ -n "$d" ] && [ "$d" != "null" ]; then
+    printf '  after %2ss, renewal %s granted: %s s\n' "$((i*12))" "$i" "$d"
+  else
+    printf '  after %2ss, renewal %s: refused - max_ttl reached\n' "$((i*12))" "$i"
+  fi
 done
-echo "It shrinks as max_ttl approaches. A loop that renews every 25"
-echo "seconds and assumes it got 30 will fall behind and then fail."
+echo
+echo "It shrinks as max_ttl approaches, and then stops. A loop that renews"
+echo "on a fixed timer and never reads lease_duration will fall behind"
+echo "without noticing - which is the bug Chapter 15 finds in the billing"
+echo "service, written independently by somebody who had not met it."
 vault lease revoke "$L" >/dev/null 2>&1
 
 wwr_case "vault lease revoke -prefix removes nothing"
