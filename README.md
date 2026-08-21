@@ -14,6 +14,13 @@ from there.
 | *Vault in Production* | [`vault-in-production/`](vault-in-production/) | early draft |
 | *Kubernetes on-premises* | [`kubernetes-on-premises/`](kubernetes-on-premises/) | early draft |
 
+**None of these books has been published yet.** The *Status* column
+describes how far each manuscript has come, not the code. There is no
+store link to give you; links and ISBNs will be added to the table as the
+books appear. Until then this repository is what it says on the tin —
+companion code, written alongside the text and kept runnable, but meant
+to be read with the book rather than instead of it.
+
 ---
 
 ## Vault in Practice
