@@ -23,21 +23,30 @@ fetch() {
   curl -fsSL "$URL"
 }
 
+# Reads the port and path out of the rendered chart rather than
+# printing what this script believes them to be.
 cmd_endpoints() {
   CHART="${CHART_VERSION:-$(. "$HERE/../../scripts/versions.sh"
     echo "${HARBOR_CHART_VERSION#v}")}"
-  helm template harbor harbor/harbor --version "$CHART" \
-    --set metrics.enabled=true 2>/dev/null \
-    | grep -E 'METRIC_PATH|METRIC_PORT|METRIC_SUBSYSTEM' | sort -u
+  R="$(helm template harbor harbor/harbor --version "$CHART" \
+       --set metrics.enabled=true 2>/dev/null)"
+  PORT="$(printf '%s' "$R" | grep -m1 'METRIC_PORT' \
+          | sed 's/.*: *//; s/"//g')"
+  PATH_="$(printf '%s' "$R" | grep -m1 'METRIC_PATH' \
+           | sed 's/.*: *//; s/"//g')"
+  SM=disabled
+  printf '%s' "$R" | grep -q 'kind: ServiceMonitor' && SM=enabled
+
+  printf '%-12s :%s%-9s %s\n' \
+    core       "$PORT" "$PATH_" "traffic: http_request_total, duration" \
+    registry   "$PORT" "$PATH_" "distribution's own metrics" \
+    jobservice "$PORT" "$PATH_" "task_total, task_process_time_seconds" \
+    exporter   "$PORT" "$PATH_" "inventory: projects, quotas, queues"
+  printf '%-12s %-16s %s\n' \
+    serviceMonitor "$SM" "needs monitoring.coreos.com/v1"
   cat <<'TXT'
 
-core        traffic:   http_request_total, _duration_seconds, inflight
-registry    distribution's own metrics
-jobservice  task_total, task_process_time_seconds
-exporter    inventory: projects, quotas, artifacts, queues, health
-
 metrics.enabled is false by default and turns on all four at once.
-serviceMonitor is separate and needs monitoring.coreos.com/v1.
 TXT
 }
 

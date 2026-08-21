@@ -1027,7 +1027,19 @@ jobs:
           if ./chapters/ch22/restore.sh /tmp/wrong; then
             echo "restore must refuse an unverifiable backup"; exit 1
           fi
-          echo "refused"
+          ./chapters/ch22/restore.sh /tmp/wrong 2>&1 \
+            | grep -q 'FORCE_BAD_BACKUP=1 to override' \
+            || { echo "the refusal must name the override"; exit 1; }
+          echo "refused, and it says how to override"
+      - name: the override is reachable, and only deliberately
+        # Chapter 22 step 3 overrides it once, on purpose, to show the
+        # failure the refusal prevents. Without the variable, never.
+        run: |
+          OUT=$(FORCE_BAD_BACKUP=1 ./chapters/ch22/restore.sh /tmp/wrong 2>&1 \
+                | head -12 || true)
+          echo "$OUT" | grep -q 'restoring anyway' \
+            || { echo "the override does not engage"; exit 1; }
+          echo "override engages only when asked"
       - name: the plan names garbage collection
         # read_only does not stop GC - job callbacks are on the
         # middleware's skip list. If the plan stops saying so, the
@@ -1122,15 +1134,18 @@ jobs:
           done
           echo "10 hooked, 9 not, exactly as the chapter prints"
       - name: four metrics endpoints on 8001, off by default
+        # endpoints reads the port and path out of the rendered chart,
+        # so this asserts the chart's values through the script rather
+        # than the script's own idea of them.
         run: |
           OUT=$(./chapters/ch24/observe.sh endpoints)
           echo "$OUT"
-          echo "$OUT" | grep -q 'METRIC_PORT: "8001"' \
-            || { echo "the metrics port changed"; exit 1; }
-          for S in core jobservice exporter; do
-            echo "$OUT" | grep -q "SUBSYSTEM: $S" \
-              || { echo "$S no longer exposes metrics"; exit 1; }
+          for C in core registry jobservice exporter; do
+            echo "$OUT" | grep -qE "^$C +:8001/metrics" \
+              || { echo "$C is not on :8001/metrics"; exit 1; }
           done
+          echo "$OUT" | grep -q '^serviceMonitor disabled' \
+            || { echo "the serviceMonitor default changed"; exit 1; }
           helm template harbor harbor/harbor \
             --version "$(. ./scripts/versions.sh; echo "${HARBOR_CHART_VERSION#v}")" \
             | grep -q 'METRIC_ENABLE' \

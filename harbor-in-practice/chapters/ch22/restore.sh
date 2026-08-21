@@ -38,12 +38,18 @@ cmd_restore() {
   [ "${1:-}" = --skip-secret ] && SKIP_SECRET=1
 
   if [ -n "$SKIP_SECRET" ]; then
-    echo "restoring WITHOUT $DATA/secret - Chapter 22 step 4." >&2
+    echo "restoring WITHOUT $DATA/secret - Chapter 22 step 5." >&2
     echo "Harbor will start. Replication, proxy cache, LDAP bind and" >&2
     echo "OIDC credentials will not decrypt." >&2
-  else
-    "$HERE/backup.sh" verify "$DIR" || {
-      echo "refusing to restore a backup that does not verify" >&2; exit 2; }
+  elif ! "$HERE/backup.sh" verify "$DIR"; then
+    if [ -n "${FORCE_BAD_BACKUP:-}" ]; then
+      echo "restoring anyway - FORCE_BAD_BACKUP is set." >&2
+      echo "Chapter 22 step 4. Do not do this to anything you need." >&2
+    else
+      echo "refusing to restore a backup that does not verify" >&2
+      echo "FORCE_BAD_BACKUP=1 to override, and read Chapter 22 first." >&2
+      exit 2
+    fi
   fi
 
   ( cd "$HARBOR_DIR" && docker compose down )
