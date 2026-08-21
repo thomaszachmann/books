@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # The chart's secret hooks, and the key each one insists on.
 #
-# Seven hooks, six different key names, two length requirements, and
+# Seven hooks, seven different key names, two length requirements, and
 # none of the names is one you would choose. A wrong key does not fail
 # at install time - the component comes up with an empty or generated
 # value and misbehaves later, which is worse than an error.

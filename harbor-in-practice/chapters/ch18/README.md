@@ -8,7 +8,7 @@ development Vault.
 NS=harbor ./secret-keys.sh check harbor-from-vault
 ```
 
-## Seven hooks, six key names, two length rules
+## Seven hooks, seven key names, two length rules
 
 | Chart value | Key the secret must contain | Length |
 |---|---|---|
