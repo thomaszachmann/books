@@ -6,3 +6,9 @@ kcadm() {
   docker compose exec -T keycloak \
     /opt/keycloak/bin/kcadm.sh "$@"
 }
+
+# The realm's issuer URL. Chapter 4 introduces it; every later chapter
+# that talks to the realm over HTTP uses it as $ISS. It lives here
+# because shell variables do not survive a new terminal, and the labs
+# are not read in one sitting.
+ISS=https://sso.meridian.test/realms/meridian
