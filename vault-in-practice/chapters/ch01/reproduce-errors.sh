@@ -37,8 +37,23 @@ wwr_case "http: server gave HTTP response to HTTPS client"
 echo "The scheme in VAULT_ADDR does not match what the server speaks."
 VAULT_ADDR="https://${VAULT_ADDR#*://}" wwr_run vault status
 
+wwr_case "Failed to lock memory: cannot allocate memory"
+echo "The lab grants IPC_LOCK on purpose, so this needs a container"
+echo "started without it. Twenty seconds, and nothing is left behind:"
+W=$(mktemp -d)
+mkdir -p "$W/config" "$W/data"; chmod 777 "$W/data"
+cat > "$W/config/mlock.hcl" <<CFG
+storage "file" { path = "/vault/data" }
+listener "tcp" { address = "0.0.0.0:8200"  tls_disable = true }
+api_addr = "http://127.0.0.1:8200"
+CFG
+docker run --rm -v "$W/config:/vault/config:ro" -v "$W/data:/vault/data" \
+  hashicorp/vault:1.18 vault server -config=/vault/config/mlock.hcl 2>&1 \
+  | grep -viE "chown|appropriate" | grep -iE "Failed to lock memory|mlock syscall" \
+  | head -2 | sed 's/^/  /'
+rm -rf "$W"
 echo
-echo "Not reproduced here: the mlock error. It needs Vault started"
-echo "without IPC_LOCK on a host that enforces it, which the lab"
-echo "avoids on purpose - docker-compose.yml grants that capability."
+echo "Note it is 'Error initializing core', not 'listener' - Vault prints"
+echo "a full listener summary first, so the failure arrives after a"
+echo "screen that looks like a successful start."
 wwr_done

@@ -12,7 +12,7 @@ services:
     image: hashicorp/vault:1.18
     container_name: vip-vault-1
     ports: ["127.0.0.1:8210:8200"]
-    cap_add: ["IPC_LOCK"]
+    cap_add: ["IPC_LOCK", "NET_ADMIN"]   # NET_ADMIN: Chapter 4 injects latency with tc
     volumes:
       - ./cluster/config:/vault/config:ro
       - ./cluster/tls:/vault/tls:ro
@@ -24,7 +24,7 @@ services:
     image: hashicorp/vault:1.18
     container_name: vip-vault-2
     ports: ["127.0.0.1:8220:8200"]
-    cap_add: ["IPC_LOCK"]
+    cap_add: ["IPC_LOCK", "NET_ADMIN"]   # NET_ADMIN: Chapter 4 injects latency with tc
     volumes:
       - ./cluster/config:/vault/config:ro
       - ./cluster/tls:/vault/tls:ro
@@ -36,7 +36,7 @@ services:
     image: hashicorp/vault:1.18
     container_name: vip-vault-3
     ports: ["127.0.0.1:8230:8200"]
-    cap_add: ["IPC_LOCK"]
+    cap_add: ["IPC_LOCK", "NET_ADMIN"]   # NET_ADMIN: Chapter 4 injects latency with tc
     volumes:
       - ./cluster/config:/vault/config:ro
       - ./cluster/tls:/vault/tls:ro

@@ -73,6 +73,33 @@ echo "Raft needs cluster_addr, and 'operator migrate' needs it in the"
 echo "MIGRATION file, not only in the server configuration. This is the"
 echo "same missing setting that later reports HA Enabled false."
 
+wwr_case "raft locks its storage, file does not"
+echo "A second process against the same RAFT directory is refused:"
+mkdir -p "$W/raftdir"; chmod 777 "$W/raftdir"
+cat > "$W/config/raft-lock.hcl" <<CFG
+disable_mlock = true
+storage "raft" { path = "/vault/data"  node_id = "n1" }
+listener "tcp" { address = "0.0.0.0:8200"  tls_disable = true }
+api_addr     = "http://127.0.0.1:8200"
+cluster_addr = "http://127.0.0.1:8201"
+CFG
+docker rm -f wwr20r >/dev/null 2>&1 || true
+docker run -d --rm --name wwr20r -v "$W/config:/vault/config:ro" \
+  -v "$W/raftdir:/vault/data" "$IMG" \
+  vault server -config=/vault/config/raft-lock.hcl >/dev/null 2>&1
+sleep 5
+docker run --rm -v "$W/config:/vault/config:ro" -v "$W/raftdir:/vault/data" "$IMG" \
+  vault server -config=/vault/config/raft-lock.hcl 2>&1 \
+  | grep -viE "chown|appropriate" | grep -iE "bolt file|error initializing storage" \
+  | head -1 | sed 's/^/  /'
+docker rm -f wwr20r >/dev/null 2>&1
+echo
+echo "The file backend does not. This is measured on a native Linux host,"
+echo "not inferred from a laptop:"
+docker run --rm -v "$W/config:/vault/config:ro" -v "$W/data:/vault/data" "$IMG" \
+  sh -c 'timeout 8 vault server -config=/vault/config/vault.hcl 2>&1 | grep -c "Vault server started"' \
+  2>/dev/null | sed 's/^/  second process started (1 = yes): /'
+
 wwr_case "migrating while Vault is still running"
 echo "The chapter says to stop the container first. On this platform the"
 echo "migration is not refused - it copies happily from underneath a"
