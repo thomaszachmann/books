@@ -1,0 +1,11 @@
+{
+  "realm": "meridian",
+  "enabled": true,
+  "displayName": "Meridian Freight",
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000
+}
