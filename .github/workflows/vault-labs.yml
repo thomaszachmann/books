@@ -1,0 +1,245 @@
+name: vault labs
+
+# Runs the Vault labs against the pinned version, and separately against
+# whatever is current. A failure against 'latest' is information, not a
+# regression: the book is written against the pin.
+#
+# The point of this workflow is not that the scripts exit 0. It is that
+# the specific things the manuscript prints are still true. Every step
+# below asserts a sentence from the book.
+
+on:
+  push:
+    branches: [harbor-in-practice, main]
+    paths: ['vault-in-practice/**', '.github/workflows/vault-labs.yml']
+  pull_request:
+    paths: ['vault-in-practice/**']
+  schedule:
+    - cron: '23 4 * * 2'
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: vault-in-practice
+
+env:
+  VAULT_PIN: "1.18"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: shellcheck
+        run: |
+          command -v shellcheck >/dev/null || {
+            sudo apt-get update -qq && sudo apt-get install -y shellcheck; }
+          shellcheck -S warning scripts/*.sh chapters/*/*.sh chapters/*/*/*.sh
+      - name: both compose files parse
+        run: |
+          docker compose -f docker-compose.yml config >/dev/null
+          docker compose -f docker-compose.cluster.yml config >/dev/null
+      - name: no script refers to a path that does not exist
+        # ch02/setup.sh and ch10/setup-database.sh both pointed at
+        # lab/docker-compose.yml for months. There is no lab/ directory,
+        # so the first script a reader runs was broken.
+        run: |
+          fail=0
+          for f in $(grep -rlo "docker compose -f [a-zA-Z0-9_./-]*" \
+                       --include='*.sh' . ); do
+            grep -o "docker compose -f [a-zA-Z0-9_./-]*" "$f" \
+              | awk '{print $4}' | sort -u | while read -r p; do
+                [ -f "$p" ] || { echo "$f -> missing $p"; exit 1; }
+              done || fail=1
+          done
+          [ "$fail" = 0 ]
+      - name: every Makefile target the README names exists
+        run: |
+          for t in $(grep -o 'make [a-z-]*' README.md | awk '{print $2}' | sort -u); do
+            grep -q "^$t:" Makefile || { echo "make $t is not a target"; exit 1; }
+            echo "ok  make $t"
+          done
+
+  core:
+    # Chapters 3, 4 and 5. Dev mode is enough for everything asserted
+    # here and starts in a second; the sealed/unsealed lifecycle has its
+    # own job below.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: start Vault ${{ env.VAULT_PIN }}
+        run: |
+          docker run -d --rm --name v -p 8200:8200 \
+            -e VAULT_DEV_ROOT_TOKEN_ID=root \
+            -e VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200 \
+            hashicorp/vault:${{ env.VAULT_PIN }}
+          for _ in $(seq 30); do
+            curl -sf http://127.0.0.1:8200/v1/sys/health >/dev/null && break
+            sleep 1
+          done
+          docker exec v vault version
+      - name: -field=token and -field=token_accessor exist
+        # Chapter 4 teaches -field as the alternative to piping through
+        # jq, and chapters 5 to 14 rely on it 34 times. -field maps to
+        # the table's left column, not to the JSON path, so the names
+        # differ from .auth.client_token and .auth.accessor.
+        run: |
+          docker exec -e VAULT_ADDR=http://127.0.0.1:8200 -e VAULT_TOKEN=root v \
+            sh -c 'vault token create -policy=default -field=token' | grep -q '^hvs\.'
+          docker exec -e VAULT_ADDR=http://127.0.0.1:8200 -e VAULT_TOKEN=root v \
+            sh -c 'vault token create -policy=default -field=token_accessor' \
+            | grep -Eq '^[A-Za-z0-9]{20,}$'
+      - name: batch tokens cannot create more tokens
+        # Chapter 5's comparison table claims it. Asserted with the
+        # policy held constant, so that a permission error cannot be
+        # mistaken for the type restriction.
+        run: |
+          docker exec -e VAULT_ADDR=http://127.0.0.1:8200 -e VAULT_TOKEN=root v sh -c '
+            echo "path \"auth/token/create\" { capabilities = [\"create\",\"update\"] }" \
+              | vault policy write cc - >/dev/null
+            S=$(vault token create -policy=cc -field=token)
+            B=$(vault token create -policy=cc -type=batch -field=token)
+            VAULT_TOKEN=$S vault token create -policy=default -field=token >/dev/null \
+              || { echo "service token could not create a child"; exit 1; }
+            VAULT_TOKEN=$B vault token create -policy=default 2>&1 \
+              | grep -q "batch tokens cannot create more tokens"
+          '
+      - name: the token prefixes the book prints
+        run: |
+          docker exec -e VAULT_ADDR=http://127.0.0.1:8200 -e VAULT_TOKEN=root v sh -c '
+            vault token create -policy=default -field=token | grep -q "^hvs\."
+            vault token create -policy=default -type=batch -field=token | grep -q "^hvb\."
+          '
+      - name: sys/rotate/config still reports the number Chapter 3 prints
+        # The manuscript prints max_operations 3865470566. If HashiCorp
+        # changes the default, the book is wrong and this turns red.
+        run: |
+          docker exec -e VAULT_ADDR=http://127.0.0.1:8200 -e VAULT_TOKEN=root v \
+            sh -c 'vault read -field=max_operations sys/rotate/config' \
+            | grep -qx '3865470566'
+      - name: operator rotate increments Key Term without sealing
+        run: |
+          docker exec -e VAULT_ADDR=http://127.0.0.1:8200 -e VAULT_TOKEN=root v sh -c '
+            before=$(vault read -field=term sys/key-status)
+            vault operator rotate >/dev/null
+            after=$(vault read -field=term sys/key-status)
+            [ "$after" -gt "$before" ] || { echo "term did not advance"; exit 1; }
+            vault status | grep -q "Sealed *false"
+          '
+      - name: operator seal is root-protected, unseal is not
+        # Chapter 22 assumed a token it never set, and Appendix B now
+        # marks seal as needing sudo. Both come from this asymmetry.
+        run: |
+          out=$(docker exec -e VAULT_ADDR=http://127.0.0.1:8200 -e VAULT_TOKEN= v \
+                  sh -c 'vault operator seal' 2>&1 || true)
+          echo "$out" | grep -q "permission denied"
+      - name: stop
+        if: always()
+        run: docker rm -f v || true
+
+  auth-and-identity:
+    # Chapters 7 and 8. These scripts were written from the manuscript
+    # and had never been run against a Vault when they were committed.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: bring up the lab
+        run: |
+          make tls
+          docker compose -f docker-compose.yml up -d vault
+          ./scripts/wait-for-vault.sh
+          ./scripts/init-vault.sh
+          ./scripts/unseal-vault.sh
+      - name: chapter 7 setup
+        run: |
+          . ./scripts/vault-env.sh
+          ./chapters/ch07/setup-auth.sh
+      - name: a SecretID with num_uses=2 is refused on the third login
+        run: |
+          . ./scripts/vault-env.sh
+          ./chapters/ch07/burn-secret-id.sh | tee /tmp/burn.txt
+          grep -q "invalid secret id" /tmp/burn.txt
+      - name: chapter 8 setup is idempotent
+        # It looks the entity up by name before creating one. Without
+        # that, a second run fails on the name already existing, and a
+        # reader who reruns the script sees an error the book does not
+        # mention.
+        run: |
+          . ./scripts/vault-env.sh
+          ./chapters/ch08/setup-identity.sh
+          ./chapters/ch08/setup-identity.sh
+      - name: both logins resolve to one entity with three policies
+        run: |
+          . ./scripts/vault-env.sh
+          a=$(VAULT_TOKEN='' vault login -field=token -method=userpass \
+                -path=login-a username=alice password=lab-a)
+          b=$(VAULT_TOKEN='' vault login -field=token -method=userpass \
+                -path=login-b username=p.raghavan password=lab-b)
+          ea=$(VAULT_TOKEN=$a vault token lookup -field=entity_id)
+          eb=$(VAULT_TOKEN=$b vault token lookup -field=entity_id)
+          [ "$ea" = "$eb" ] || { echo "entity ids differ: $ea vs $eb"; exit 1; }
+          VAULT_TOKEN=$a vault token lookup -format=json \
+            | grep -q entity-alice
+      - name: one flag closes both doors
+        run: |
+          . ./scripts/vault-env.sh
+          ./chapters/ch08/revoke-drill.sh | tee /tmp/rev.txt
+          grep -q "entity is disabled" /tmp/rev.txt
+      - name: the templated policy permits one path and refuses the other
+        run: |
+          . ./scripts/vault-env.sh
+          ./chapters/ch08/templated-policy.sh | tee /tmp/tpl.txt
+          grep -q "refused, as intended" /tmp/tpl.txt
+      - name: teardown
+        if: always()
+        run: docker compose -f docker-compose.yml down -v || true
+
+  openbao:
+    # Chapter 18 measures compatibility rather than asserting it. The
+    # report is the chapter's deliverable, so a divergence should turn
+    # this red and become a paragraph in the book.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: the book's commands run against OpenBao
+        run: |
+          docker compose -f docker-compose.yml up -d openbao
+          for _ in $(seq 30); do
+            curl -sf http://127.0.0.1:8300/v1/sys/health >/dev/null && break
+            sleep 1
+          done
+          ./chapters/ch18/run-book-against-openbao.sh
+      - name: compatibility report
+        run: ./chapters/ch18/compat-report.sh | tee /tmp/compat.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: openbao-compat
+          path: /tmp/compat.txt
+      - name: teardown
+        if: always()
+        run: docker compose -f docker-compose.yml down -v || true
+
+  latest:
+    # Allowed to fail. The book is written against the pin; this job
+    # exists to notice the day that stops being a safe assumption.
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v5
+      - name: the core assertions against hashicorp/vault:latest
+        run: |
+          docker run -d --rm --name vl -p 8200:8200 \
+            -e VAULT_DEV_ROOT_TOKEN_ID=root \
+            -e VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200 hashicorp/vault:latest
+          for _ in $(seq 30); do
+            curl -sf http://127.0.0.1:8200/v1/sys/health >/dev/null && break
+            sleep 1
+          done
+          docker exec vl vault version
+          docker exec -e VAULT_ADDR=http://127.0.0.1:8200 -e VAULT_TOKEN=root vl sh -c '
+            vault token create -policy=default -field=token_accessor >/dev/null
+            vault read -field=max_operations sys/rotate/config
+          '
+      - name: stop
+        if: always()
+        run: docker rm -f vl || true
