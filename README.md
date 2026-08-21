@@ -10,6 +10,8 @@ from there.
 |---|---|---|
 | *Vault in Practice* | [`vault-in-practice/`](vault-in-practice/) | in progress |
 | *Harbor in Practice* | [`harbor-in-practice/`](harbor-in-practice/) | in progress |
+| *Vault in Production* | [`vault-in-production/`](vault-in-production/) | early draft |
+| *Kubernetes on-premises* | [`kubernetes-on-premises/`](kubernetes-on-premises/) | early draft |
 
 ---
 

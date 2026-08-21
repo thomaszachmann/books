@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-oidc
+data:
+  issuer: https://idp.meridian.example/realms/corp
+  clientId: web
+  scopes: openid profile email groups

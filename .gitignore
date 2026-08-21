@@ -12,6 +12,11 @@
 *.snap
 *.log
 
+# Band 5 - was die Labore erzeugen, nicht was das Buch liefert.
+# Deckungsgleich mit 'make clean' in kubernetes-on-premises/.
+**/evidence/ch*/
+**/evidence/REGISTER.csv
+
 # OS noise
 .DS_Store
 Thumbs.db

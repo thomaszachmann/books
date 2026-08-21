@@ -1,0 +1,12 @@
+apiVersion: v2
+name: meridian-platform
+version: 3.2.0
+# The dependency below is the answer to Exercise 1.2. It names a repository
+# ALIAS, not a URL: helm resolves it from the repo list on the machine
+# running the command. Nothing in the cluster ever sees it, no scan of
+# these manifests will report it, and on a fresh or isolated machine the
+# release fails before a single image is requested.
+dependencies:
+  - name: common
+    version: 2.x.x
+    repository: "@meridian-charts"

@@ -1,0 +1,41 @@
+# product	count	profiles
+# Snapshot of ComplianceAsCode/content, master, 2026-08-21.
+# Regenerate from a clone with ./profiles.sh --refresh <path>
+al2023	2	cis cis_server_l1
+alinux2	3	default pci-dss standard
+alinux3	3	default pci-dss standard
+almalinux9	11	anssi_bp28_enhanced anssi_bp28_high anssi_bp28_intermediary anssi_bp28_minimal cis cis_server_l1 cis_workstation_l1 cis_workstation_l2 hipaa pci-dss standard
+anolis23	3	default pci-dss standard
+anolis8	3	default pci-dss standard
+debian11	6	anssi_np_nt28_average anssi_np_nt28_high anssi_np_nt28_minimal anssi_np_nt28_restrictive default standard
+debian12	14	anssi_bp28_enhanced anssi_bp28_high anssi_bp28_intermediary anssi_bp28_minimal anssi_np_nt28_average anssi_np_nt28_high anssi_np_nt28_minimal anssi_np_nt28_restrictive cis_level1_server cis_level1_workstation cis_level2_server cis_level2_workstation default standard
+debian13	9	anssi_bp28_enhanced anssi_bp28_high anssi_bp28_intermediary anssi_bp28_minimal cis_level1_server cis_level1_workstation cis_level2_server cis_level2_workstation standard
+eks	3	cis cis-node default
+example	2	default example
+fedora	10	cis cis_server_l1 cis_workstation_l1 cis_workstation_l2 cusp_fedora default ospp pci-dss standard test
+firefox	3	cusp_firefox default stig
+hummingbird	2	cis stig
+kylinsecserver6	1	standard
+kylinserver10	1	standard
+ocp4	36	bsi bsi-2022 bsi-node bsi-node-2022 cis cis-1-7 cis-1-9 cis-node cis-node-1-7 cis-node-1-9 cis-vm-extension cis-vm-extension-node default e8 high high-node high-node-rev-4 high-rev-4 moderate moderate-node moderate-node-rev-4 moderate-rev-4 nerc-cip nerc-cip-node pci-dss pci-dss-3-2 pci-dss-4-0 pci-dss-node pci-dss-node-3-2 pci-dss-node-4-0 stig stig-node stig-node-v2r2 stig-node-v2r3 stig-v2r2 stig-v2r3
+ol10	13	anssi_bp28_enhanced anssi_bp28_high anssi_bp28_intermediary anssi_bp28_minimal e8 hipaa ism_o ism_o_secret ism_o_top_secret ospp pci-dss stig stig_gui
+ol7	16	anssi_nt28_enhanced anssi_nt28_high anssi_nt28_intermediary anssi_nt28_minimal cjis cui default e8 hipaa ncp ospp pci-dss sap standard stig stig_gui
+ol8	15	anssi_bp28_enhanced anssi_bp28_high anssi_bp28_intermediary anssi_bp28_minimal cjis cui default e8 hipaa ism_o ospp pci-dss standard stig stig_gui
+ol9	17	anssi_bp28_enhanced anssi_bp28_high anssi_bp28_intermediary anssi_bp28_minimal ccn_advanced ccn_basic ccn_intermediate cui default e8 hipaa ism_o ospp pci-dss standard stig stig_gui
+openembedded	3	default expanded standard
+openeuler2203	1	standard
+opensuse	2	default standard
+rhcos4	16	anssi_bp28_enhanced anssi_bp28_high anssi_bp28_intermediary anssi_bp28_minimal bsi bsi-2022 default e8 high high-rev-4 moderate moderate-rev-4 nerc-cip stig stig-v2r2 stig-v2r3
+rhel10	19	anssi_bp28_enhanced anssi_bp28_high anssi_bp28_intermediary anssi_bp28_minimal bsi cis cis_server_l1 cis_workstation_l1 cis_workstation_l2 default e8 hipaa ism_o ism_o_secret ism_o_top_secret ospp pci-dss stig stig_gui
+rhel8	20	anssi_bp28_enhanced anssi_bp28_high anssi_bp28_intermediary anssi_bp28_minimal cis cis_server_l1 cis_workstation_l1 cis_workstation_l2 cjis cui default e8 hipaa ism_o ospp pci-dss rht-ccp standard stig stig_gui
+rhel9	21	anssi_bp28_enhanced anssi_bp28_high anssi_bp28_intermediary anssi_bp28_minimal bsi ccn_advanced ccn_basic ccn_intermediate cis cis_server_l1 cis_workstation_l1 cis_workstation_l2 cui default e8 hipaa ism_o ospp pci-dss stig stig_gui
+rhv4	4	default pci-dss rhvh-stig rhvh-vpp
+sle12	13	anssi_bp28_enhanced anssi_bp28_high anssi_bp28_intermediary anssi_bp28_minimal cis cis_server_l1 cis_workstation_l1 cis_workstation_l2 default pci-dss pci-dss-4 standard stig
+sle15	17	anssi_bp28_enhanced anssi_bp28_high anssi_bp28_intermediary anssi_bp28_minimal cis cis_server_l1 cis_workstation_l1 cis_workstation_l2 default general hipaa pci-dss-4 pcs-hardening pcs-hardening-chost pcs-hardening-sap standard stig
+sle16	7	anssi_bp28_enhanced anssi_bp28_high anssi_bp28_intermediary anssi_bp28_minimal base hipaa pci-dss-4
+slmicro5	3	general pcs-hardening stig
+slmicro6	1	general
+tencentos4	2	basic standard
+ubuntu2204	7	cis_level1_server cis_level1_workstation cis_level2_server cis_level2_workstation default standard stig
+ubuntu2404	6	cis_level1_server cis_level1_workstation cis_level2_server cis_level2_workstation default stig
+ubuntu2604	1	default

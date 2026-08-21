@@ -1,0 +1,48 @@
+id,summary,chapter,artifact
+SYS.1.6.A1,"Decide and record why containers, and on what",4,Substrate decision record
+SYS.1.6.A2,Decide and record how the platform is operated,4,"Reference architecture, Appendix B"
+SYS.1.6.A3,Harden the host the runtime sits on,7,"`oscap` report, profile `bsi`"
+SYS.1.6.A4,Decide where images come from and how they travel,22,Image supply policy
+SYS.1.6.A5,Keep management traffic off the workload network,8,"Network plan, firewall export"
+SYS.1.6.A6,Only images of known provenance run,22,Signature verification policy report
+SYS.1.6.A7,Logs survive the container that wrote them,25,"Retention config, shipping proof"
+SYS.1.6.A8,"No credentials in images, manifests or plain etcd",21,Encryption-at-rest config
+SYS.1.6.A9,Assess whether an application belongs in a container,20,Tenancy design review
+SYS.1.6.A10,"A written, enforced policy rather than a convention",18,"Policy repository, policy report"
+SYS.1.6.A11,"One process per container, enforced not requested",18,Kyverno policy report
+SYS.1.6.A12,Signatures and attestations travel with the image,28,"Mirror manifest, transfer record"
+SYS.1.6.A13,"An image enters the environment by decision, not by pull",29,Airlock seal record
+SYS.1.6.A14,"Images are replaced, not patched in place",31,Patch record
+SYS.1.6.A15,"CPU, memory and storage bounded per workload",20,Quota and limit-range report
+SYS.1.6.A16,"Administrative access is named, limited and logged",17,"RBAC export, break-glass procedure"
+SYS.1.6.A17,"No privileged containers, no root by default",18,Admission policy report
+SYS.1.6.A18,Each workload has its own identity,17,Service account inventory
+SYS.1.6.A19,Persistent data is deliberate and outside the container,8,Storage class and CSI record
+SYS.1.6.A20,"Configuration is versioned, reviewed and attributable",23,Signed change record
+SYS.1.6.A21,Mandatory access control and seccomp beyond defaults,18,"Policy report, `oscap` report"
+SYS.1.6.A22,"You can reconstruct who did what, afterwards",25,Audit trail extract
+SYS.1.6.A23,"Read-only root filesystems, no in-place change",18,Admission policy report
+SYS.1.6.A24,Detect attacks on the node at runtime,—,**not covered — see below**
+SYS.1.6.A25,The application survives the loss of a node,9,Node-loss drill record
+SYS.1.6.A26,Stronger isolation than shared-kernel namespaces,20,**partial — see below**
+APP.4.4.A1,"Decide the namespace, cluster and network cut before going live",20,"Tenancy plan, design review"
+APP.4.4.A2,The path from change to cluster is designed and recorded,23,"GitOps design, change records"
+APP.4.4.A3,"Who may do what, provably, and how you get in when it fails",17,"RBAC export, break-glass record"
+APP.4.4.A4,"Kernel isolation of processes, IPC, users, filesystem, network",7,"`oscap` report, rule `selinux_state`"
+APP.4.4.A5,"Volumes, cluster state and configuration, restorable",26,Restore drill record
+APP.4.4.A6,Startup is controlled and cannot be used to escalate,18,Admission policy report
+APP.4.4.A7,"Default-deny, then explicit permission",19,Cilium network policy report
+APP.4.4.A8,"Manifests are protected, versioned and attributable",23,Signed change record
+APP.4.4.A9,"No shared or default service accounts, tokens bounded",17,Service account inventory
+APP.4.4.A10,The pipeline is as protected as the cluster it changes,23,Runner isolation record
+APP.4.4.A11,The platform is watched and the watching is proven,24,"Alert rule export, firing evidence"
+APP.4.4.A12,The control plane's own components are hardened,12,`kube-bench` result
+APP.4.4.A13,"The check runs by itself, on a schedule, and is kept",12,`kube-bench` and policy report in CI
+APP.4.4.A14,Workloads with different protection needs on different nodes,20,Node pool and taint record
+APP.4.4.A15,"Where a namespace is not enough, a cluster",20,Tenancy design review
+APP.4.4.A16,Operators are governed like any other privileged workload,23,"Operator inventory, RBAC export"
+APP.4.4.A17,A node proves it is the node it claims to be,6,**partial — see below**
+APP.4.4.A18,"Segmentation to the workload, not to the subnet",19,Cilium network policy report
+APP.4.4.A19,The control plane survives the loss of a member,9,Quorum-loss drill record
+APP.4.4.A20,"Persistent data encrypted at rest, with managed keys",21,"Encryption config, key custody record"
+APP.4.4.A21,"Long-lived pods are replaced, not left running for a year",31,Rolling restart record

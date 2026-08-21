@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: web}
+  template:
+    metadata:
+      labels: {app: web}
+    spec:
+      containers:
+        - name: web
+          image: ghcr.io/meridian/web:1.9
+          env:
+            # Two of these are network destinations. Neither is a URL,
+            # which is the point of Exercise 1.1.
+            - name: SMTP_RELAY_HOST
+              value: smtp.meridian.example
+            - name: SYSLOG_SERVER
+              value: logs.meridian.example
+            - name: NTP_SERVER
+              value: ntp.meridian.example
+            - name: SBOM_ENDPOINT
+              value: https://sbom.meridian.example/api/v1/bom
+            - name: VAULT_ADDR
+              value: https://vault.meridian.example/v1/pki/issue/web
+        - name: db
+          image: docker.io/library/postgres:16.4
