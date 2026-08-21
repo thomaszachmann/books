@@ -67,5 +67,30 @@ echo "The existing token keeps the lifetime it was given. It always will."
 echo "To force the change, revoke the outstanding tokens by accessor."
 
 vault auth disable wwr-contractors >/dev/null 2>&1 || true
+wwr_case "after a few bad SecretIDs, the correct one is refused too"
+vault auth enable -path=wwr-lock approle >/dev/null 2>&1 || true
+vault write auth/wwr-lock/role/r token_ttl=5m secret_id_num_uses=0 >/dev/null
+RID=$(vault read -field=role_id auth/wwr-lock/role/r/role-id)
+GOOD=$(vault write -f -field=secret_id auth/wwr-lock/role/r/secret-id)
+vault write -field=token auth/wwr-lock/login role_id="$RID" secret_id="$GOOD" >/dev/null \
+  && echo "  a valid login works to begin with"
+for i in 1 2 3 4 5 6; do
+  m=$(vault write auth/wwr-lock/login role_id="$RID" secret_id=wrong 2>&1 \
+        | grep -oE "invalid role or secret ID|permission denied" | head -1)
+  printf '  attempt %s: %s\n' "$i" "$m"
+done
+echo
+echo "Now with the SAME valid SecretID that worked a moment ago:"
+vault write auth/wwr-lock/login role_id="$RID" secret_id="$GOOD" 2>&1 \
+  | grep -E "Code:|permission denied" | sed 's/^/  /'
+echo
+echo "The entity is locked out - five failures in fifteen minutes, by"
+echo "default, for fifteen minutes. The message stopped describing the"
+echo "credential at exactly the moment you supplied a correct one."
+echo "Check before you touch a policy:"
+vault read -format=json sys/locked-users 2>/dev/null \
+  | jq -r '"  locked entries: \(.data.by_namespace[]?.counts // 0)"' | head -1
+vault auth disable wwr-lock >/dev/null 2>&1 || true
+
 vault delete auth/approle/role/wwr-role >/dev/null 2>&1 || true
 wwr_done
