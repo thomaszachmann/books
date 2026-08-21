@@ -1,0 +1,62 @@
+# The Keycloak custom resource. The operator turns this into a
+# StatefulSet, a Service, an Ingress and the configuration to match.
+#
+# Two fields carry the whole of Chapters 2 and 3 into the cluster:
+# spec.hostname.hostname is the issuer, and it must be a full URL; and
+# proxy headers must be set, because TLS terminates at the ingress and
+# Keycloak would otherwise conclude it is being reached over plain HTTP
+# and issue an http:// issuer.
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: meridian
+spec:
+  instances: 1
+  db:
+    vendor: postgres
+    host: postgres
+    database: keycloak
+    usernameSecret:
+      name: keycloak-db
+      key: username
+    passwordSecret:
+      name: keycloak-db
+      key: password
+  hostname:
+    hostname: https://sso.meridian.test
+  ingress:
+    enabled: false
+  proxy:
+    headers: xforwarded
+---
+# TLS terminates here, not at Keycloak.
+#
+# The operator's own ingress is switched off and this one supplied
+# instead, because the operator attaches TLS to its Ingress only when
+# Keycloak itself holds the certificate - which is the other
+# architecture. Terminating at the edge is what makes the certificate
+# rotation in Chapter 19 possible without restarting Keycloak, and it is
+# what makes proxy.headers above mean anything: something has to set
+# X-Forwarded-Proto for Keycloak to read it.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: keycloak
+  annotations:
+    nginx.ingress.kubernetes.io/affinity: cookie
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: [sso.meridian.test]
+      secretName: keycloak-tls
+  rules:
+    - host: sso.meridian.test
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: keycloak-service
+                port:
+                  number: 8080

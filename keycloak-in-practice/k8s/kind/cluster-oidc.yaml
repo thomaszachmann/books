@@ -1,0 +1,42 @@
+# The Chapter 15 cluster, plus what the API server needs to accept
+# tokens from Keycloak.
+#
+# Three additions, and each one is a thing that has to be true in any
+# cluster, managed or not:
+#   1. the authentication config file, mounted into the control plane
+#   2. the flag pointing at it
+#   3. the private CA in the node's trust store, so the API server can
+#      verify the issuer's certificate - done by chapters/ch16/trust.sh
+#      after creation, because kind has no hook for it
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: meridian
+nodes:
+  - role: control-plane
+    kubeadmConfigPatches:
+      - |
+        kind: InitConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "ingress-ready=true"
+      - |
+        kind: ClusterConfiguration
+        apiServer:
+          extraArgs:
+            authentication-config: /etc/kubernetes/authn/config.yaml
+          extraVolumes:
+            - name: authn
+              hostPath: /etc/kubernetes/authn
+              mountPath: /etc/kubernetes/authn
+              readOnly: true
+              pathType: DirectoryOrCreate
+    extraMounts:
+      - hostPath: ./k8s/base/authn
+        containerPath: /etc/kubernetes/authn
+    extraPortMappings:
+      - containerPort: 443
+        hostPort: 8443
+        protocol: TCP
+      - containerPort: 80
+        hostPort: 8080
+        protocol: TCP

@@ -1,0 +1,24 @@
+# kind has no load balancer and no ingress controller. Both are supplied
+# here: the control-plane node is labelled so ingress-nginx will schedule
+# on it, and 443 is mapped from the host so that sso.meridian.test in
+# your hosts file reaches the cluster.
+#
+# minikube users do not need this file; see k8s/minikube/README.md.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: meridian
+nodes:
+  - role: control-plane
+    kubeadmConfigPatches:
+      - |
+        kind: InitConfiguration
+        nodeRegistration:
+          kubeletExtraArgs:
+            node-labels: "ingress-ready=true"
+    extraPortMappings:
+      - containerPort: 443
+        hostPort: 8443
+        protocol: TCP
+      - containerPort: 80
+        hostPort: 8080
+        protocol: TCP

@@ -1,0 +1,14 @@
+# A realm, declared. Read the warning in chapters/ch15/README.md before
+# treating this as GitOps: the operator IMPORTS this once. It does not
+# reconcile it, and a change made in the console is not corrected.
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: KeycloakRealmImport
+metadata:
+  name: meridian
+spec:
+  keycloakCRName: meridian
+  realm:
+    realm: meridian
+    enabled: true
+    displayName: Meridian Freight
+    sslRequired: external
