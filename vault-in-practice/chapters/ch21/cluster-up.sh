@@ -63,12 +63,24 @@ UK=$(jq -r '.unseal_keys_b64[0]' $C/init.json)
 
 # Every node has its own root key in its own memory. Three nodes, three
 # unseal operations - the argument for Chapter 22 in one loop.
+#
+# Nodes 2 and 3 cannot be unsealed until they have joined: retry_join
+# fetches the seal configuration from the leader, and until it arrives the
+# node answers "Vault is not initialized" and ignores the key. Waiting for
+# Initialized=true is the difference between this working and failing on
+# the second node every time.
 for p in 8210 8220 8230; do
-  VAULT_ADDR="https://127.0.0.1:$p" vault operator unseal "$UK" >/dev/null
+  for _ in $(seq 60); do
+    out=$(VAULT_ADDR="https://127.0.0.1:$p" vault status -format=json 2>/dev/null || true)
+    [ -n "$out" ] && printf '%s' "$out" | jq -e '.initialized' >/dev/null 2>&1 && break
+    sleep 1
+  done
+  VAULT_ADDR="https://127.0.0.1:$p" vault operator unseal "$UK" >/dev/null 2>&1 || true
 done
 sleep 3
 
-export VAULT_TOKEN=$(jq -r '.root_token' $C/init.json)
+VAULT_TOKEN=$(jq -r '.root_token' $C/init.json)
+export VAULT_TOKEN
 vault operator raft list-peers
 
 echo
