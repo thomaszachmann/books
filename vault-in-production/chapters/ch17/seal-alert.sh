@@ -20,8 +20,15 @@ metrics(){ curl -s --cacert "$CA" \
 
 show(){
   for p in $PORTS; do
+    # NICHT  jq -r '.sealed // "?"'  benutzen: // ist in jq der
+    # Alternativ-Operator und behandelt false als leer, also wird
+    # aus einem entsiegelten Knoten (sealed: false) ein "?". Der
+    # Fehler laeuft genau in die Richtung, die ein Problem
+    # verdeckt - passend zum Thema dieses Kapitels.
     sealed=$(VAULT_ADDR=https://127.0.0.1:$p vault status \
-             -format=json 2>/dev/null | jq -r '.sealed // "?"')
+             -format=json 2>/dev/null \
+             | jq -r 'if has("sealed") then (.sealed|tostring)
+                      else "?" end')
     fams=$(metrics "$p" | grep -c '^# TYPE')
     printf '  port %s  sealed=%-5s families=%-4s\n' \
       "$p" "$sealed" "$fams"
