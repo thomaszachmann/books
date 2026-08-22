@@ -28,7 +28,13 @@ cd "$(dirname "$0")/.."
 
 $COMPOSE down -v >/dev/null 2>&1 || true
 
-TARGETS="data1 data2 data3 init.json"
+# config gehoert dazu: cluster-up.sh ueberspringt vorhandene
+# Knoten-Konfigurationen. Bleibt sie stehen, wirkt jede Aenderung
+# an cluster-up.sh stillschweigend nicht - man aendert die
+# Telemetrie-Stanza, startet neu und misst weiter den alten Stand.
+# tls bleibt absichtlich erhalten: Zertifikate neu zu erzeugen
+# kostet Zeit und aendert an keinem Kapitel etwas.
+TARGETS="data1 data2 data3 init.json config"
 
 # Schneller Weg: was dem Host-Benutzer gehoert, ist gleich weg.
 for t in $TARGETS; do rm -rf "cluster/$t" 2>/dev/null || true; done
