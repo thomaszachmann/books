@@ -24,8 +24,28 @@ port_of_leader(){
   done
   echo 8210
 }
-L=$(port_of_leader); S=$([ "$L" = 8220 ] && echo 8210 || echo 8220)
-echo "leader $L, standby used for comparison: $S"
+# Der Vergleichsknoten muss ein ENTSIEGELTER Standby sein.
+# Ein versiegelter Knoten antwortet blitzschnell mit einem Fehler
+# - im ersten Anlauf las der "Standby" dadurch scheinbar schneller
+# als der Leader, und die Weiterleitungs-Metrik fehlte, weil ein
+# versiegelter Knoten sie gar nicht exportiert.
+port_of_standby(){
+  for p in 8210 8220 8230; do
+    [ "$p" = "$1" ] && continue
+    if curl -s --cacert "$CA" "https://127.0.0.1:$p/v1/sys/health" \
+       2>/dev/null | jq -e '.standby == true and .sealed == false' \
+       >/dev/null 2>&1
+    then echo "$p"; return; fi
+  done
+}
+L=$(port_of_leader); S=$(port_of_standby "$L")
+if [ -z "$S" ]; then
+  echo "ABBRUCH: kein entsiegelter Standby. 'make unseal' und" \
+       "erneut versuchen - sonst misst Abschnitt 2 einen" \
+       "versiegelten Knoten und meldet ihn als schnell." >&2
+  exit 1
+fi
+echo "leader $L, unsealed standby for comparison: $S"
 
 rep(){ local u=$1 n=$2 out=""
        for _ in $(seq 1 "$n"); do out="$out $u"; done; echo "$out"; }
