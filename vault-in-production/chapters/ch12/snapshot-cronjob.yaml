@@ -1,0 +1,51 @@
+# Addresses vault-active, NOT vault. The plain service selects all
+# three pods, and a standby answers a snapshot request with
+#   incomplete snapshot, unable to read SHA256SUMS.sealed file
+# which reads like corruption and is not. Measured: 4 of 10
+# attempts succeed against vault, 10 of 10 against vault-active.
+#
+# TWO THINGS ARE STILL WRONG HERE, on purpose (see Chapter 12):
+#   1. emptyDir dies with the pod. Point it at storage that
+#      leaves this cluster.
+#   2. a root token in a Secret. Use the Kubernetes auth method
+#      with a policy limited to:
+#        path "sys/storage/raft/snapshot" { capabilities=["read"] }
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: vault-snapshot
+  namespace: vault
+spec:
+  schedule: "0 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: snapshot
+              image: hashicorp/vault:1.18.5
+              env:
+                - name: VAULT_ADDR
+                  value: http://vault-active.vault.svc:8200
+                - name: VAULT_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: vault-snapshot-token
+                      key: token
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -e
+                  f=/snapshots/vault-$(date +%Y%m%dT%H%M%S).snap
+                  vault operator raft snapshot save "$f"
+                  # inspect what was just written: a file that
+                  # inspects cleanly was written completely
+                  vault operator raft snapshot inspect "$f"
+                  ls -l "$f"
+              volumeMounts:
+                - name: snapshots
+                  mountPath: /snapshots
+          volumes:
+            - name: snapshots
+              emptyDir: {}

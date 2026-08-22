@@ -1,0 +1,16 @@
+# Four nodes: one Vault pod per worker, because the Helm chart's
+# default anti-affinity insists on it.
+#
+# If a worker never joins and kubeadm reports
+#   nodes "vip-worker3" not found / error uploading crisocket
+# raise the host's inotify limits first:
+#   sudo sysctl -w fs.inotify.max_user_instances=512 \
+#                  fs.inotify.max_user_watches=524288
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: vip
+nodes:
+  - role: control-plane
+  - role: worker
+  - role: worker
+  - role: worker

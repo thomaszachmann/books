@@ -1,0 +1,22 @@
+# Chart 0.29.1 ships Vault 1.18.1; the tag below pins the same
+# 1.18 line the Compose lab uses in the rest of the book.
+#
+# NOTE: this chart's default raft config has NO retry_join.
+# Three replicas give you three unrelated Vaults. See join.sh.
+server:
+  image:
+    repository: hashicorp/vault
+    tag: "1.18.5"
+  ha:
+    enabled: true
+    replicas: 3
+    raft:
+      enabled: true
+      setNodeId: true      # keeps vault-N's Raft ID across restarts
+  dataStorage:
+    enabled: true
+    size: 1Gi
+injector:
+  enabled: false
+ui:
+  enabled: false
