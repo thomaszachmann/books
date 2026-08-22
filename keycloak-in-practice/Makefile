@@ -32,16 +32,21 @@ pki:  ## Chapter 2: root CA and the server certificate
 # neither VERSIONS.md nor VERSIONS.mk. `export` above covers make; this
 # target covers a reader who types docker compose directly, which the
 # book does from Chapter 3.
+# Phony on purpose. As a file target with .env.example as a
+# prerequisite, make skips it whenever .env already exists and is newer
+# - which is exactly what happens when a reader follows the front matter
+# and types `cp .env.example .env` first. The pins are then never
+# appended, docker compose interpolates empty strings, and the failure
+# arrives later as an image with no tag. The recipe is idempotent, so
+# running it every time costs nothing.
 .PHONY: env
-env: .env  ## Create .env and append the pinned versions to it
-.env: .env.example VERSIONS.md
+env:  ## Create .env and append the pinned versions to it
 	@[ -f .env ] || cp .env.example .env
 	@grep -q '^# --- pinned' .env || { \
 	  printf '\n# --- pinned versions, from VERSIONS.md. Do not edit. ---\n' \
 	    >> .env; \
 	  grep -E '^[A-Z_]+=' VERSIONS.md >> .env; \
 	  echo "appended pinned versions to .env"; }
-	@touch .env
 
 .PHONY: up
 up: env pki  ## Start the database and Keycloak

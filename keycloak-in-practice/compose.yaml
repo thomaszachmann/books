@@ -51,6 +51,12 @@ services:
       - ./pki/sso.crt:/opt/keycloak/conf/sso.crt:ro
       - ./pki/sso.key:/opt/keycloak/conf/sso.key:ro
       - ./pki/ca.crt:/opt/keycloak/conf/ca.crt:ro
+      # The fourth trust store from Chapter 2, and the direction people
+      # forget: Keycloak as a CLIENT, dialling out to LDAPS in Chapter
+      # 12. Keycloak reads every certificate in conf/truststores at
+      # start. Without this, the sync fails with PKIX path building
+      # failed - which names neither LDAP nor the certificate.
+      - ./pki/ca.crt:/opt/keycloak/conf/truststores/meridian.crt:ro
       # Chapter 13. Absent until make-keytab.sh has run; the mount is
       # optional so that Chapters 1 to 12 start without it.
       - ./pki:/opt/keycloak/conf/pki:ro
@@ -91,6 +97,10 @@ services:
     volumes:
       - dc-data:/var/lib/samba
       - dc-etc:/etc/samba
+      # Chapter 2 issued dc.crt for this host. Without this mount Samba
+      # serves LDAPS with its own temporary self-signed certificate, and
+      # every client that trusts the Meridian root refuses it.
+      - ./pki:/pki:ro
     networks:
       default:
         aliases:

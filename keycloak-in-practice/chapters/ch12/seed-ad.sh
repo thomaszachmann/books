@@ -18,9 +18,13 @@ done
 
 echo "users"
 add() {  # username, given, surname, group
+  # No --use-username-as-cn: in Active Directory the cn IS the display
+  # name, and Keycloak's AD preset creates a full-name mapper that reads
+  # cn and splits it. Make cn the username and every imported user
+  # arrives with no first name and no explanation.
   dc samba-tool user create "$1" "$PW" \
-      --given-name="$2" --surname="$3" \
-      --use-username-as-cn 2>/dev/null || echo "  $1 exists"
+      --given-name="$2" --surname="$3" 2>/dev/null \
+    || echo "  $1 exists"
   dc samba-tool group addmembers "$4" "$1" 2>/dev/null || true
 }
 

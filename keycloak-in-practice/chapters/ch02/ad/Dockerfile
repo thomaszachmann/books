@@ -11,7 +11,8 @@ FROM ubuntu:${UBUNTU_SERIES}
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      samba samba-dsdb-modules samba-vfs-modules smbclient \
+      samba samba-ad-provision samba-dsdb-modules \
+      samba-vfs-modules smbclient \
       krb5-user krb5-config ldap-utils winbind \
       ca-certificates procps iproute2 \
  && rm -rf /var/lib/apt/lists/*

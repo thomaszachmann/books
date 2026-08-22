@@ -24,6 +24,13 @@ spec:
       key: password
   hostname:
     hostname: https://sso.meridian.test
+  http:
+    # TLS terminates at the Ingress below, so Keycloak speaks plain HTTP
+    # inside the cluster. Production mode refuses to start without one
+    # of the two: "Key material not provided to setup HTTPS". The
+    # operator sets this for you when it manages the ingress itself;
+    # with ingress.enabled false it does not.
+    httpEnabled: true
   ingress:
     enabled: false
   proxy:
@@ -56,7 +63,11 @@ spec:
           - path: /
             pathType: Prefix
             backend:
+              # The operator names the service after the Keycloak
+              # resource: <metadata.name>-service. Rename the resource
+              # above and this line has to follow, or the ingress
+              # answers 503 with nothing in any log to explain it.
               service:
-                name: keycloak-service
+                name: meridian-service
                 port:
                   number: 8080
