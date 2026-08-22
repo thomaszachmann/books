@@ -17,7 +17,7 @@
 
 services:
   vault-1:
-    image: hashicorp/vault:${VAULT_VERSION_1:-1.18}
+    image: docker.io/hashicorp/vault:${VAULT_VERSION_1:-1.18}
     container_name: vip-vault-1
     ports: ["127.0.0.1:8210:8200"]
     cap_add: ["IPC_LOCK", "NET_ADMIN"]   # NET_ADMIN: Chapter 4 injects latency with tc
@@ -29,7 +29,7 @@ services:
     command: vault server -config=/vault/config/vault-1.hcl
 
   vault-2:
-    image: hashicorp/vault:${VAULT_VERSION_2:-1.18}
+    image: docker.io/hashicorp/vault:${VAULT_VERSION_2:-1.18}
     container_name: vip-vault-2
     ports: ["127.0.0.1:8220:8200"]
     cap_add: ["IPC_LOCK", "NET_ADMIN"]   # NET_ADMIN: Chapter 4 injects latency with tc
@@ -41,7 +41,7 @@ services:
     command: vault server -config=/vault/config/vault-2.hcl
 
   vault-3:
-    image: hashicorp/vault:${VAULT_VERSION_3:-1.18}
+    image: docker.io/hashicorp/vault:${VAULT_VERSION_3:-1.18}
     container_name: vip-vault-3
     ports: ["127.0.0.1:8230:8200"]
     cap_add: ["IPC_LOCK", "NET_ADMIN"]   # NET_ADMIN: Chapter 4 injects latency with tc
