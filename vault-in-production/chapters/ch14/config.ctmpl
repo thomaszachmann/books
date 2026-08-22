@@ -1,0 +1,4 @@
+{{- with secret "secret/data/app/config" }}
+db={{ .Data.data.db }}
+tier={{ .Data.data.tier }}
+{{- end }}
