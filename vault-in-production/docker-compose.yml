@@ -22,10 +22,10 @@ services:
     ports: ["127.0.0.1:8210:8200"]
     cap_add: ["IPC_LOCK", "NET_ADMIN"]   # NET_ADMIN: Chapter 4 injects latency with tc
     volumes:
-      - ./cluster/config:/vault/config:ro
-      - ./cluster/tls:/vault/tls:ro
-      - ./cluster/data1:/vault/data:rw
-      - ./logs:/vault/logs:rw
+      - ./cluster/config:/vault/config:ro${VAULT_MOUNT_OPT}
+      - ./cluster/tls:/vault/tls:ro${VAULT_MOUNT_OPT}
+      - ./cluster/data1:/vault/data:rw${VAULT_MOUNT_OPT}
+      - ./logs:/vault/logs:rw${VAULT_MOUNT_OPT}
     command: vault server -config=/vault/config/vault-1.hcl
 
   vault-2:
@@ -34,10 +34,10 @@ services:
     ports: ["127.0.0.1:8220:8200"]
     cap_add: ["IPC_LOCK", "NET_ADMIN"]   # NET_ADMIN: Chapter 4 injects latency with tc
     volumes:
-      - ./cluster/config:/vault/config:ro
-      - ./cluster/tls:/vault/tls:ro
-      - ./cluster/data2:/vault/data:rw
-      - ./logs:/vault/logs:rw
+      - ./cluster/config:/vault/config:ro${VAULT_MOUNT_OPT}
+      - ./cluster/tls:/vault/tls:ro${VAULT_MOUNT_OPT}
+      - ./cluster/data2:/vault/data:rw${VAULT_MOUNT_OPT}
+      - ./logs:/vault/logs:rw${VAULT_MOUNT_OPT}
     command: vault server -config=/vault/config/vault-2.hcl
 
   vault-3:
@@ -46,8 +46,8 @@ services:
     ports: ["127.0.0.1:8230:8200"]
     cap_add: ["IPC_LOCK", "NET_ADMIN"]   # NET_ADMIN: Chapter 4 injects latency with tc
     volumes:
-      - ./cluster/config:/vault/config:ro
-      - ./cluster/tls:/vault/tls:ro
-      - ./cluster/data3:/vault/data:rw
-      - ./logs:/vault/logs:rw
+      - ./cluster/config:/vault/config:ro${VAULT_MOUNT_OPT}
+      - ./cluster/tls:/vault/tls:ro${VAULT_MOUNT_OPT}
+      - ./cluster/data3:/vault/data:rw${VAULT_MOUNT_OPT}
+      - ./logs:/vault/logs:rw${VAULT_MOUNT_OPT}
     command: vault server -config=/vault/config/vault-3.hcl

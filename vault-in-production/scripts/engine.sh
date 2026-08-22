@@ -27,12 +27,26 @@ esac
 if ! command -v docker >/dev/null 2>&1; then _is_podman=yes; fi
 
 if [ "$_is_podman" = yes ] && command -v podman >/dev/null 2>&1; then
-  ENGINE="sudo podman"
-  COMPOSE="sudo podman compose"
+  # sudo -E, nicht sudo: sudo raeumt die Umgebung auf, und VAULT_MOUNT_OPT
+  # kaeme sonst nie bei compose an. Der Fehler sieht dann exakt so aus, als
+  # haette die Option nicht gewirkt.
+  ENGINE="sudo -E podman"
+  COMPOSE="sudo -E podman compose"
   ENGINE_NAME="podman (rootful)"
+  # Unter SELinux traegt ein Verzeichnis im Home den Typ user_home_t, und
+  # ein Container darf darauf nicht schreiben. ":z" etikettiert es auf
+  # container_file_t um. Gemessen auf Rocky 10.2:
+  #   ohne :z   touch /vault/logs/probe  -> Permission denied
+  #   mit  :z   touch /vault/logs/probe  -> geht
+  # Der Fehler, den man dabei sieht, lautet "chown: ... Permission
+  # denied" und fuehrt in die Irre: es ist keine Frage der Besitzer,
+  # sondern des SELinux-Typs. AVC-Meldungen erscheinen nicht, weil die
+  # Regel sie unterdrueckt.
+  VAULT_MOUNT_OPT=",z"
 else
   ENGINE="docker"
   COMPOSE="docker compose"
   ENGINE_NAME="docker"
+  VAULT_MOUNT_OPT=""
 fi
-export ENGINE COMPOSE ENGINE_NAME
+export ENGINE COMPOSE ENGINE_NAME VAULT_MOUNT_OPT
