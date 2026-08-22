@@ -12,6 +12,7 @@
 #    exit code poisons the whole pipeline even when jq succeeded, so the
 #    output is captured first and parsed afterwards.
 set -euo pipefail
+. "$(dirname "$0")/engine.sh"
 cd "$(dirname "$0")/.." || exit 1
 export VAULT_CACERT="$PWD/cluster/tls/cert.pem"
 command -v jq >/dev/null || { echo "jq required"; exit 1; }
@@ -35,7 +36,7 @@ for port in 8210 8220 8230; do
     sleep 1
   done
   if ! field "$port" '.initialized'; then
-    echo "  $port  vault-$node has not joined - try: docker logs vip-vault-$node"
+    echo "  $port  vault-$node has not joined - try: $ENGINE logs vip-vault-$node"
     continue
   fi
 

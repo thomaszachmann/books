@@ -36,6 +36,6 @@ down:
 	@./scripts/cluster-down.sh
 
 reset:
-	@docker compose down -v 2>/dev/null || true
+	@. ./scripts/engine.sh && $$COMPOSE down -v 2>/dev/null || true
 	@rm -rf cluster/data1 cluster/data2 cluster/data3 cluster/init.json logs/*
 	@echo "Gone. 'make up' starts over."

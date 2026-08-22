@@ -10,6 +10,10 @@
 # Die Version steht je Knoten, damit Kapitel 6 einen rollenden
 # Upgrade fahren kann:  VAULT_VERSION_2=1.19.5 docker compose up -d vault-2
 # Ohne Angabe laeuft ueberall 1.18.
+#
+# Alle Bind-Mounts tragen einen ausdruecklichen Modus. Docker braucht das
+# nicht, podman macht die Absicht damit eindeutig - und wer :ro vergisst,
+# gibt einem Vault-Prozess Schreibrecht auf seine eigene Konfiguration.
 
 services:
   vault-1:
@@ -18,10 +22,10 @@ services:
     ports: ["127.0.0.1:8210:8200"]
     cap_add: ["IPC_LOCK", "NET_ADMIN"]   # NET_ADMIN: Chapter 4 injects latency with tc
     volumes:
-      - ./cluster/config:/vault/config:ro${VAULT_MOUNT_OPT}
-      - ./cluster/tls:/vault/tls:ro${VAULT_MOUNT_OPT}
-      - ./cluster/data1:/vault/data:rw${VAULT_MOUNT_OPT}
-      - ./logs:/vault/logs:rw${VAULT_MOUNT_OPT}
+      - ./cluster/config:/vault/config:ro
+      - ./cluster/tls:/vault/tls:ro
+      - ./cluster/data1:/vault/data:rw
+      - ./logs:/vault/logs:rw
     command: vault server -config=/vault/config/vault-1.hcl
 
   vault-2:
@@ -30,10 +34,10 @@ services:
     ports: ["127.0.0.1:8220:8200"]
     cap_add: ["IPC_LOCK", "NET_ADMIN"]   # NET_ADMIN: Chapter 4 injects latency with tc
     volumes:
-      - ./cluster/config:/vault/config:ro${VAULT_MOUNT_OPT}
-      - ./cluster/tls:/vault/tls:ro${VAULT_MOUNT_OPT}
-      - ./cluster/data2:/vault/data:rw${VAULT_MOUNT_OPT}
-      - ./logs:/vault/logs:rw${VAULT_MOUNT_OPT}
+      - ./cluster/config:/vault/config:ro
+      - ./cluster/tls:/vault/tls:ro
+      - ./cluster/data2:/vault/data:rw
+      - ./logs:/vault/logs:rw
     command: vault server -config=/vault/config/vault-2.hcl
 
   vault-3:
@@ -42,8 +46,8 @@ services:
     ports: ["127.0.0.1:8230:8200"]
     cap_add: ["IPC_LOCK", "NET_ADMIN"]   # NET_ADMIN: Chapter 4 injects latency with tc
     volumes:
-      - ./cluster/config:/vault/config:ro${VAULT_MOUNT_OPT}
-      - ./cluster/tls:/vault/tls:ro${VAULT_MOUNT_OPT}
-      - ./cluster/data3:/vault/data:rw${VAULT_MOUNT_OPT}
-      - ./logs:/vault/logs:rw${VAULT_MOUNT_OPT}
+      - ./cluster/config:/vault/config:ro
+      - ./cluster/tls:/vault/tls:ro
+      - ./cluster/data3:/vault/data:rw
+      - ./logs:/vault/logs:rw
     command: vault server -config=/vault/config/vault-3.hcl
