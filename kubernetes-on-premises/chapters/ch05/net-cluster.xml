@@ -1,0 +1,28 @@
+<!--
+  Das abgeschottete Netz. Kein <forward/> - und das ist der ganze
+  Punkt: libvirt legt dann weder NAT noch eine Route zum Host-Netz
+  an. Wer hier hineingehaengt wird, erreicht das Internet nicht,
+  auch nicht versehentlich.
+
+  Kapitel 27 trennt den laufenden Cluster vom Netz. Wenn das Labor
+  von Anfang an isoliert ist, ist Kapitel 27 kein Umbau, sondern
+  das Abschalten der einen Bruecke, die es gab.
+-->
+<network>
+  <name>k8s-cluster</name>
+  <bridge name='virbr-k8s' stp='on' delay='0'/>
+  <ip address='10.44.0.1' netmask='255.255.255.0'>
+    <dhcp>
+      <range start='10.44.0.100' end='10.44.0.199'/>
+      <!-- Feste Adressen: der Cluster braucht stabile Namen,
+           und Kapitel 9 verteilt die VIP per kube-vip. -->
+      <host mac='52:54:00:44:00:11' name='cp1'     ip='10.44.0.11'/>
+      <host mac='52:54:00:44:00:12' name='cp2'     ip='10.44.0.12'/>
+      <host mac='52:54:00:44:00:13' name='cp3'     ip='10.44.0.13'/>
+      <host mac='52:54:00:44:00:21' name='worker1' ip='10.44.0.21'/>
+      <host mac='52:54:00:44:00:22' name='worker2' ip='10.44.0.22'/>
+      <host mac='52:54:00:44:00:31' name='lb'      ip='10.44.0.31'/>
+      <host mac='52:54:00:44:00:41' name='mirror'  ip='10.44.0.41'/>
+    </dhcp>
+  </ip>
+</network>

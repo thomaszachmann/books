@@ -1,0 +1,17 @@
+<!--
+  Das Verwaltungsnetz. Hier gibt es NAT, weil der Spiegel etwas
+  zu spiegeln haben muss.
+  Nur der Spiegel/Bastion haengt in BEIDEN netzen. Er ist die
+  einzige Bruecke, und Kapitel 29 macht daraus die Schleuse.
+-->
+<network>
+  <name>k8s-mgmt</name>
+  <forward mode='nat'/>
+  <bridge name='virbr-mgmt' stp='on' delay='0'/>
+  <ip address='10.45.0.1' netmask='255.255.255.0'>
+    <dhcp>
+      <range start='10.45.0.100' end='10.45.0.199'/>
+      <host mac='52:54:00:45:00:41' name='mirror' ip='10.45.0.41'/>
+    </dhcp>
+  </ip>
+</network>
