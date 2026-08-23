@@ -42,6 +42,12 @@ ch07:   ## Chapter 7 - the exception register keeps its shape
 appendix-d:  ## Regenerate the Appendix D tables from the control files
 	@./tools/appendix-d.py
 
+coverage:  ## How much of the compendium has evidence behind it
+	@./tools/coverage.py
+
+pending:  ## Which requirements are still owed, by chapter
+	@./tools/coverage.py --pending
+
 vendor-refresh:  ## Re-download the control files. Needs a network.
 	@b=https://raw.githubusercontent.com/ComplianceAsCode/content/master/controls; \
 	 for f in bsi_app_4_4.yml bsi_sys_1_6.yml; do \
