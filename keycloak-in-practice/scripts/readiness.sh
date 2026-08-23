@@ -24,8 +24,10 @@ ROOT="$(cd "$HERE/.." && pwd)"
 [ -f "$ROOT/.env" ] && . "$ROOT/.env" 2>/dev/null
 
 KC_REALM="${KC_REALM:-meridian}"
-KC_ADMIN="${KC_ADMIN:-${KEYCLOAK_ADMIN:-admin}}"
-KC_PASS="${KC_PASS:-${KEYCLOAK_ADMIN_PASSWORD:-}}"
+# Keycloak has renamed these twice. Accept all three spellings so the
+# script works against this book's lab without being told anything.
+KC_ADMIN="${KC_ADMIN:-${KC_BOOTSTRAP_ADMIN_USERNAME:-${KEYCLOAK_ADMIN:-admin}}}"
+KC_PASS="${KC_PASS:-${KC_BOOTSTRAP_ADMIN_PASSWORD:-${KEYCLOAK_ADMIN_PASSWORD:-}}}"
 
 SECTION=""; MARKDOWN=""
 while [ $# -gt 0 ]; do
@@ -67,9 +69,21 @@ manual() { active || return 0
 kcadm() { docker compose -f "$ROOT/compose.yaml" exec -T keycloak \
             /opt/keycloak/bin/kcadm.sh "$@" 2>/dev/null; }
 
+# Das Labor faehrt HTTPS-only. KC_HOSTNAME steht in VERSIONS.mk und
+# ist der Name, auf den das Zertifikat aus Kapitel 2 ausgestellt ist -
+# eine IP oder localhost scheitert an der Pruefung, nicht am Passwort.
+# kcadm laeuft ueber 'exec' INNERHALB des containers. Dort lauscht
+# Keycloak auf 8443; KC_HOSTNAME nennt den Port, unter dem der HOST es
+# erreicht. Von innen mit dem Host-Port anzufragen gibt 'Connection
+# refused' - dieselbe Falle wie im make-ziel kcadm-login.
+if [ -z "${KC_URL:-}" ] && [ -f "$ROOT/VERSIONS.mk" ]; then
+  KC_URL="$(awk -F= '/^KC_HOSTNAME=/{print $2}' "$ROOT/VERSIONS.mk"):8443"
+fi
+KC_URL="${KC_URL:-https://localhost:8443}"
+
 HAVE_API=
 if [ -n "$KC_PASS" ] && kcadm config credentials \
-     --server http://localhost:8080 --realm master \
+     --server "$KC_URL" --realm master \
      --user "$KC_ADMIN" --password "$KC_PASS" >/dev/null 2>&1; then
   HAVE_API=1
   REALM_JSON="$(kcadm get "realms/$KC_REALM" || echo '{}')"
@@ -77,7 +91,10 @@ else
   REALM_JSON='{}'
 fi
 r() { printf '%s' "$REALM_JSON" | jq -r ".$1 // empty" 2>/dev/null; }
-noapi() { skip "$1" "$2" "no admin API access"; }
+noapi() { skip "$1" "$2" "$NOAPI_WHY"; }
+NOAPI_WHY="no admin API access"
+[ -z "${HAVE_API:-}" ] && [ -n "${KC_PASS:-}" ] \
+  && NOAPI_WHY="admin login failed - run 'make kcadm-init' first"
 
 # --- 1 identity and naming --------------------------------------------
 section identity "1 · Identity and naming"

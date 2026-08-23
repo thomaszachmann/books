@@ -4,6 +4,12 @@
 
 SHELL := /bin/bash
 COMPOSE := docker compose
+# kcadm laeuft ueber 'exec' INNERHALB des containers, und dort lauscht
+# Keycloak auf 8443. KC_HOSTNAME traegt den Port, unter dem der HOST es
+# erreicht (443, gemappt auf 8443) - von innen ist das 'Connection
+# refused'. Gemessen: vom host antwortet 443 mit 302 und 8443 gar nicht,
+# im container genau umgekehrt.
+KC_INTERNAL := $(KC_HOSTNAME):8443
 KCADM := $(COMPOSE) exec -T keycloak /opt/keycloak/bin/kcadm.sh
 REALM ?= meridian
 
@@ -88,7 +94,7 @@ kcadm-init:  ## Chapter 3 step 6: truststore, then log the CLI in
 .PHONY: kcadm-login
 kcadm-login:  ## Authenticate the admin CLI (prompts for the password)
 	$(COMPOSE) exec keycloak /opt/keycloak/bin/kcadm.sh \
-	  config credentials --server $(KC_HOSTNAME) \
+	  config credentials --server $(KC_INTERNAL) \
 	  --realm master --user $${KC_BOOTSTRAP_ADMIN_USERNAME:-admin}
 
 .PHONY: realm
