@@ -63,9 +63,21 @@ chk "a snapshot can be taken" \
   "Chapter 9" \
   'stat -c%s /tmp/golive.snap 2>/dev/null || stat -f%z /tmp/golive.snap'
 
-chk "failure tolerance at least 1" \
-  '[ "$(vault operator raft autopilot state -format=json \
-        | jq .FailureTolerance)" -ge 1 ]' \
+# Autopilot braucht nach dem Entsiegeln einen Moment, bis es die
+# Follower zu Votern befoerdert hat - Kapitel 10 hat 16 Sekunden
+# gemessen. Ohne dieses Fenster meldet die Abnahme auf einem
+# kerngesunden Cluster einen Fehler, und ein Pruefskript, das
+# falschen Alarm schlaegt, erzieht zum Wegsehen (Kapitel 17).
+ft_ok() {
+  local t0; t0=$(date +%s)
+  while [ $(( $(date +%s) - t0 )) -lt 45 ]; do
+    [ "$(vault operator raft autopilot state -format=json 2>/dev/null \
+         | jq .FailureTolerance 2>/dev/null)" -ge 1 ] 2>/dev/null && return 0
+    sleep 3
+  done
+  return 1
+}
+chk "failure tolerance at least 1" 'ft_ok' \
   "Chapter 5" \
   'vault operator raft autopilot state -format=json | jq .FailureTolerance'
 
