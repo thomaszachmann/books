@@ -76,7 +76,7 @@ pass "unsealed"
 # 5. Token
 if [ -z "${VAULT_TOKEN:-}" ] && [ ! -f ~/.vault-token ]; then
   fail "no token in VAULT_TOKEN and no ~/.vault-token"
-  info "fix: export VAULT_TOKEN=\$(jq -r .root_token init.json)"
+  info "fix: source .env"
   exit 1
 fi
 

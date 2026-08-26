@@ -1,7 +1,7 @@
 # Vault in Practice - companion lab
 SHELL := /bin/bash
 
-.PHONY: help check install diagnose teardown tls up down restart reset init unseal env status db-up db-down clean
+.PHONY: help check install diagnose teardown tls up down restart reset seed init unseal env status db-up db-down clean
 
 help:
 	@echo "Vault in Practice - lab targets"
@@ -12,13 +12,14 @@ help:
 	@echo "  make teardown  remove everything, including clusters"
 	@echo "  make tls       generate the self-signed certificate"
 	@echo "  make up        start Vault"
-	@echo "  make init      initialise (writes init.json)"
-	@echo "  make unseal    unseal using init.json"
+	@echo "  make init      initialise (writes .env)"
+	@echo "  make unseal    unseal using .env"
 	@echo "  make env       print shell exports"
 	@echo "  make status    vault status"
 	@echo "  make db-up     start PostgreSQL (Chapter 10)"
 	@echo "  make restart   restart Vault (it comes back sealed)"
 	@echo "  make reset     DESTROY all data and start over"
+	@echo "  make seed      create the state chapters after 3 assume"
 	@echo "  make down      stop everything"
 
 check:
@@ -50,6 +51,9 @@ restart:
 reset:
 	@./scripts/reset-lab.sh
 
+seed:
+	@./scripts/seed-lab.sh
+
 init:
 	@./scripts/init-vault.sh
 
@@ -59,8 +63,8 @@ unseal:
 env:
 	@echo "export VAULT_ADDR='https://127.0.0.1:8200'"
 	@echo "export VAULT_CACERT='$(PWD)/tls/vault-cert.pem'"
-	@if [ -f init.json ]; then \
-	  echo "export VAULT_TOKEN='$$(jq -r .root_token init.json)'"; \
+	@if [ -f .env ]; then \
+	  echo "source .env"; \
 	fi
 
 status:
@@ -76,5 +80,5 @@ db-down:
 	@docker compose -f docker-compose.yml stop postgres
 
 clean: down
-	@rm -rf data/* logs/* init.json
+	@rm -rf data/* logs/* .env
 	@echo "Cleaned."

@@ -8,7 +8,7 @@ cd "$(dirname "$0")/.."
 
 echo "This removes:"
 echo "  - all containers from both compose files, with their volumes"
-echo "  - Vault data, Raft state, audit logs and init.json"
+echo "  - Vault data, Raft state, audit logs and .env"
 echo "  - the three-node cluster from Chapter 21"
 echo "  - the generated TLS certificate"
 echo "  - the offline root CA from Chapter 13"
@@ -20,7 +20,7 @@ read -r -p "Type TEARDOWN to continue: " confirm
 
 docker compose down -v --remove-orphans 2>/dev/null || true
 docker compose -f docker-compose.cluster.yml down -v 2>/dev/null || true
-rm -rf data/* logs/* raft cluster init.json init-backup.json root-ca
+rm -rf data/* logs/* raft cluster .env .env-backup root-ca
 rm -rf chapters/ch19/ssh-ca
 rm -f tls/*.pem tls/*.srl
 

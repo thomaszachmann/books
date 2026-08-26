@@ -8,6 +8,11 @@
 **/tls/*.srl
 **/init.json
 **/init-backup.json
+# Ab Band 1 halten die Labore Unseal-Keys und Root-Token in .env.
+# Der Eintrag steht vor allen anderen Regeln, weil ein versehentlich
+# committetes .env den gesamten Laborzustand offenlegt.
+**/.env
+**/.env-backup
 **/root-ca/
 *.snap
 *.log

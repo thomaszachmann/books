@@ -11,8 +11,9 @@ export VAULT_CACERT="$_LAB_ROOT/tls/vault-cert.pem"
 
 # VAULT_TOKEN outranks ~/.vault-token. Unset it before `vault login`,
 # or the login appears to succeed and every later command still fails.
-if [ -f "$_LAB_ROOT/init.json" ]; then
-  VAULT_TOKEN="$(jq -r '.root_token' "$_LAB_ROOT/init.json")"
+if [ -f "$_LAB_ROOT/.env" ]; then
+  # shellcheck source=/dev/null
+  source "$_LAB_ROOT/.env"
   export VAULT_TOKEN
 fi
 
