@@ -27,15 +27,22 @@ why the top-level README now links to the store pages.
 - [x] Each book's README links to its store page and ISBN
       — done 2026-09-03 for *Vault in Practice*; the other four have no
       store page yet and carry an em dash in the table
-- [ ] **Commit identity.** The books appear under the pen name; the commits
-      should too. `git log --format='%an <%ae>' | sort | uniq -c` must show
-      one author. As of 2026-09-03 it showed two: 108 commits as
-      *Thomas Zachmann*, 30 as the real name with an employer address.
-      Set it per repository before the next commit:
+- [x] **Commit identity.** The books appear under the pen name, so the
+      commits should too. Set per repository, not globally:
       `git config user.name "Thomas Zachmann"` and
       `git config user.email "thomas@zachmann.work"`.
-      Rewriting the 30 existing commits is a separate decision — it means a
-      force-push over a public history and breaks every clone.
+      Done 2026-09-03 for this repository. Check with
+      `git log --format='%an <%ae>' | sort | uniq -c` before publishing a
+      new book directory.
+
+      **The 30 older commits keep the real name — decided, not overlooked.**
+      They were made before the identity was set per repository. Rewriting
+      them would mean a force-push over a public history and would break
+      every clone, for a gain that does not justify it. The GitHub
+      contributor list therefore shows a second account beside the pen
+      name. If that is ever to change, the route is `git filter-repo` with
+      a mailmap, a bare clone as a backup, and a preview of the affected
+      commits first.
 
 ## Adding a book
 
