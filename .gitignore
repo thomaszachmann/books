@@ -12,6 +12,12 @@
 *.snap
 *.log
 
+# Lokale Zugangsdaten - nie committen.
+# Das Muster trifft nur Dateien, die exakt ".env" heissen; .env.example
+# wird davon nicht erfasst und bleibt bewusst versioniert, weil es die
+# erwarteten Variablen dokumentiert - ohne Werte.
+**/.env
+
 # Band 5 - was die Labore erzeugen, nicht was das Buch liefert.
 # Deckungsgleich mit 'make clean' in kubernetes-on-premises/.
 **/evidence/ch*/

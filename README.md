@@ -6,20 +6,35 @@ Each directory is one book and is self-contained: clone the repository,
 change into the book's directory, and everything the book prints resolves
 from there.
 
-| Book | Directory | Status |
-|---|---|---|
-| *Vault in Practice* | [`vault-in-practice/`](vault-in-practice/) | in progress |
-| *Harbor in Practice* | [`harbor-in-practice/`](harbor-in-practice/) | in progress |
-| *Keycloak in Practice* | [`keycloak-in-practice/`](keycloak-in-practice/) | in progress |
-| *Vault in Production* | [`vault-in-production/`](vault-in-production/) | early draft |
-| *Kubernetes on-premises* | [`kubernetes-on-premises/`](kubernetes-on-premises/) | early draft |
+| Book | Directory | Status | Where to get it |
+|---|---|---|---|
+| *Vault in Practice* | [`vault-in-practice/`](vault-in-practice/) | **published** | [leanpub.com/vault-in-practice](https://leanpub.com/vault-in-practice) |
+| *Harbor in Practice* | [`harbor-in-practice/`](harbor-in-practice/) | in progress | — |
+| *Keycloak in Practice* | [`keycloak-in-practice/`](keycloak-in-practice/) | in progress | — |
+| *Vault in Production* | [`vault-in-production/`](vault-in-production/) | early draft | — |
+| *Kubernetes on-premises* | [`kubernetes-on-premises/`](kubernetes-on-premises/) | early draft | — |
 
-**None of these books has been published yet.** The *Status* column
-describes how far each manuscript has come, not the code. There is no
-store link to give you; links and ISBNs will be added to the table as the
-books appear. Until then this repository is what it says on the tin —
-companion code, written alongside the text and kept runnable, but meant
-to be read with the book rather than instead of it.
+The *Status* column describes how far each **manuscript** has come, not the
+code — the labs in a directory are usually complete well before the text
+around them is.
+
+This repository is what it says on the tin: companion code, written
+alongside the text and kept runnable, but meant to be read *with* the book
+rather than instead of it. Cloning it gets you working scripts and no
+explanation of why any of them is shaped the way it is.
+
+### Also by the same author
+
+**[Enterprise AI Platform — Lab Guide](https://leanpub.com/enterprise-ai-platform)**
+· GPU infrastructure, model serving and the operation of an AI platform
+inside a company. 386 pages, 23 labs, with vLLM, KServe, LiteLLM, the NVIDIA
+GPU Operator, Keycloak, OpenBao, ArgoCD and pgvector. Its Chapter 12 runs
+OpenBao and Keycloak, its Chapter 16 runs Harbor — so the *in Practice*
+books above are the deep dives to three of its chapters. That book carries
+its labs in its own text and has no directory here.
+
+A German edition of it is free:
+[thomaszachmann.de/buch](https://thomaszachmann.de/buch).
 
 ---
 
@@ -41,6 +56,8 @@ make tls && make up && make init && make unseal
 
 See [`vault-in-practice/README.md`](vault-in-practice/README.md) for the
 full instructions.
+
+The book itself: **[leanpub.com/vault-in-practice](https://leanpub.com/vault-in-practice)**
 
 ---
 
