@@ -17,7 +17,12 @@ need() {   # command, needed-from, version-args...
     return
   fi
   local v
-  v=$("$cmd" "$@" 2>&1 | head -1 | tr -d '\r\n')
+  # cosign only prints one line as JSON; everything else prints one line.
+  v=$("$cmd" "$@" 2>&1 | { read -r first; case "$first" in
+        "{"*) printf '%s\n' "$first"; cat; ;;
+        *)    printf '%s\n' "$first"; cat >/dev/null ;; esac; })
+  case "$v" in "{"*) v="$cmd $(printf '%s' "$v" | jq -r '.gitVersion // .GitVersion // empty')" ;; esac
+  v=$(printf '%s' "$v" | head -1 | tr -d '\r\n')
   if printf '%s' "$v" | grep -qiE 'unknown (flag|command)|^error'; then
     printf '  ok?     %-11s installed, version check failed\n' "$cmd"
     return
@@ -37,7 +42,7 @@ need kubectl   "Chapter 15" version --client
 need helm      "Chapter 15" version --short
 need kind      "Chapter 15" version
 need minikube  "Chapter 15" version --short
-need cosign    "Chapter 10" version
+need cosign    "Chapter 10" version --json
 
 echo
 if [ "$missing" -gt 0 ]; then

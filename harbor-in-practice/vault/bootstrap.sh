@@ -37,12 +37,12 @@ if v read pki/cert/ca >/dev/null 2>&1; then
   echo "ok      root CA already present"
 else
   v write -field=certificate pki/root/generate/internal \
-    common_name="Meridian Lab CA" ttl=8760h >/dev/null
+    common_name="Meridian Lab Root CA" ttl=87600h >/dev/null
   echo "generated the root CA"
 fi
 v write pki/roles/harbor \
   allowed_domains=meridian.test allow_subdomains=true \
-  max_ttl=720h >/dev/null
+  max_ttl=72h >/dev/null
 echo "role    pki/roles/harbor"
 
 echo

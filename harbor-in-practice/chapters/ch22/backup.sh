@@ -44,16 +44,22 @@ TXT
 }
 
 cmd_quiesce() {
+  # Order matters: the schedule first, read-only second. Read-only
+  # mode refuses PUT /system/gc/schedule (403), so doing it the other
+  # way round locks you out of the very step you still need.
+  "$API" PUT /system/gc/schedule -d '{"schedule":{"type":"None"}}' >/dev/null
   "$API" PUT /configurations -d '{"read_only": true}' >/dev/null
   RO="$("$API" GET /configurations | jq -r '.read_only.value')"
   printf '%-16s %s\n' 'read_only' "$RO"
-  SCHED="$("$API" GET /system/gc/schedule | jq -r '.schedule.type // "None"')"
+  # A disabled schedule comes back as "" or null, never as "None".
+  SCHED="$("$API" GET /system/gc/schedule \
+    | jq -r 'if (.schedule.type // "") == "" then "None" else .schedule.type end')"
   printf '%-16s %s\n' 'gc schedule' "$SCHED"
   RUNNING="$("$API" GET /system/gc | jq '[.[] | select(.job_status
     == "Running" or .job_status == "Pending")] | length')"
   printf '%-16s %s running\n' 'gc executions' "$RUNNING"
   [ "$RO" = true ]      || { echo "read_only did not take"; exit 1; }
-  [ "$SCHED" = None ]   || { echo "disable the GC schedule first"; exit 1; }
+  [ "$SCHED" = None ]   || { echo "the GC schedule did not switch off"; exit 1; }
   [ "$RUNNING" = 0 ]    || { echo "a GC is in flight; wait for it"; exit 1; }
 }
 
@@ -97,7 +103,8 @@ cmd_run() {
     # so lift it for the window and let the reader push into the gap.
     do_blobs
     "$API" PUT /configurations -d '{"read_only": false}' >/dev/null
-    echo "blobs done. read_only is OFF for the gap - push now:" >&2
+    echo "blobs done. read_only is OFF for the gap - push something" >&2
+    echo "that has NEVER been in this Harbor (its blobs must be new):" >&2
     echo "  docker push harbor.meridian.test/meridian/late:1.0" >&2
     printf 'then press Enter to snapshot the database ' >&2
     read -r _ </dev/tty

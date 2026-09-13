@@ -1,0 +1,33 @@
+# Chapter 18. The lab Vault is a container on your laptop, not a pod.
+# This gives the cluster a name for it - vault.vault:8200 - pointing at
+# the laptop's LAN address. Replace the IP with yours (not 127.0.0.1:
+# inside a pod that is the pod). Requires VAULT_BIND=0.0.0.0 make vault-up.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: vault
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vault
+  namespace: vault
+spec:
+  ports:
+    - port: 8200
+      targetPort: 8200
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: vault-1
+  namespace: vault
+  labels:
+    kubernetes.io/service-name: vault
+addressType: IPv4
+ports:
+  - name: ""
+    port: 8200
+endpoints:
+  - addresses:
+      - "<your laptop's LAN address>"

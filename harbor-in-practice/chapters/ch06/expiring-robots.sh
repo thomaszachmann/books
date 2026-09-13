@@ -16,7 +16,7 @@ NOW=$(date +%s)
 
 json="${ROBOTS_JSON:-}"
 if [ -z "$json" ]; then
-  json=$("$ROOT/scripts/harbor-api.sh" GET '/robots?page_size=100')
+  json=$("$ROOT/scripts/list-robots.sh")   # system AND project robots
 fi
 
 printf '%s' "$json" | jq -r --argjson now "$NOW" --argjson d "$DAYS" '

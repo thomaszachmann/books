@@ -8,8 +8,9 @@
 set -euo pipefail
 . "$(dirname "${BASH_SOURCE[0]}")/versions.sh"
 
-if ! multipass info "$VM_NAME" >/dev/null 2>&1; then
-  echo "No VM '$VM_NAME'. Run 'make vm-up' first."
+if ! vm_present; then
+  echo "No VM '$VM_NAME'. Run 'make vm-up' first - or, without Multipass,"
+  echo "set HARBOR_VM_SSH=ubuntu@<the VM's address> (Appendix A)."
   exit 1
 fi
 
@@ -26,7 +27,7 @@ TXT
 read -r -p "Type 'yes' to continue: " reply
 [ "$reply" = "yes" ] || { echo "Nothing done."; exit 0; }
 
-multipass exec "$VM_NAME" -- bash -lc '
+vm_exec bash -lc '
   cd /opt/harbor 2>/dev/null && sudo docker compose down -v || true
   sudo rm -rf /data/* /opt/harbor
   sudo mkdir -p /data

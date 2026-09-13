@@ -9,11 +9,15 @@ line() { printf '\n== %s\n' "$1"; }
 line "tools"
 "$ROOT/scripts/check-prereqs.sh" 2>&1 | sed 's/^/  /'
 
-line "multipass"
-if command -v multipass >/dev/null 2>&1; then
+line "vm"
+if [ -n "${HARBOR_VM_SSH:-}" ]; then
+  echo "  HARBOR_VM_SSH=$HARBOR_VM_SSH"
+  vm_exec 'hostname; docker ps --format "{{.Names}}\t{{.Status}}" 2>/dev/null' \
+    2>&1 | sed 's/^/  /' | head -14
+elif command -v multipass >/dev/null 2>&1; then
   multipass info "$VM_NAME" 2>&1 | sed 's/^/  /' | head -12
 else
-  echo "  multipass not installed"
+  echo "  multipass not installed and HARBOR_VM_SSH not set"
 fi
 
 line "name resolution"

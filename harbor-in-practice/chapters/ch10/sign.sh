@@ -22,7 +22,11 @@ if [ ! -f cosign.key ]; then
   cosign generate-key-pair
 fi
 
-cosign sign --yes --key cosign.key "$REF"
+# cosign 3 writes signatures as Sigstore bundle referrers by default.
+# Kyverno (Chapter 16) and `cosign download signature` look for the
+# older sha256-<digest>.sig tag, so ask for that format explicitly.
+cosign sign --yes --new-bundle-format=false --use-signing-config=false \
+  --key cosign.key "$REF"
 
 cat <<TXT
 

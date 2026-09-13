@@ -3,7 +3,7 @@
 # fix by itself.
 #
 #   ./restore.sh /backup/today
-#   ./restore.sh /backup/today --skip-secret   # to see what that costs
+#   ./restore.sh /backup/today --wrong-key     # to see what losing the key costs
 #   ./restore.sh check
 #
 # The restore refuses a backup that does not pass verify. A backup you
@@ -34,13 +34,17 @@ cmd_check() {
 
 cmd_restore() {
   DIR="${1:?a backup directory}"; shift || true
-  SKIP_SECRET=
-  [ "${1:-}" = --skip-secret ] && SKIP_SECRET=1
+  WRONG_KEY=
+  [ "${1:-}" = --wrong-key ] && WRONG_KEY=1
 
-  if [ -n "$SKIP_SECRET" ]; then
-    echo "restoring WITHOUT $DATA/secret - Chapter 22 step 5." >&2
-    echo "Harbor will start. Replication, proxy cache, LDAP bind and" >&2
-    echo "OIDC credentials will not decrypt." >&2
+  if [ -n "$WRONG_KEY" ]; then
+    # Harbor does not start without the files under /data/secret at
+    # all - they are bind-mounted. The quiet failure needs a key that
+    # is present and different, which is what a fresh install or a
+    # backup script that forgot the file gives you.
+    echo "restoring with a DIFFERENT secret key - Chapter 22 step 5." >&2
+    echo "Harbor will start. Everything encrypted with the old key -" >&2
+    echo "endpoint credentials, LDAP bind, OIDC secrets - will not decrypt." >&2
   elif ! "$HERE/backup.sh" verify "$DIR"; then
     if [ -n "${FORCE_BAD_BACKUP:-}" ]; then
       echo "restoring anyway - FORCE_BAD_BACKUP is set." >&2
@@ -63,14 +67,18 @@ cmd_restore() {
   rm -rf "${DATA:?}/registry"
   tar -C "$DATA" -xf "$DIR/registry.tar"
 
-  if [ -z "$SKIP_SECRET" ]; then
-    echo "secrets"
-    tar -C "$DATA" -xf "$DIR/secret.tar"
+  echo "secrets"
+  tar -C "$DATA" -xf "$DIR/secret.tar"
+  if [ -n "$WRONG_KEY" ]; then
+    cp "$DATA/secret/keys/secretkey" "$DIR/secretkey.original"
+    printf '%s' "$(openssl rand -hex 8)" > "$DATA/secret/keys/secretkey"
+    echo "  secretkey replaced; the original is in $DIR/secretkey.original"
   fi
 
   # Postgres must be up to be restored into, and Harbor must not be.
   echo "database"
-  ( cd "$HARBOR_DIR" && docker compose up -d harbor-db )
+  # The compose service is 'postgresql'; harbor-db is only the container name.
+  ( cd "$HARBOR_DIR" && docker compose up -d postgresql )
   until docker exec harbor-db pg_isready -U postgres >/dev/null 2>&1; do
     sleep 1
   done
@@ -87,6 +95,6 @@ cmd_restore() {
 
 case "${1:-}" in
   check) cmd_check ;;
-  '')    echo "usage: $0 <backup-dir> [--skip-secret] | check" >&2; exit 2 ;;
+  '')    echo "usage: $0 <backup-dir> [--wrong-key] | check" >&2; exit 2 ;;
   *)     cmd_restore "$@" ;;
 esac

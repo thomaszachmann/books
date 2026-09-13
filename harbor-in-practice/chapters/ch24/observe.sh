@@ -28,14 +28,16 @@ fetch() {
 cmd_endpoints() {
   CHART="${CHART_VERSION:-$(. "$HERE/../../scripts/versions.sh"
     echo "${HARBOR_CHART_VERSION#v}")}"
-  R="$(helm template harbor harbor/harbor --version "$CHART" \
-       --set metrics.enabled=true 2>/dev/null)"
-  PORT="$(printf '%s' "$R" | grep -m1 'METRIC_PORT' \
-          | sed 's/.*: *//; s/"//g')"
-  PATH_="$(printf '%s' "$R" | grep -m1 'METRIC_PATH' \
-           | sed 's/.*: *//; s/"//g')"
+  # Render to a file: piping the render into grep -m1 lets grep close
+  # the pipe early, printf dies of SIGPIPE, and under pipefail the
+  # whole script exits 141 with nothing printed.
+  R="$(mktemp)"; trap 'rm -f "$R"' EXIT
+  helm template harbor harbor/harbor --version "$CHART" \
+    --set metrics.enabled=true > "$R" 2>/dev/null
+  PORT="$(grep -m1 'METRIC_PORT' "$R" | sed 's/.*: *//; s/"//g')"
+  PATH_="$(grep -m1 'METRIC_PATH' "$R" | sed 's/.*: *//; s/"//g')"
   SM=disabled
-  printf '%s' "$R" | grep -q 'kind: ServiceMonitor' && SM=enabled
+  grep -q 'kind: ServiceMonitor' "$R" && SM=enabled
 
   printf '%-12s :%s%-9s %s\n' \
     core       "$PORT" "$PATH_" "traffic: http_request_total, duration" \

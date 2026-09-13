@@ -20,7 +20,7 @@ for u in alice bruno cleo dieter; do
     "$(probe "$u" DELETE "/projects/$P/repositories/$REPO/artifacts/$TAG")" \
     "$(probe "$u" POST "/projects/$P/repositories/$REPO/artifacts/$TAG/scan")" \
     "$(probe "$u" GET "/projects/$P/members")" \
-    "$(probe "$u" GET "/projects/$P/logs")"
+    "$(probe "$u" GET "/projects/$P/auditlog-exts")"
 done
 
 cat <<'TXT'

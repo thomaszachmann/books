@@ -26,7 +26,10 @@ list_migrations() {
     curl -fsSL -H "Authorization: Bearer $GITHUB_TOKEN" "$URL"
   else
     curl -fsSL "$URL"
-  fi | jq -r '.[].name' | sort
+  fi 2>/dev/null | jq -r '.[].name' | sort
+  # A 404 here means the tag does not exist (yet) - say so instead of
+  # leaving curl's exit code as the only clue.
+  [ "${PIPESTATUS[0]}" = 0 ] || echo "no such tag: $TAG - nothing to compare against" >&2
 }
 
 cmd_migrations() {
@@ -45,8 +48,11 @@ cmd_schema() {
     || docker exec "$DB_CONTAINER" psql -U "$DB_USER" "$DB_NAME" -tA -F' ' \
        -c 'SELECT version, dirty FROM schema_migrations')"
   VER="${ROW%% *}"; DIRTY="${ROW##* }"
+  case "$DIRTY" in t) DIRTY=true ;; f) DIRTY=false ;; esac
   printf '%-16s %s\n' 'schema version' "$VER"
   printf '%-16s %s\n' 'dirty' "$DIRTY"
+  BY="$(list_migrations 2>/dev/null | grep -m1 "^$(printf '%04d' "$VER")_" || true)"
+  [ -n "$BY" ] && printf '%-16s %s\n' 'introduced by' "$BY"
   if [ "$DIRTY" = t ] || [ "$DIRTY" = true ]; then
     echo
     echo "A migration did not finish. Read the core log for the original"

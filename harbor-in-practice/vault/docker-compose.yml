@@ -12,7 +12,10 @@ services:
     container_name: harbor-lab-vault
     cap_add: [IPC_LOCK]
     ports:
-      - "127.0.0.1:${VAULT_PORT:-8200}:8200"
+      # 127.0.0.1 for the VM path (Chapter 18, Vault Agent on the VM
+      # reaches it through the laptop). The cluster path needs pods to
+      # reach Vault, so bind to the LAN: VAULT_BIND=0.0.0.0 make vault-up
+      - "${VAULT_BIND:-127.0.0.1}:${VAULT_PORT:-8200}:8200"
     environment:
       VAULT_DEV_ROOT_TOKEN_ID: root
       VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"

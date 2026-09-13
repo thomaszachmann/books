@@ -94,7 +94,8 @@ AM="$(cfg auth_mode)"
 [ -n "$AM" ] && pass 2.1 "auth_mode is $AM - frozen once users exist" \
   || skip 2.1 "auth_mode is the final answer" "no API access"
 if [ -n "$HAVE_API" ]; then
-  if HARBOR_PASS=Harbor12345 "$API" GET /users/current >/dev/null 2>&1; then
+  # harbor-api.sh exits 0 on a 401, so ask for the status code.
+  if [ "$(HARBOR_PASS=Harbor12345 "$API" GET /users/current -o /dev/null -w '%{http_code}' 2>/dev/null)" = 200 ]; then
     fail 2.2 "the admin password is still Harbor12345"
   else
     pass 2.2 "the default admin password does not work"
@@ -109,7 +110,7 @@ PC="$(cfg project_creation_restriction)"
   || fail 2.4 "project creation is $PC"; } \
   || skip 2.4 "project creation restriction" "no API access"
 if [ -n "$HAVE_API" ]; then
-  NEVER="$(api '/robots?page_size=100' | jq '[.[] | select(.expires_at == -1)] | length')"
+  NEVER="$("$ROOT/scripts/list-robots.sh" 2>/dev/null | jq '[.[] | select(.expires_at == -1)] | length')"
   [ "${NEVER:-0}" = 0 ] && pass 2.5 "every robot expires" \
     || fail 2.5 "$NEVER robot account(s) never expire"
 else skip 2.5 "robot expiry" "no API access"; fi
@@ -120,7 +121,7 @@ manual rehearse 2.8 "Someone else can add and remove a project member"
 # --- 3 blocking -------------------------------------------------------
 section blocking "3 · What blocks a deployment"
 if [ -n "$HAVE_API" ]; then
-  DEF="$(api /scanners | jq -r '.[] | select(.is_default) | .name // empty')"
+  DEF="$(api /scanners | jq -r '.[] | select(.is_default == true) | .name')"
   [ -n "$DEF" ] && pass 3.1 "default scanner: $DEF" || fail 3.1 "no default scanner"
   PROJ="$(api '/projects?page_size=100')"
   NOSCAN="$(printf '%s' "$PROJ" | jq '[.[] | select(.metadata.auto_scan != "true")] | length')"

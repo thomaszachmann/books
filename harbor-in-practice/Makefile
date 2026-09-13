@@ -249,7 +249,7 @@ vm-down:
 
 kind-up:
 	@kind create cluster --config k8s/kind/kind-cluster.yaml
-	@echo "Now install an ingress controller. Chapter 15, step 3."
+	@echo "Now install an ingress controller. Chapter 15, step 2."
 
 kind-down:
 	@kind delete cluster --name harbor-lab
