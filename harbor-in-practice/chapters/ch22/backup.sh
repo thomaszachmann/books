@@ -89,7 +89,20 @@ cmd_run() {
     BLOB_END="$(now)"
   }
 
-  if [ "$ORDER" = db-first ]; then do_db; do_blobs; else do_blobs; do_db; fi
+  if [ "$ORDER" = db-first ]; then
+    do_db; do_blobs
+  else
+    # The wrong order only bites when something lands between the two
+    # snapshots. Read-only would stop that, which is why step 1 set it -
+    # so lift it for the window and let the reader push into the gap.
+    do_blobs
+    "$API" PUT /configurations -d '{"read_only": false}' >/dev/null
+    echo "blobs done. read_only is OFF for the gap - push now:" >&2
+    echo "  docker push harbor.meridian.test/meridian/late:1.0" >&2
+    printf 'then press Enter to snapshot the database ' >&2
+    read -r _ </dev/tty
+    do_db
+  fi
 
   echo "secrets    $DATA/secret"
   tar -C "$DATA" -cf "$DIR/secret.tar" secret
