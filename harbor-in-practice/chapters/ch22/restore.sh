@@ -62,6 +62,12 @@ cmd_restore() {
   for f in harbor.yml docker-compose.yml; do
     [ -f "$DIR/$f" ] && cp "$DIR/$f" "$HARBOR_DIR/"
   done
+  # harbor.yml is the source; everything under common/config is
+  # rendered from it. Render again so that nginx, core and the compose
+  # file agree - a config from before a change (metrics, say) and a
+  # rendered tree from after it leaves nginx looping on a missing
+  # upstream. Same flags as the install: a plain prepare drops Trivy.
+  ( cd "$HARBOR_DIR" && ./prepare ${PREPARE_FLAGS:---with-trivy} >/dev/null )
 
   echo "blobs"
   rm -rf "${DATA:?}/registry"
