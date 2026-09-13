@@ -35,7 +35,11 @@ echo "robots"
 echo "projects"
 h GET '/projects?page_size=100' | jq -r '.[] | select(.name != "library") | .name' \
 | while read -r p; do
-  # a project deletes only when empty: repositories first, then webhooks
+  # a project deletes only when empty: immutability rules first (an
+  # immutable tag blocks its repository's deletion), then repositories,
+  # then webhooks
+  h GET "/projects/$p/immutabletagrules" | ids | while read -r i; do
+    h DELETE "/projects/$p/immutabletagrules/$i" >/dev/null; done
   h GET "/projects/$p/repositories?page_size=100" | jq -r '.[].name' \
   | while read -r r; do
       enc="${r#"$p/"}"; enc="${enc//\//%252F}"
