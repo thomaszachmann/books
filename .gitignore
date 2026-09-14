@@ -39,3 +39,8 @@ Thumbs.db
 **/*.hcl.bak
 **/backups/
 **/cluster/config/
+# Band 1, Kapitel 22 - Seal-Tokens, KMS-Key-ID und der SoftHSM-Tokenspeicher
+# sind Laborzustand.
+**/.unseal-token-hsm
+**/.kms-key-id
+**/hsm/tokens/

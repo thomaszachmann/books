@@ -1,0 +1,33 @@
+# Chapter 22 - AWS KMS auto-unseal without an AWS account.
+#
+# moto answers the KMS API on a laptop. LocalStack used to be the obvious
+# choice; since 2026 its image refuses to start without a licence token,
+# which is the wrong dependency for a book. moto is Apache-licensed and
+# does everything the seal needs: CreateKey, DescribeKey, GenerateDataKey,
+# Decrypt.
+#
+# One property of moto matters for the lab: state lives in memory. Stop
+# the container and every key is gone - which is precisely what a deleted
+# CMK looks like to Vault. Use `pause` to simulate an outage, `stop` to
+# simulate a deletion. The chapter uses both, deliberately.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.awskms.yml up -d moto
+
+services:
+  moto:
+    image: docker.io/motoserver/moto:5.2.3
+    container_name: moto
+    ports:
+      - "127.0.0.1:5000:5000"
+    restart: unless-stopped
+
+  # The AWS CLI, with the throwaway credentials moto accepts. Used as
+  #   docker compose -f docker-compose.yml -f docker-compose.awskms.yml run --rm aws kms list-keys
+  aws:
+    image: docker.io/amazon/aws-cli:2.36.44
+    profiles: ["tools"]
+    environment:
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_DEFAULT_REGION: eu-central-1
+      AWS_ENDPOINT_URL: http://moto:5000

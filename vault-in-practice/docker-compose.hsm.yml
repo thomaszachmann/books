@@ -1,0 +1,24 @@
+# Chapter 22 - the unsealer that needs no human: OpenBao behind a PKCS#11
+# seal, with SoftHSM standing in for the hardware.
+#
+# Separate file, so the rest of the lab is untouched:
+#   docker compose -f docker-compose.yml -f docker-compose.hsm.yml up -d openbao-hsm
+#
+# The token directory is the HSM's state. Lose it and the unsealer's
+# root key is gone - exactly as if you had lost the hardware.
+
+services:
+  openbao-hsm:
+    build: ./chapters/ch22/hsm
+    image: localhost/openbao-softhsm:2.6.2
+    container_name: openbao-hsm
+    ports:
+      - "127.0.0.1:8400:8200"
+    cap_add:
+      - IPC_LOCK
+    volumes:
+      - ./chapters/ch22/hsm/config:/openbao/config:ro,z
+      - ./chapters/ch22/hsm/tokens:/var/lib/softhsm/tokens:z
+      - ./chapters/ch22/hsm/data:/openbao/data:z
+    command: bao server -config=/openbao/config/openbao-hsm.hcl
+    restart: unless-stopped

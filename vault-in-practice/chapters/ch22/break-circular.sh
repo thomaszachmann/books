@@ -11,7 +11,7 @@ cp config/vault.hcl config/vault-transit.hcl.bak
 python3 - <<'PY'
 import pathlib
 p = pathlib.Path("config/vault.hcl"); s = p.read_text()
-p.write_text(s.replace("http://host.docker.internal:8300",
+p.write_text(s.replace("http://openbao:8200",
                        "https://127.0.0.1:8200"))
 PY
 

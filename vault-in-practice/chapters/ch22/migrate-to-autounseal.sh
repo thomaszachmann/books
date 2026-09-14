@@ -19,7 +19,7 @@ grep -q 'seal "transit"' config/vault.hcl || cat >> config/vault.hcl <<CFG
 # or in VAULT_SEAL_TRANSIT_TOKEN from the platform - not in a file you
 # keep in Git.
 seal "transit" {
-  address         = "http://host.docker.internal:8300"
+  address         = "http://openbao:8200"
   token           = "$TOKEN"
   key_name        = "vault-unseal"
   mount_path      = "transit/"
