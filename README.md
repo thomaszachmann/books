@@ -36,6 +36,12 @@ its labs in its own text and has no directory here.
 A German edition of it is free:
 [thomaszachmann.de/buch](https://thomaszachmann.de/buch).
 
+**[Field Notes](https://github.com/thomaszachmann/field-notes)** · short,
+free guides from a homelab, in German and English, with every command and
+every error that happened along the way. So far: *OpenBao on Kubernetes*,
+*Dynamic Database Credentials with OpenBao* and *OpenBao on a VM* — the
+practical continuation of Chapters 16–18 of *Vault in Practice*.
+
 ---
 
 ## Vault in Practice
