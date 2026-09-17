@@ -40,8 +40,8 @@ A German edition of it is free:
 free guides from a homelab, in German and English, with every command and
 every error that happened along the way. The first series, *OpenBao Field Notes*: *OpenBao on Kubernetes*,
 *Dynamic Database Credentials*, *OpenBao on a VM*, *Kubernetes Secrets with
-ESO*, *Internal PKI with OpenBao* and *Raft Snapshots from the Cluster* —
-the practical continuation of
+ESO*, *Internal PKI with OpenBao*, *Raft Snapshots from the Cluster* and
+*Keycloak and OpenBao* — the practical continuation of
 Chapters 16–18 of *Vault in Practice*.
 
 ---
