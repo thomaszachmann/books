@@ -13,8 +13,8 @@ from there.
 | *Keycloak in Practice* | [`keycloak-in-practice/`](keycloak-in-practice/) | in progress | — |
 | *Vault in Production* | [`vault-in-production/`](vault-in-production/) | early draft | — |
 | *Kubernetes on-premises* | [`kubernetes-on-premises/`](kubernetes-on-premises/) | early draft | — |
-| *Sichere Lieferketten zum Anfassen* (German) | [`supply-chain-training/`](supply-chain-training/) | early draft | — |
-| *OpenBao zum Anfassen* (German) | [`openbao-training/`](openbao-training/) | early draft | — |
+| *Sichere Lieferketten zum Anfassen* (German) | [`supply-chain-training/`](supply-chain-training/) | early draft | [free PDF / EPUB](https://github.com/thomaszachmann/books/releases/tag/supply-chain-training-2026.10) |
+| *OpenBao zum Anfassen* (German) | [`openbao-training/`](openbao-training/) | early draft | [free PDF / EPUB](https://github.com/thomaszachmann/books/releases/tag/openbao-training-2026.10) |
 
 The *Status* column describes how far each **manuscript** has come, not the
 code — the labs in a directory are usually complete well before the text
@@ -114,6 +114,9 @@ Then start with Chapter 0. The book works in `~/seclab`; the directory
 mirrors it chapter by chapter. See
 [`supply-chain-training/README.md`](supply-chain-training/README.md).
 
+The book itself, free as PDF and EPUB:
+**[Release supply-chain-training-2026.10](https://github.com/thomaszachmann/books/releases/tag/supply-chain-training-2026.10)**
+
 ---
 
 ## OpenBao zum Anfassen
@@ -139,12 +142,19 @@ Chapter 18, and the *OpenBao Field Notes* cover single topics; this book
 works through OpenBao alone, from the dev server to the operated cluster.
 See [`openbao-training/README.md`](openbao-training/README.md).
 
+The book itself, free as PDF and EPUB:
+**[Release openbao-training-2026.10](https://github.com/thomaszachmann/books/releases/tag/openbao-training-2026.10)**
+
 ---
 
 ## Licence
 
 Code in this repository is MIT licensed — see [`LICENSE`](LICENSE). The
-text of the books is not covered by that licence and is not included here.
+text of the books is not covered by that licence. The German training books
+*Sichere Lieferketten zum Anfassen* and *OpenBao zum Anfassen* are free to
+download from the [releases](https://github.com/thomaszachmann/books/releases)
+under [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/);
+the other books are not included here.
 
 HashiCorp and Vault are trademarks of HashiCorp, Inc. OpenBao, Harbor and
 Kubernetes are projects and trademarks of the Linux Foundation. Docker is a

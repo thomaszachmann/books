@@ -10,7 +10,7 @@ Raft storage on kind, and end with eight disaster drills.
 > manuscript. The dev-mode days (1–6) were tested with `bao` 2.7.1. The
 > Kubernetes days (7–14) were rendered with `helm template` and checked
 > against a local Raft rebuild with `bao` 2.7.1 — they have **not** been
-> run end-to-end in a cluster. Store page: —
+> run end-to-end in a cluster. Book: free PDF and EPUB at [Release openbao-training-2026.10](https://github.com/thomaszachmann/books/releases/tag/openbao-training-2026.10) (CC BY-NC-ND 4.0)
 
 > **Auf Deutsch:** Dieses Verzeichnis enthält den Begleitcode zum Buch
 > *OpenBao zum Anfassen* — ein Trainingslager zum Mitmachen mit 15 Tagen

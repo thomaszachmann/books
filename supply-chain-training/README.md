@@ -6,7 +6,7 @@ supply-chain security: twelve chapters (0–11) and three appendices.
 
 > **Status: early draft.** The files below are extracted verbatim from the
 > manuscript. They have been syntax-checked, but the labs have **not yet
-> been run end-to-end in a fresh lab**. Store page: —
+> been run end-to-end in a fresh lab**. Book: free PDF and EPUB at [Release supply-chain-training-2026.10](https://github.com/thomaszachmann/books/releases/tag/supply-chain-training-2026.10) (CC BY-NC-ND 4.0)
 
 > **Auf Deutsch:** Dieses Verzeichnis enthält den Begleitcode zum Buch
 > *Sichere Lieferketten zum Anfassen* — ein Trainingslager zum Mitmachen
