@@ -1,0 +1,20 @@
+services:
+  dtrack-apiserver:
+    image: dependencytrack/apiserver:latest
+    mem_limit: 6g
+    ports:
+      - "8080:8080"
+    volumes:
+      - dtrack-data:/data
+    restart: unless-stopped
+  dtrack-frontend:
+    image: dependencytrack/frontend:latest
+    depends_on:
+      - dtrack-apiserver
+    environment:
+      API_BASE_URL: "http://localhost:8080"
+    ports:
+      - "8088:8080"
+    restart: unless-stopped
+volumes:
+  dtrack-data: {}

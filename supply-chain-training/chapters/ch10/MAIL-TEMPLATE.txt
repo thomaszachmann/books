@@ -1,0 +1,18 @@
+Betreff: [Plattform] Neue Regel "<Regelname>" - Warnung ab <Datum>,
+         Pflicht ab <Stichtag>
+
+Hallo zusammen,
+
+was aendert sich? Ab <Stichtag> lehnt der Cluster Pods ohne <Bedingung> ab.
+Warum? <ein Satz zum Risiko, ohne Fachjargon>.
+Was muesst ihr tun? <konkreter Schritt, z. B. Template auf v2.3 heben>.
+Wie pruefe ich das? <Befehl oder Link zum Policy-Report eures Namespaces>.
+Was, wenn es nicht geht? Ausnahme per Merge Request auf exceptions.yaml
+bis <Datum>, mit Begruendung, Kompensation und Frist (max. 90 Tage).
+Hilfe: Sprechstunde donnerstags 10-11 Uhr, Kanal #plattform-security,
+euer Security-Champion.
+
+Zeitplan: Beobachten ab <Datum>, Warnen ab <Datum>, Erzwingen ab <Stichtag>.
+
+Danke fuers Mitziehen!
+Euer Plattform-Team

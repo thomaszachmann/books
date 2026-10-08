@@ -1,0 +1,28 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-run-as-non-root
+  annotations:
+    policies.kyverno.io/description: >-
+      Pods muessen runAsNonRoot=true setzen. Stichtag Enforce: siehe Changelog.
+spec:
+  background: true
+  emitWarning: false
+  rules:
+    - name: check-run-as-non-root
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - demo
+      validate:
+        failureAction: Audit
+        message: >-
+          Bitte spec.securityContext.runAsNonRoot=true setzen.
+          Beispiel: Template v2.3, Sprechstunde donnerstags 10 Uhr.
+        pattern:
+          spec:
+            securityContext:
+              runAsNonRoot: true

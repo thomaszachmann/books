@@ -1,0 +1,15 @@
+# Chapter 8
+
+**Kapitel 8: Automatisierte Prüfwerkzeuge, Befundtriage und Schwellenwerte (SAST, SCA, Image- und IaC-Scans mit Trivy, Checkov)**
+
+Starts from Chapter 0. Works on a copy of the demo app in `~/seclab/kap08/demo-app`.
+
+| File | Book step | Goes to |
+|---|---|---|
+| `demo-app/app.py` | Schritt 2 | `~/seclab/kap08/demo-app/` — **deliberately vulnerable** `/ping` route |
+| `terraform/main.tf` | Schritt 7 | `~/seclab/kap08/terraform/` |
+| `demo-app/.trivyignore` | Schritt 9 | `~/seclab/kap08/demo-app/` |
+| `demo-app/trivyignore.yaml` | Schritt 9 | `~/seclab/kap08/demo-app/` |
+| `gitlab-ci-security.yml` | Schritt 12 | `security` stage for `.gitlab-ci.yml` |
+
+Schritt 3 fixes the injection by passing `["ping", "-c", "1", host]` without `shell=True`; the file here is the state *before* the fix, which is what Semgrep is meant to find.

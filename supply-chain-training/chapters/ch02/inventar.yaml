@@ -1,0 +1,19 @@
+pipelines:
+  - name: demo-app-legacy
+    owner: team-demo
+    definition: legacy/build-legacy.sh
+    runner:
+      host: build01
+      langlebig: true
+      privileged: true
+    bezugsquellen:
+      - docker.io/library/python:latest
+      - pypi.org
+      - deb.debian.org
+      - bootstrap.pypa.io
+      - tools.example.com
+    secrets:
+      - name: REGISTRY_PASSWORD
+        ablage: klartext-im-skript
+      - name: API_TOKEN
+        ablage: dockerfile-env

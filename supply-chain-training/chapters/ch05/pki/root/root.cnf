@@ -1,0 +1,20 @@
+[ req ]
+distinguished_name = dn
+prompt             = no
+
+[ dn ]
+C  = DE
+O  = Seclab Lab
+CN = Seclab Offline Root CA
+
+[ v3_root ]
+basicConstraints     = critical, CA:true, pathlen:1
+keyUsage             = critical, keyCertSign, cRLSign
+subjectKeyIdentifier = hash
+
+[ v3_intermediate ]
+basicConstraints       = critical, CA:true, pathlen:0
+keyUsage               = critical, keyCertSign, cRLSign
+extendedKeyUsage       = codeSigning
+subjectKeyIdentifier   = hash
+authorityKeyIdentifier = keyid:always

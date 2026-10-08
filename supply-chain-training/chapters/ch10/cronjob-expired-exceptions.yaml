@@ -1,0 +1,62 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: exception-checker
+  namespace: policy-exceptions
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: read-policyexceptions
+  namespace: policy-exceptions
+rules:
+  - apiGroups: ["kyverno.io"]
+    resources: ["policyexceptions"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: exception-checker
+  namespace: policy-exceptions
+subjects:
+  - kind: ServiceAccount
+    name: exception-checker
+    namespace: policy-exceptions
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: read-policyexceptions
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: find-expired-exceptions
+  namespace: policy-exceptions
+spec:
+  schedule: "0 7 * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        spec:
+          serviceAccountName: exception-checker
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+          containers:
+            - name: check
+              image: alpine/k8s:1.31.13   # ueber Nexus-Spiegel beziehen
+              command: ["/bin/bash", "/scripts/find-expired-exceptions.sh"]
+              env:
+                - name: HOME          # kubectl-Cache in beschreibbares Verzeichnis
+                  value: /tmp
+              volumeMounts:
+                - name: scripts
+                  mountPath: /scripts
+          volumes:
+            - name: scripts
+              configMap:
+                name: find-expired-exceptions

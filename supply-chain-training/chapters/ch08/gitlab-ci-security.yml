@@ -1,0 +1,67 @@
+stages: [build, security, publish]
+
+variables:
+  MIRROR: "nexus.seclab.local:8082"          # Docker-Proxy aus Kapitel 3
+  IMAGE_REF: "reg-build:5000/demo-app:${CI_COMMIT_SHORT_SHA}"
+  TRIVY_NO_PROGRESS: "true"
+  TRIVY_CACHE_DIR: ".trivycache"
+  TRIVY_DB_REPOSITORY: "reg-build:5000/aquasecurity/trivy-db:2"
+
+.reports: &reports
+  artifacts:
+    when: always
+    expire_in: 30 days
+    paths: [reports/]
+
+sast-semgrep:
+  stage: security
+  image: ${MIRROR}/semgrep/semgrep:1.90.0    # Beispielversion, per Digest pinnen
+  <<: *reports
+  script:
+    - mkdir -p reports
+    - semgrep scan --config semgrep-rules/ --metrics=off
+        --json --output reports/semgrep.json .
+    - semgrep scan --config semgrep-rules/ --metrics=off --error
+        --severity ERROR --sarif --output reports/semgrep.sarif .
+
+sca-trivy-fs:
+  stage: security
+  image: { name: "${MIRROR}/aquasec/trivy:0.58.1", entrypoint: [""] }
+  <<: *reports
+  script:
+    - mkdir -p reports
+    - trivy fs --scanners vuln --format json -o reports/trivy-fs.json .
+    - trivy fs --scanners vuln --skip-db-update --ignorefile trivyignore.yaml
+        --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 .
+
+image-trivy:
+  stage: security
+  image: { name: "${MIRROR}/aquasec/trivy:0.58.1", entrypoint: [""] }
+  needs: [build-image]
+  <<: *reports
+  script:
+    - mkdir -p reports
+    - trivy image --format json -o reports/trivy-image.json "$IMAGE_REF"
+    - trivy convert --format sarif -o reports/trivy-image.sarif
+        reports/trivy-image.json
+    - trivy image --skip-db-update --ignorefile trivyignore.yaml
+        --severity CRITICAL --ignore-unfixed --exit-code 1 "$IMAGE_REF"
+
+iac-trivy-config:
+  stage: security
+  image: { name: "${MIRROR}/aquasec/trivy:0.58.1", entrypoint: [""] }
+  <<: *reports
+  script:
+    - mkdir -p reports
+    - trivy config --format sarif -o reports/trivy-config.sarif .
+    - trivy config --ignorefile trivyignore.yaml
+        --severity HIGH,CRITICAL --exit-code 1 .
+
+iac-checkov:
+  stage: security
+  image: { name: "${MIRROR}/bridgecrew/checkov:3", entrypoint: [""] }
+  <<: *reports
+  script:
+    - mkdir -p reports
+    - checkov -d k8s/ --baseline k8s/.checkov.baseline --quiet
+        -o cli -o sarif --output-file-path console,reports/

@@ -1,0 +1,11 @@
+Types: deb
+URIs: http://nexus:8081/repository/debian-bookworm/
+Suites: bookworm
+Components: main
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+
+Types: deb
+URIs: http://nexus:8081/repository/debian-security/
+Suites: bookworm-security
+Components: main
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg

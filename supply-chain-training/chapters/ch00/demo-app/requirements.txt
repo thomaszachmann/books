@@ -1,0 +1,5 @@
+flask==3.0.3
+gunicorn==22.0.0
+# Absichtlich veraltet: bekannte Schwachstellen für die Scan-Übungen
+# in Kapitel 7 und 8. Die App benutzt requests nicht.
+requests==2.25.0

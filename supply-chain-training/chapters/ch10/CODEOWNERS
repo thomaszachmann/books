@@ -1,0 +1,4 @@
+# Ausnahmen genehmigt nur das Security-Team
+/exceptions.yaml     @seclab/security
+/.trivyignore.yaml   @seclab/security
+/policies/           @seclab/security

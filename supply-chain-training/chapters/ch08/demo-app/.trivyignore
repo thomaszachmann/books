@@ -1,0 +1,3 @@
+# Risiko akzeptiert: netrc-Credential-Leak, App nutzt keine .netrc.
+# Owner: team-demo, Ticket: SEC-142, Review durch Security am 2026-10-08
+CVE-2024-47081 exp:2026-12-31

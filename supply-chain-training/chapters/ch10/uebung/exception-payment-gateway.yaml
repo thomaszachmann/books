@@ -1,0 +1,23 @@
+apiVersion: kyverno.io/v2
+kind: PolicyException
+metadata:
+  name: exc-2026-003-payment-gateway
+  namespace: policy-exceptions
+  labels:
+    seclab.example/expires: "2027-01-06"
+  annotations:
+    seclab.example/owner: "team-payments@example.org"
+    seclab.example/ticket: "SEC-145"
+    seclab.example/register-id: "EXC-2026-003"
+spec:
+  exceptions:
+    - policyName: require-run-as-non-root
+      ruleNames:
+        - check-run-as-non-root
+        - autogen-check-run-as-non-root
+  match:
+    any:
+      - resources:
+          kinds: ["Pod", "Deployment", "ReplicaSet"]
+          namespaces: ["payments"]
+          names: ["payment-gateway*"]

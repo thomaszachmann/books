@@ -1,0 +1,23 @@
+sbom-gate:
+  stage: test
+  image: reg-build:5000/tools/sbom:1.0.0
+  needs: ["sbom"]
+  script:
+    - TOKEN=$(jq -r .token dt-upload.json)
+    - |
+      for i in $(seq 1 30); do
+        curl -s -H "X-Api-Key: ${DT_API_KEY}" \
+          "${DT_URL}/api/v1/bom/token/${TOKEN}" | grep -q '"processing":false' && break
+        sleep 10
+      done
+    - Q="name=${CI_PROJECT_NAME}&version=${CI_COMMIT_REF_NAME}"
+    - 'H="X-Api-Key: ${DT_API_KEY}"'
+    - >
+      UUID=$(curl -s -H "$H" "${DT_URL}/api/v1/project/lookup?${Q}"
+      | jq -r .uuid)
+    - >
+      FAILS=$(curl -s -H "$H" "${DT_URL}/api/v1/violation/project/${UUID}"
+      | jq '[.[] | select(.policyCondition.policy.violationState=="FAIL")]
+      | length')
+    - echo "FAIL-Verstoesse: ${FAILS}"
+    - test "${FAILS}" -eq 0

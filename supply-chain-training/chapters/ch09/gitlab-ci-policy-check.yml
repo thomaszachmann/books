@@ -1,0 +1,9 @@
+policy-check:
+  stage: security
+  image: ${MIRROR}/seclab/policy-tools:1.0   # eigenes Image mit kyverno, conftest, opa
+  script:
+    - opa fmt --list --fail policy/
+    - opa test policy/
+    - conftest test k8s/
+    - kyverno test tests/
+    - kyverno apply policies/ --resource k8s/deployment.yaml

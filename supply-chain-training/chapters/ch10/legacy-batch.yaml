@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: legacy-batch
+  namespace: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: legacy-batch
+  template:
+    metadata:
+      labels:
+        app: legacy-batch
+    spec:
+      containers:
+        - name: app
+          image: reg-build:5000/demo-app:1.0.0

@@ -1,0 +1,198 @@
+# .gitlab-ci.yml - demo-app: die ganze Kette (Kapitel 11)
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+stages: [verify, test, build, scan, sbom, handover]
+
+variables:
+  MIRROR: "nexus:8082"                      # einziger Bezugsweg (Kap 3)
+  PIP_INDEX_URL: "http://nexus:8081/repository/pypi-proxy/simple"
+  PIP_TRUSTED_HOST: "nexus"
+  IMAGE: "reg-build:5000/demo-app"
+  APP_VERSION: "1.1.0"
+  VAULT_ADDR: "http://vault:8200"
+  DT_URL: "http://dtrack-apiserver:8080"
+  TRIVY_DB_REPOSITORY: "nexus:8082/aquasec/trivy-db:2"
+  TRIVY_CACHE_DIR: ".trivycache"
+  TRIVY_NO_PROGRESS: "true"
+
+# ---------------- verify: Bezugsweg, Version, Ausnahmen ----------------
+verify:bezugsweg:
+  stage: verify
+  image: nexus:8082/alpine/k8s:1.31.13
+  script:
+    - |
+      bad=$(grep -E '^FROM ' Dockerfile \
+        | grep -vE '^FROM \$\{BASE_REGISTRY\}/' || true)
+      if [ -n "$bad" ]; then
+        echo "FEHLER: Basis-Image am Spiegel vorbei: $bad"; exit 1
+      fi
+      grep -qE '^ARG BASE_REGISTRY=nexus:8082$' Dockerfile \
+        || { echo "FEHLER: BASE_REGISTRY muss nexus:8082 sein"; exit 1; }
+    - |
+      if [ -n "${CI_COMMIT_TAG:-}" ] && [ "$CI_COMMIT_TAG" != "v$APP_VERSION" ]
+      then
+        echo "FEHLER: Tag $CI_COMMIT_TAG passt nicht zu $APP_VERSION"; exit 1
+      fi
+
+verify:ausnahmen:
+  stage: verify
+  image: nexus:8082/alpine/k8s:1.31.13
+  script:
+    - ci/check-exceptions.sh exceptions.yaml
+    - ci/check-trivyignore.sh .trivyignore.yaml exceptions.yaml
+
+# ---------------- test: SAST, SCA, IaC, Secrets (Kap 8) ----------------
+test:sast:
+  stage: test
+  image: nexus:8082/semgrep/semgrep:1.180.0
+  script:
+    - semgrep scan --config .semgrep/ --error --metrics=off .
+
+test:sca:
+  stage: test
+  image:
+    name: nexus:8082/aquasec/trivy:0.74.0
+    entrypoint: [""]
+  script:
+    - trivy fs --insecure --scanners vuln --severity MEDIUM,HIGH,CRITICAL
+        --ignorefile .trivyignore.yaml --exit-code 1 .
+  cache:
+    key: trivy-db
+    paths: [.trivycache/]
+
+test:iac:
+  stage: test
+  image:
+    name: nexus:8082/bridgecrew/checkov:3.3.26
+    entrypoint: [""]
+  script:
+    - checkov -d k8s --framework kubernetes --config-file .checkov.yaml
+        --compact
+
+test:secrets:
+  stage: test
+  image:
+    name: nexus:8082/zricethezav/gitleaks:v8.30.1
+    entrypoint: [""]
+  variables:
+    GIT_DEPTH: "0"
+  script:
+    - git config --global --add safe.directory "$CI_PROJECT_DIR"
+    - gitleaks git --redact --no-banner .
+
+# ---------------- build: gehaertet, nur ueber den Spiegel (Kap 2) -------
+build:image:
+  stage: build
+  image: nexus:8082/buildah/stable:v1.43
+  variables:
+    STORAGE_DRIVER: vfs
+    BUILDAH_ISOLATION: chroot
+  script:
+    - TAG="${CI_COMMIT_TAG#v}"; TAG="${TAG:-$CI_COMMIT_SHORT_SHA}"
+    - buildah build --tls-verify=false
+        --build-arg BASE_REGISTRY="$MIRROR"
+        --build-arg PIP_INDEX_URL="$PIP_INDEX_URL"
+        --build-arg PIP_TRUSTED_HOST="$PIP_TRUSTED_HOST"
+        --label org.opencontainers.image.version="$APP_VERSION"
+        --label org.opencontainers.image.revision="$CI_COMMIT_SHA"
+        --label org.opencontainers.image.source="$CI_PROJECT_URL"
+        -t "$IMAGE:$TAG" .
+    - buildah push --tls-verify=false --digestfile digest.txt "$IMAGE:$TAG"
+    - echo "IMAGE_TAG=$TAG" > build.env
+    - echo "IMAGE_DIGEST=$(cat digest.txt)" >> build.env
+    - cat build.env
+  artifacts:
+    reports:
+      dotenv: build.env
+
+# ---------------- scan: Image mit Schwellenwert (Kap 8) -----------------
+scan:image:
+  stage: scan
+  needs: [build:image]
+  image:
+    name: nexus:8082/aquasec/trivy:0.74.0
+    entrypoint: [""]
+  script:
+    - REF="$IMAGE@$IMAGE_DIGEST"
+    - trivy image --insecure --scanners vuln --severity HIGH,CRITICAL
+        --ignore-unfixed --ignorefile .trivyignore.yaml --exit-code 1
+        --format json --output trivy-image.json "$REF" || rc=$?
+    - trivy convert --format table trivy-image.json
+    - exit "${rc:-0}"
+  cache:
+    key: trivy-db
+    paths: [.trivycache/]
+  artifacts:
+    when: always
+    paths: [trivy-image.json]
+    expire_in: 90 days
+
+# ---------------- sbom: erzeugen und hochladen (Kap 7, Kap 6) -----------
+sbom:generate:
+  stage: sbom
+  needs: [build:image]
+  image:
+    name: nexus:8082/anchore/syft:v1.54.1-debug
+    entrypoint: [""]
+  variables:
+    SYFT_REGISTRY_INSECURE_USE_HTTP: "true"
+  script:
+    - syft scan "registry:$IMAGE@$IMAGE_DIGEST"
+        -o cyclonedx-json=sbom.cdx.json
+  artifacts:
+    paths: [sbom.cdx.json]
+    expire_in: 90 days
+
+sbom:upload:
+  stage: sbom
+  needs: [build:image, sbom:generate]
+  image: nexus:8082/alpine/k8s:1.31.13
+  id_tokens:
+    VAULT_ID_TOKEN:
+      aud: http://vault:8200
+  rules:
+    - if: $CI_COMMIT_REF_PROTECTED == "true"
+  script:
+    - |
+      VAULT_TOKEN=$(curl -sf -X POST "$VAULT_ADDR/v1/auth/jwt/login" \
+        -d "{\"role\":\"demo-app\",\"jwt\":\"$VAULT_ID_TOKEN\"}" \
+        | jq -r .auth.client_token)
+      [ -n "$VAULT_TOKEN" ] && [ "$VAULT_TOKEN" != "null" ] \
+        || { echo "FEHLER: Vault-Login fehlgeschlagen"; exit 1; }
+      DT_API_KEY=$(curl -sf -H "X-Vault-Token: $VAULT_TOKEN" \
+        "$VAULT_ADDR/v1/secret/data/demo-app/dtrack" \
+        | jq -r .data.data.api_key)
+      curl -sf -X POST "$DT_URL/api/v1/bom" -H "X-Api-Key: $DT_API_KEY" \
+        -F "autoCreate=true" -F "projectName=demo-app" \
+        -F "projectVersion=$IMAGE_TAG" -F "bom=@sbom.cdx.json"
+      echo
+      curl -sf -X POST -H "X-Vault-Token: $VAULT_TOKEN" \
+        "$VAULT_ADDR/v1/auth/token/revoke-self"
+
+# ---------------- handover: Release-Kandidat fuer Signatur (Kap 4/5) ----
+release-candidate:
+  stage: handover
+  needs: [build:image, scan:image, sbom:generate, sbom:upload]
+  image: nexus:8082/alpine/k8s:1.31.13
+  rules:
+    - if: $CI_COMMIT_TAG
+  script:
+    - |
+      jq -n \
+        --arg image "$IMAGE" --arg digest "$IMAGE_DIGEST" \
+        --arg version "$APP_VERSION" --arg commit "$CI_COMMIT_SHA" \
+        --arg pipeline "$CI_PIPELINE_URL" \
+        --arg sbom "$(sha256sum sbom.cdx.json | cut -d' ' -f1)" \
+        --arg scan "$(sha256sum trivy-image.json | cut -d' ' -f1)" \
+        '{image: $image, digest: $digest, version: $version,
+          commit: $commit, pipeline: $pipeline,
+          sbom_sha256: $sbom, scan_sha256: $scan}' > release-candidate.json
+    - cat release-candidate.json
+  artifacts:
+    paths: [release-candidate.json, sbom.cdx.json, trivy-image.json]
+    expire_in: 90 days

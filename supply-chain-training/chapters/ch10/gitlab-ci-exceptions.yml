@@ -1,0 +1,10 @@
+exceptions:validate:
+  stage: verify
+  image: nexus:8082/alpine/k8s:1.31.13   # enthaelt bash, jq, yq
+  script:
+    - ./check-exceptions.sh exceptions.yaml
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - changes:
+        - exceptions.yaml
+        - .trivyignore.yaml

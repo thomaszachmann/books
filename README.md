@@ -13,6 +13,7 @@ from there.
 | *Keycloak in Practice* | [`keycloak-in-practice/`](keycloak-in-practice/) | in progress | — |
 | *Vault in Production* | [`vault-in-production/`](vault-in-production/) | early draft | — |
 | *Kubernetes on-premises* | [`kubernetes-on-premises/`](kubernetes-on-premises/) | early draft | — |
+| *Sichere Lieferketten zum Anfassen* (German) | [`supply-chain-training/`](supply-chain-training/) | early draft | — |
 
 The *Status* column describes how far each **manuscript** has come, not the
 code — the labs in a directory are usually complete well before the text
@@ -89,6 +90,28 @@ make ch01
 See [`harbor-in-practice/README.md`](harbor-in-practice/README.md) and
 [`harbor-in-practice/VERSIONS.md`](harbor-in-practice/VERSIONS.md) for the
 pinned versions.
+
+---
+
+## Sichere Lieferketten zum Anfassen
+
+**Ein Trainingslager für sichere Software-Lieferketten — in German**
+
+Twelve chapters and three appendices, all on a laptop: two local
+registries as build and target zone, a kind cluster, GitLab, Nexus,
+Vault, Dependency-Track, Kyverno and Argo CD — from the first pipeline to
+offline signing, zone transfer, SBOMs, scanner triage, policy as code and
+exceptions with an expiry date, joined into one chain in Chapter 11.
+
+```bash
+git clone https://github.com/thomaszachmann/books.git
+cd books/supply-chain-training
+chapters/ch00/check-tools.sh
+```
+
+Then start with Chapter 0. The book works in `~/seclab`; the directory
+mirrors it chapter by chapter. See
+[`supply-chain-training/README.md`](supply-chain-training/README.md).
 
 ---
 

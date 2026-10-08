@@ -1,0 +1,14 @@
+  - id: EXC-2026-003
+    type: policy
+    target: payments/payment-gateway
+    reference: require-run-as-non-root
+    reason: "Hersteller-Agent v4 benoetigt root; Anfrage HER-77 beim Hersteller"
+    risk: high
+    compensation: >-
+      NetworkPolicy nur zu payment-db, readOnlyRootFilesystem,
+      drop ALL capabilities, automountServiceAccountToken=false
+    owner: team-payments@example.org
+    approver: security@example.org
+    ticket: SEC-145
+    created: "2026-10-08"
+    expires: "2027-01-06"
