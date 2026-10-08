@@ -1,0 +1,119 @@
+global:
+  tlsDisable: false            # Chart setzt BAO_ADDR=https://…
+
+injector:
+  enabled: true
+  agentImage:
+    tag: "2.7.1"
+
+server:
+  logLevel: info
+  auditStorage:
+    enabled: true          # PVC "audit", gemountet unter /openbao/audit
+
+  image:
+    tag: "2.7.1"
+
+  podManagementPolicy: Parallel  # alle 3 Pods sofort, nicht erst nach Ready
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      memory: 512Mi
+
+  extraEnvironmentVars:
+    BAO_CACERT: /openbao/userconfig/openbao-tls/ca.crt
+
+  extraSecretEnvironmentVars:
+    - envName: TRANSIT_WRAPPER_TOKEN
+      secretName: openbao-unseal-token
+      secretKey: token
+
+  extraVolumes:
+    - type: secret
+      name: openbao-tls        # -> /openbao/userconfig/openbao-tls/
+
+  affinity: |
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: {{ template "openbao.name" . }}
+              app.kubernetes.io/instance: "{{ .Release.Name }}"
+              component: server
+          topologyKey: kubernetes.io/hostname
+
+  dataStorage:
+    enabled: true
+    size: 1Gi
+
+  standalone:
+    enabled: false
+
+  ha:
+    enabled: true
+    replicas: 3
+    raft:
+      enabled: true
+      setNodeId: true          # Raft-Node-ID = Pod-Name
+      config: |
+        ui = true
+
+        listener "tcp" {
+          address         = "[::]:8200"
+          cluster_address = "[::]:8201"
+          tls_cert_file   = "/openbao/userconfig/openbao-tls/tls.crt"
+          tls_key_file    = "/openbao/userconfig/openbao-tls/tls.key"
+          telemetry {
+            unauthenticated_metrics_access = true
+          }
+        }
+
+        storage "raft" {
+          path = "/openbao/data"
+
+          retry_join {
+            leader_api_addr       = "https://openbao-0.openbao-internal:8200"
+            leader_ca_cert_file   = "/openbao/userconfig/openbao-tls/ca.crt"
+            leader_tls_servername = "openbao-0.openbao-internal"
+          }
+          retry_join {
+            leader_api_addr       = "https://openbao-1.openbao-internal:8200"
+            leader_ca_cert_file   = "/openbao/userconfig/openbao-tls/ca.crt"
+            leader_tls_servername = "openbao-1.openbao-internal"
+          }
+          retry_join {
+            leader_api_addr       = "https://openbao-2.openbao-internal:8200"
+            leader_ca_cert_file   = "/openbao/userconfig/openbao-tls/ca.crt"
+            leader_tls_servername = "openbao-2.openbao-internal"
+          }
+        }
+
+        service_registration "kubernetes" {}
+
+        seal "transit" {
+          address    = "http://bao-unsealer.unsealer.svc:8200"
+          key_name   = "autounseal"
+          mount_path = "transit/"
+        }
+
+        telemetry {
+          prometheus_retention_time = "30s"
+          disable_hostname          = true
+        }
+
+        audit "file" "stdout" {
+          description = "Audit nach stdout"
+          options {
+            file_path = "stdout"
+          }
+        }
+
+        audit "file" "datei" {
+          options {
+            file_path = "/openbao/audit/audit.log"
+            mode      = "0600"
+          }
+        }

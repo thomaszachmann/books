@@ -14,6 +14,7 @@ from there.
 | *Vault in Production* | [`vault-in-production/`](vault-in-production/) | early draft | — |
 | *Kubernetes on-premises* | [`kubernetes-on-premises/`](kubernetes-on-premises/) | early draft | — |
 | *Sichere Lieferketten zum Anfassen* (German) | [`supply-chain-training/`](supply-chain-training/) | early draft | — |
+| *OpenBao zum Anfassen* (German) | [`openbao-training/`](openbao-training/) | early draft | — |
 
 The *Status* column describes how far each **manuscript** has come, not the
 code — the labs in a directory are usually complete well before the text
@@ -112,6 +113,31 @@ chapters/ch00/check-tools.sh
 Then start with Chapter 0. The book works in `~/seclab`; the directory
 mirrors it chapter by chapter. See
 [`supply-chain-training/README.md`](supply-chain-training/README.md).
+
+---
+
+## OpenBao zum Anfassen
+
+**Ein Trainingslager für OpenBao — in German**
+
+Fifteen days and two appendices. Days 1–6 run against a dev server on the
+laptop — KV v2, tokens and policies, AppRole and response wrapping,
+dynamic database secrets, transit, PKI, identity and audit. Days 7–14
+build a three-pod HA cluster with Raft on kind and operate it: TLS from a
+lab CA, auto-unseal, Kubernetes auth, External Secrets Operator, the agent
+injector, snapshots, a rolling upgrade, governance and eight disaster
+drills.
+
+```bash
+git clone https://github.com/thomaszachmann/books.git
+cd books/openbao-training
+```
+
+Then start with Tag 0. The book works in `~/bao-lab`; the directory
+mirrors it day by day. *Vault in Practice* introduces OpenBao in its
+Chapter 18, and the *OpenBao Field Notes* cover single topics; this book
+works through OpenBao alone, from the dev server to the operated cluster.
+See [`openbao-training/README.md`](openbao-training/README.md).
 
 ---
 
