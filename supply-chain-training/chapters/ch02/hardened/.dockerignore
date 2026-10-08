@@ -1,0 +1,7 @@
+.git
+.venv
+.env
+*.pyc
+__pycache__
+tests
+k8s

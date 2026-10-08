@@ -1,0 +1,33 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: team-label
+spec:
+  background: true
+  rules:
+    - name: team-standard-in-demo
+      match:
+        any:
+          - resources:
+              kinds: [Deployment]
+              namespaces: [demo]
+      mutate:
+        patchStrategicMerge:
+          metadata:
+            labels:
+              +(team): team-demo
+    - name: team-pflicht
+      match:
+        any:
+          - resources: { kinds: [Deployment] }
+      exclude:
+        any:
+          - resources:
+              namespaces: [kube-system, kyverno, local-path-storage]
+      validate:
+        failureAction: Audit
+        message: "Deployments brauchen das Label 'team' (Ansprechpartner)."
+        pattern:
+          metadata:
+            labels:
+              team: "?*"

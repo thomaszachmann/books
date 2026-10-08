@@ -1,0 +1,39 @@
+apiVersion: cli.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: seclab-baseline-tests
+policies:
+  - ../policies/baseline.yaml
+resources:
+  - resources.yaml
+results:
+  - policy: seclab-baseline
+    rule: nur-interne-registries
+    kind: Pod
+    resources: [gut, mit-latest, als-root, ohne-limits]
+    result: pass
+  - policy: seclab-baseline
+    rule: nur-interne-registries
+    kind: Pod
+    resources: [fremde-registry]
+    result: fail
+  - policy: seclab-baseline
+    rule: kein-latest
+    kind: Pod
+    resources: [mit-latest]
+    result: fail
+  - policy: seclab-baseline
+    rule: run-as-non-root
+    kind: Pod
+    resources: [als-root]
+    result: fail
+  - policy: seclab-baseline
+    rule: ressourcen-limits
+    kind: Pod
+    resources: [ohne-limits]
+    result: fail
+  - policy: seclab-baseline
+    rule: ressourcen-limits
+    kind: Pod
+    resources: [gut]
+    result: pass

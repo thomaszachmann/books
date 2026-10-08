@@ -1,0 +1,41 @@
+services:
+  gitlab:
+    # Lab: latest. In echten Umgebungen eine konkrete Version pinnen!
+    image: gitlab/gitlab-ce:latest
+    container_name: gitlab
+    hostname: gitlab
+    restart: unless-stopped
+    shm_size: "256m"
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'http://localhost:8929'
+        # Ressourcen sparen im Labor
+        puma['worker_processes'] = 0
+        sidekiq['concurrency'] = 10
+        prometheus_monitoring['enable'] = false
+    ports:
+      - "127.0.0.1:8929:8929"
+    volumes:
+      - gitlab-config:/etc/gitlab
+      - gitlab-logs:/var/log/gitlab
+      - gitlab-data:/var/opt/gitlab
+
+  gitlab-runner:
+    image: gitlab/gitlab-runner:latest
+    container_name: gitlab-runner
+    restart: unless-stopped
+    volumes:
+      - runner-config:/etc/gitlab-runner
+      # Der Runner startet Job-Container über den Docker-Daemon des Hosts.
+      - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  gitlab-config:
+  gitlab-logs:
+  gitlab-data:
+  runner-config:
+
+networks:
+  default:
+    name: kind
+    external: true

@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: Pod
+metadata: { name: gut }
+spec:
+  securityContext: { runAsNonRoot: true }
+  containers:
+    - name: app
+      image: reg-build:5000/demo-app:1.0.0
+      resources: { limits: { cpu: 100m, memory: 64Mi } }
+---
+apiVersion: v1
+kind: Pod
+metadata: { name: fremde-registry }
+spec:
+  securityContext: { runAsNonRoot: true }
+  containers:
+    - name: app
+      image: docker.io/library/nginx:1.27
+      resources: { limits: { cpu: 100m, memory: 64Mi } }
+---
+apiVersion: v1
+kind: Pod
+metadata: { name: mit-latest }
+spec:
+  securityContext: { runAsNonRoot: true }
+  containers:
+    - name: app
+      image: reg-build:5000/demo-app:latest
+      resources: { limits: { cpu: 100m, memory: 64Mi } }
+---
+apiVersion: v1
+kind: Pod
+metadata: { name: als-root }
+spec:
+  containers:
+    - name: app
+      image: reg-build:5000/demo-app:1.0.0
+      resources: { limits: { cpu: 100m, memory: 64Mi } }
+---
+apiVersion: v1
+kind: Pod
+metadata: { name: ohne-limits }
+spec:
+  securityContext: { runAsNonRoot: true }
+  containers:
+    - name: app
+      image: reg-build:5000/demo-app:1.0.0

@@ -1,0 +1,4 @@
+FROM alpine:3.20
+RUN apk add --no-cache curl jq ca-certificates
+COPY --from=anchore/syft:v1.18.0 /syft /usr/local/bin/syft
+USER 10001

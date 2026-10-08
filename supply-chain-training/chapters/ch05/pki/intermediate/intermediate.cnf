@@ -1,0 +1,16 @@
+[ req ]
+distinguished_name = dn
+prompt             = no
+
+[ dn ]
+C  = DE
+O  = Seclab Lab
+CN = Seclab Code Signing CA 1
+
+[ v3_codesign ]
+basicConstraints       = critical, CA:false
+keyUsage               = critical, digitalSignature
+extendedKeyUsage       = critical, codeSigning
+subjectAltName         = email:release-signer@seclab.example
+subjectKeyIdentifier   = hash
+authorityKeyIdentifier = keyid:always

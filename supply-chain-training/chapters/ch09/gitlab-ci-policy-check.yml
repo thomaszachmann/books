@@ -1,0 +1,9 @@
+policy-check:
+  stage: security
+  image: reg-build:5000/tools/policy-tools:1.0.0   # Dockerfile.policy-tools
+  script:
+    - opa fmt --list --fail policy/
+    - opa test policy/
+    - conftest test k8s/
+    - kyverno test tests/
+    - kyverno apply policies/ --resource k8s/deployment.yaml

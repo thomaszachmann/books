@@ -1,0 +1,74 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: seclab-baseline
+  annotations:
+    policies.kyverno.io/title: Seclab-Grundregeln fuer Pods
+spec:
+  background: true
+  rules:
+    - name: nur-interne-registries
+      match:
+        any:
+          - resources: { kinds: [Pod] }
+      exclude:
+        any:
+          - resources:
+              namespaces: [kube-system, kyverno, local-path-storage]
+      validate:
+        failureAction: Audit
+        message: "Images nur aus reg-build:5000 oder reg-ziel:5000."
+        pattern:
+          spec:
+            =(initContainers):
+              - image: "reg-build:5000/* | reg-ziel:5000/*"
+            containers:
+              - image: "reg-build:5000/* | reg-ziel:5000/*"
+    - name: kein-latest
+      match:
+        any:
+          - resources: { kinds: [Pod] }
+      exclude:
+        any:
+          - resources:
+              namespaces: [kube-system, kyverno, local-path-storage]
+      validate:
+        failureAction: Audit
+        message: "Das Tag :latest ist nicht erlaubt. Feste Version oder Digest nutzen."
+        pattern:
+          spec:
+            containers:
+              - image: "!*:latest"
+    - name: run-as-non-root
+      match:
+        any:
+          - resources: { kinds: [Pod] }
+      exclude:
+        any:
+          - resources:
+              namespaces: [kube-system, kyverno, local-path-storage]
+      validate:
+        failureAction: Audit
+        message: "spec.securityContext.runAsNonRoot muss true sein."
+        pattern:
+          spec:
+            securityContext:
+              runAsNonRoot: true
+    - name: ressourcen-limits
+      match:
+        any:
+          - resources: { kinds: [Pod] }
+      exclude:
+        any:
+          - resources:
+              namespaces: [kube-system, kyverno, local-path-storage]
+      validate:
+        failureAction: Audit
+        message: "CPU- und Memory-Limits sind Pflicht."
+        pattern:
+          spec:
+            containers:
+              - resources:
+                  limits:
+                    cpu: "?*"
+                    memory: "?*"

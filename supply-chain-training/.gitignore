@@ -1,0 +1,57 @@
+# The labs run in ~/seclab, not here. If you work inside this directory
+# anyway, these are what the labs generate - keys, bundles, reports.
+# None of it belongs in Git. The root .gitignore covers data/, logs/, tls/.
+
+# Kapitel 4 und 5 - Schlüssel, Zertifikate, Signaturen
+*.key
+*.csr
+*.srl
+*.crt
+*.pem
+*.pub
+keys/
+signing-config-offline.json
+trusted-root.json
+
+# Kapitel 4 und 11 - Schleuse, Bundles, Übergabe
+schleuse/
+bundle/
+bundle-a/
+ziel/
+b111/
+export/
+*.tar
+*.tar.gz
+*.tar.sha256
+rc.zip
+release-candidate.json
+
+# Kapitel 2 und 3 - Build-Ergebnisse
+requirements.lock
+wheels/
+image.ref
+meta-*.json
+
+# Kapitel 6 - Laufzeitdaten
+creds.json
+k8s-ca.crt
+leak-demo/
+leak-demo-clean/
+replacements.txt
+
+# Kapitel 7 und 8 - Berichte
+*.cdx.json
+*.spdx.json
+*.purls
+upload.json
+reports/
+gitleaks.json
+trivy-image.json
+kev.json
+cache-offline/
+.trivycache/
+
+# Lokale Python-Umgebung der demo-app
+.venv/
+__pycache__/
+.pytest_cache/

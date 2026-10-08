@@ -1,0 +1,22 @@
+{
+  "buildDefinition": {
+    "buildType": "https://seclab.example/buildtypes/docker-build@v1",
+    "externalParameters": {
+      "repository": "https://gitlab.seclab.example/team/demo-app",
+      "ref": "refs/tags/v1.0.0"
+    },
+    "internalParameters": {},
+    "resolvedDependencies": [{
+      "uri": "git+https://gitlab.seclab.example/team/demo-app@refs/tags/v1.0.0",
+      "digest": { "gitCommit": "${COMMIT}" }
+    }]
+  },
+  "runDetails": {
+    "builder": { "id": "https://gitlab.seclab.example/runners/build-01" },
+    "metadata": {
+      "invocationId": "pipeline-4711",
+      "startedOn": "2026-10-08T08:00:00Z",
+      "finishedOn": "2026-10-08T08:04:12Z"
+    }
+  }
+}

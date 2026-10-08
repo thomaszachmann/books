@@ -1,0 +1,10 @@
+vulnerabilities:
+  - id: CVE-2024-47081
+    paths:
+      - "requirements.txt"
+    statement: "Risiko akzeptiert, keine .netrc im Container. Owner team-demo, SEC-142"
+    expired_at: 2026-12-31
+misconfigurations:
+  - id: AVD-DS-0026
+    statement: "Healthcheck erfolgt per Kubernetes-Probe statt Dockerfile. SEC-143"
+    expired_at: 2027-03-31

@@ -1,0 +1,30 @@
+# Ausnahmeregister - Aenderungen nur per Merge Request.
+# Genehmigung: CODEOWNERS (Security). Ab "expires" ist die Ausnahme ungueltig.
+exceptions:
+  - id: EXC-2026-001
+    type: vulnerability
+    target: demo-app
+    reference: "pkg:pypi/requests@2.25.0"
+    findings:
+      - CVE-2023-32681
+      - CVE-2024-35195
+    reason: "Upgrade auf requests 2.32 bricht Legacy-Client, Migration in 1.2.0"
+    risk: medium
+    compensation: "Kein verify=False (Semgrep-Regel), Egress nur intern"
+    owner: team-demo@example.org
+    approver: security@example.org
+    ticket: SEC-123
+    created: "${CREATED}"
+    expires: "${EXPIRES}"
+  - id: EXC-2026-002
+    type: policy
+    target: demo/legacy-batch
+    reference: require-run-as-non-root
+    reason: "Altes Image schreibt nach /root, Umbau laeuft"
+    risk: high
+    compensation: "Eigener Namespace, NetworkPolicy deny-egress, readOnlyRootFS"
+    owner: team-batch@example.org
+    approver: security@example.org
+    ticket: SEC-130
+    created: "${CREATED}"
+    expires: "${EXPIRES}"

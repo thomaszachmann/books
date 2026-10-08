@@ -1,0 +1,25 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-exception-metadata
+spec:
+  background: false
+  rules:
+    - name: require-expiry-and-owner
+      match:
+        any:
+          - resources:
+              kinds:
+                - PolicyException
+      validate:
+        failureAction: Enforce
+        message: >-
+          Jede PolicyException braucht das Label seclab.example/expires
+          (JJJJ-MM-TT) und die Annotationen owner und ticket.
+        pattern:
+          metadata:
+            labels:
+              seclab.example/expires: "????-??-??"
+            annotations:
+              seclab.example/owner: "?*"
+              seclab.example/ticket: "?*"
