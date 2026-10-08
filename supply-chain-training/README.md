@@ -4,9 +4,9 @@ Working code for the labs in **Sichere Lieferketten zum Anfassen** by
 Thomas Zachmann — a German-language, hands-on training camp for software
 supply-chain security: twelve chapters (0–11) and three appendices.
 
-> **Status: early draft.** The files below are extracted verbatim from the
+> **Status: free edition, October 2026.** The files below are extracted verbatim from the
 > manuscript. They have been syntax-checked, but the labs have **not yet
-> been run end-to-end in a fresh lab**. Store page: —
+> been run end-to-end in a fresh lab**. Book: [PDF](https://github.com/thomaszachmann/books/releases/download/supply-chain-training-2026.10/Sichere-Lieferketten-zum-Anfassen.pdf) · [EPUB](https://github.com/thomaszachmann/books/releases/download/supply-chain-training-2026.10/Sichere-Lieferketten-zum-Anfassen.epub) (free, CC BY-NC-ND 4.0)
 
 > **Auf Deutsch:** Dieses Verzeichnis enthält den Begleitcode zum Buch
 > *Sichere Lieferketten zum Anfassen* — ein Trainingslager zum Mitmachen
