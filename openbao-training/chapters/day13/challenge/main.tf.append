@@ -1,0 +1,12 @@
+
+resource "vault_auth_backend" "approle_shop" {
+  namespace = "team-shop"
+  type      = "approle"
+}
+
+resource "vault_approle_auth_backend_role" "shop_ci" {
+  namespace      = "team-shop"
+  backend        = vault_auth_backend.approle_shop.path
+  role_name      = "ci"
+  token_policies = ["shop-dev"]
+}

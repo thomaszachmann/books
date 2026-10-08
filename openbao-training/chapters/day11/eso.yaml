@@ -1,0 +1,45 @@
+apiVersion: external-secrets.io/v1
+kind: SecretStore
+metadata:
+  name: openbao
+  namespace: webshop
+spec:
+  provider:
+    vault:
+      server: https://openbao.openbao.svc:8200
+      path: secret
+      version: v2
+      caProvider:
+        type: Secret
+        name: openbao-ca
+        key: ca.crt
+      auth:
+        kubernetes:
+          mountPath: kubernetes
+          role: webshop
+          serviceAccountRef:
+            name: webshop
+            audiences:
+              - openbao
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: webshop-config
+  namespace: webshop
+spec:
+  refreshInterval: 15s
+  secretStoreRef:
+    kind: SecretStore
+    name: openbao
+  target:
+    name: webshop-config
+  data:
+    - secretKey: DB_USER
+      remoteRef:
+        key: webshop/config
+        property: db_user
+    - secretKey: DB_PASS
+      remoteRef:
+        key: webshop/config
+        property: db_pass

@@ -1,0 +1,48 @@
+# The labs run in ~/bao-lab, not here. If you work inside this directory
+# anyway, these are what the labs generate - keys, tokens, snapshots.
+# None of it belongs in Git. The root .gitignore covers data/, raft/, logs/.
+
+# Tag 9, 10, 13, 14 - Unseal-/Recovery-Keys, Root- und Transit-Token
+init.json
+**/init.json
+unsealer-init.json
+unseal-token.json
+recovery-neu.json
+temp-init.json
+gr.json
+leak-sid.json
+geleakt.txt
+
+# Tag 4, 5, 11 - Zugangsdaten und Zertifikate aus den Drills
+creds.json
+cert.json
+k8s-ca.crt
+
+# Tag 5, 7, 13, 14 - Schlüssel, Zertifikate, CSRs (Lab-CA in ~/bao-lab/tls)
+tls/
+*.key
+*.crt
+*.csr
+*.srl
+*.pem
+unseal.key
+san.ext
+
+# Tag 12, 14 - Raft-Snapshots
+*.snap
+
+# Laufzeitdaten der Server (Tag 6, 13)
+data/
+audit.log
+server.log
+dev.log
+
+# Tag 8 - erzeugt von helm show values / helm template
+values-default.yaml
+rendered.yaml
+
+# Tag 13 - OpenTofu: State enthält Secrets im Klartext
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*

@@ -1,0 +1,40 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: openbao-snapshot
+  namespace: openbao
+spec:
+  schedule: "0 * * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: openbao-snapshot
+          restartPolicy: OnFailure
+          securityContext: { runAsUser: 100, runAsGroup: 1000, fsGroup: 1000 }
+          containers:
+            - name: snap
+              image: quay.io/openbao/openbao:2.7.0   # Tag wie dein Cluster
+              command: ["/bin/sh", "-ec"]
+              args:
+                - |
+                  export BAO_ADDR=https://openbao.openbao.svc:8200
+                  export BAO_CACERT=/tls/ca.crt
+                  export BAO_TOKEN=$(bao write -field=token auth/kubernetes/login \
+                    role=snapshot jwt=@/var/run/secrets/bao/token)
+                  bao operator raft snapshot save /backup/raft-$(date +%Y%m%d-%H%M).snap
+                  find /backup -name '*.snap' -mtime +7 -delete
+              volumeMounts:
+                - { name: backup, mountPath: /backup }
+                - { name: tls, mountPath: /tls, readOnly: true }
+                - { name: bao-token, mountPath: /var/run/secrets/bao, readOnly: true }
+          volumes:
+            - name: backup
+              persistentVolumeClaim: { claimName: openbao-backup }
+            - name: tls
+              secret: { secretName: openbao-tls }
+            - name: bao-token
+              projected:
+                sources:
+                  - serviceAccountToken: { path: token, audience: openbao }
