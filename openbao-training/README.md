@@ -6,11 +6,11 @@ a German-language, hands-on training camp for OpenBao: fifteen days
 laptop; days 7–14 build and operate a three-pod HA cluster with integrated
 Raft storage on kind, and end with eight disaster drills.
 
-> **Status: early draft.** The files below are extracted verbatim from the
+> **Status: free edition, October 2026.** The files below are extracted verbatim from the
 > manuscript. The dev-mode days (1–6) were tested with `bao` 2.7.1. The
 > Kubernetes days (7–14) were rendered with `helm template` and checked
 > against a local Raft rebuild with `bao` 2.7.1 — they have **not** been
-> run end-to-end in a cluster. Book: free PDF and EPUB at [Release openbao-training-2026.10](https://github.com/thomaszachmann/books/releases/tag/openbao-training-2026.10) (CC BY-NC-ND 4.0)
+> run end-to-end in a cluster. Book: [PDF](https://github.com/thomaszachmann/books/releases/download/openbao-training-2026.10/OpenBao-zum-Anfassen.pdf) · [EPUB](https://github.com/thomaszachmann/books/releases/download/openbao-training-2026.10/OpenBao-zum-Anfassen.epub) (free, CC BY-NC-ND 4.0)
 
 > **Auf Deutsch:** Dieses Verzeichnis enthält den Begleitcode zum Buch
 > *OpenBao zum Anfassen* — ein Trainingslager zum Mitmachen mit 15 Tagen

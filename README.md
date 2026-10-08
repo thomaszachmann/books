@@ -6,6 +6,16 @@ Each directory is one book and is self-contained: clone the repository,
 change into the book's directory, and everything the book prints resolves
 from there.
 
+## Download the free books
+
+| Book | PDF | EPUB |
+|---|---|---|
+| *Sichere Lieferketten zum Anfassen* (German, 376 pages) | [**PDF**](https://github.com/thomaszachmann/books/releases/download/supply-chain-training-2026.10/Sichere-Lieferketten-zum-Anfassen.pdf) | [EPUB](https://github.com/thomaszachmann/books/releases/download/supply-chain-training-2026.10/Sichere-Lieferketten-zum-Anfassen.epub) |
+| *OpenBao zum Anfassen* (German, 172 pages) | [**PDF**](https://github.com/thomaszachmann/books/releases/download/openbao-training-2026.10/OpenBao-zum-Anfassen.pdf) | [EPUB](https://github.com/thomaszachmann/books/releases/download/openbao-training-2026.10/OpenBao-zum-Anfassen.epub) |
+
+Edition October 2026, licensed [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/).
+All editions: [releases](https://github.com/thomaszachmann/books/releases).
+
 | Book | Directory | Status | Where to get it |
 |---|---|---|---|
 | *Vault in Practice* | [`vault-in-practice/`](vault-in-practice/) | **published** | [leanpub.com/vault-in-practice](https://leanpub.com/vault-in-practice) |
@@ -13,8 +23,8 @@ from there.
 | *Keycloak in Practice* | [`keycloak-in-practice/`](keycloak-in-practice/) | in progress | — |
 | *Vault in Production* | [`vault-in-production/`](vault-in-production/) | early draft | — |
 | *Kubernetes on-premises* | [`kubernetes-on-premises/`](kubernetes-on-premises/) | early draft | — |
-| *Sichere Lieferketten zum Anfassen* (German) | [`supply-chain-training/`](supply-chain-training/) | early draft | [free PDF / EPUB](https://github.com/thomaszachmann/books/releases/tag/supply-chain-training-2026.10) |
-| *OpenBao zum Anfassen* (German) | [`openbao-training/`](openbao-training/) | early draft | [free PDF / EPUB](https://github.com/thomaszachmann/books/releases/tag/openbao-training-2026.10) |
+| *Sichere Lieferketten zum Anfassen* (German) | [`supply-chain-training/`](supply-chain-training/) | **free download** | [PDF](https://github.com/thomaszachmann/books/releases/download/supply-chain-training-2026.10/Sichere-Lieferketten-zum-Anfassen.pdf) · [EPUB](https://github.com/thomaszachmann/books/releases/download/supply-chain-training-2026.10/Sichere-Lieferketten-zum-Anfassen.epub) |
+| *OpenBao zum Anfassen* (German) | [`openbao-training/`](openbao-training/) | **free download** | [PDF](https://github.com/thomaszachmann/books/releases/download/openbao-training-2026.10/OpenBao-zum-Anfassen.pdf) · [EPUB](https://github.com/thomaszachmann/books/releases/download/openbao-training-2026.10/OpenBao-zum-Anfassen.epub) |
 
 The *Status* column describes how far each **manuscript** has come, not the
 code — the labs in a directory are usually complete well before the text
@@ -114,8 +124,7 @@ Then start with Chapter 0. The book works in `~/seclab`; the directory
 mirrors it chapter by chapter. See
 [`supply-chain-training/README.md`](supply-chain-training/README.md).
 
-The book itself, free as PDF and EPUB:
-**[Release supply-chain-training-2026.10](https://github.com/thomaszachmann/books/releases/tag/supply-chain-training-2026.10)**
+The book itself, free: **[PDF](https://github.com/thomaszachmann/books/releases/download/supply-chain-training-2026.10/Sichere-Lieferketten-zum-Anfassen.pdf)** · [EPUB](https://github.com/thomaszachmann/books/releases/download/supply-chain-training-2026.10/Sichere-Lieferketten-zum-Anfassen.epub)
 
 ---
 
@@ -142,8 +151,7 @@ Chapter 18, and the *OpenBao Field Notes* cover single topics; this book
 works through OpenBao alone, from the dev server to the operated cluster.
 See [`openbao-training/README.md`](openbao-training/README.md).
 
-The book itself, free as PDF and EPUB:
-**[Release openbao-training-2026.10](https://github.com/thomaszachmann/books/releases/tag/openbao-training-2026.10)**
+The book itself, free: **[PDF](https://github.com/thomaszachmann/books/releases/download/openbao-training-2026.10/OpenBao-zum-Anfassen.pdf)** · [EPUB](https://github.com/thomaszachmann/books/releases/download/openbao-training-2026.10/OpenBao-zum-Anfassen.epub)
 
 ---
 
