@@ -13,4 +13,4 @@ The book works in `~/bao-lab/k8s`, `~/bao-lab/tls`.
 | `openbao.ext`, `erzeuge-server-zertifikat.sh` | Drill 4 | run inside `~/bao-lab/tls`; writes `openbao.ext`, `tls.key`, `tls.csr`, `tls.crt` |
 | `check.sh` | Kontrollpunkt | `bash check.sh` against that day's lab |
 
-Needs **OpenSSL 3** — the LibreSSL in macOS (`/usr/bin/openssl`) rejects `-addext`, `-verify_hostname` and `-verify_ip`. See `../../ERRATA.md`. No key or certificate is included.
+Needs **OpenSSL 3** from Tag 0 — the LibreSSL in macOS (`/usr/bin/openssl`) rejects `-addext`, `-verify_hostname` and `-verify_ip`. `openbao.ext` is reused on Tag 14, Szenario 7. No key or certificate is included.

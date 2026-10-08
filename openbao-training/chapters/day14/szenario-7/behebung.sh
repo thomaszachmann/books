@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Tag 14, Szenario 7, Behebung - Befehle wörtlich aus dem Buch.
 openssl x509 -req -in drill.csr -CA ca.crt -CAkey ca.key -CAcreateserial \
-  -days 365 -extfile san.ext -out tls.crt && cp drill.key tls.key
+  -days 180 -sha256 -extfile openbao.ext -out tls.crt && cp drill.key tls.key
 kubectl -n openbao create secret generic openbao-tls --from-file=tls.crt \
   --from-file=tls.key --from-file=ca.crt --dry-run=client -o yaml | kubectl apply -f -
 sleep 90

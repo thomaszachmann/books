@@ -67,7 +67,7 @@ workers.
 | `bao` (OpenBao CLI), `curl`, `jq` | Tag 0 |
 | `docker` | Tag 4 (Postgres), Tag 7 (kind) |
 | `kind`, `kubectl`, `helm` (v3 or v4) | Tag 7 |
-| `openssl` **3.x** — not the LibreSSL in macOS | Tag 7, Tag 14 |
+| `openssl` **3.x** — not the LibreSSL in macOS; Tag 0 installs it | Tag 7, Tag 14 |
 | `tofu` (OpenTofu) | Tag 13 |
 
 See [`VERSIONS.md`](VERSIONS.md) for the versions the book was written
@@ -113,7 +113,8 @@ chapters/
           snapshot policy                                      operations
   day13/  bao-admin, break-glass, shop-dev policies,
           tofu/main.tf, selfinit/config.hcl                    governance
-  day14/  vorbereitung.sh, szenario-1 … szenario-8/            disaster drills
+  day14/  vorbereitung.sh, wettkampf policy,
+          szenario-1 … szenario-8/                             disaster drills
 ```
 
 The appendices (Anhang A, cheat sheet; Anhang B, final exam) create no
@@ -178,7 +179,7 @@ Left out on purpose:
 
 Everything here is for a laptop and is **not** safe for production. All
 passwords in the book and in these files are lab values — `lab-pg-pw`,
-`lab-alt-pw`, `lab-pw-thomas`, `lab-admin-pw`, `lab-bg-pw`, `lab-shop-pw`,
+`lab-alt-pw`, `lab-pw-thomas`, `lab-admin-pw`, `lab-bg-pw`, `lab-shop-pw`, `lab-wk-pw`,
 and the dev root token `root`. The cluster from Tag 8 on runs with TLS
 from a lab CA; the unsealer of Tag 10 does not (`tls_disable = 1`, marked
 *Lab!* in the file). No private key, no `init.json` and no token is committed; the labs

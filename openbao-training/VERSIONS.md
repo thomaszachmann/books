@@ -38,8 +38,9 @@ the state after that upgrade.
 
 macOS ships LibreSSL as `/usr/bin/openssl` (3.3.6 on the test machine). It
 rejects `-addext` (Tag 7, Drill 3), `-verify_hostname` and `-verify_ip`
-(Tag 7, Drill 5) and `-not_before` (Tag 14, Szenario 7). Use
-`brew install openssl@3` and put it first on the `PATH`.
+(Tag 7, Drill 5) and `-not_before` (Tag 14, Szenario 7). Tag 0 installs
+`openssl@3` and puts it first on the `PATH`; its Kontrollpunkt checks for
+OpenSSL 3.
 
 ## Images the labs pull
 
@@ -56,12 +57,14 @@ rejects `-addext` (Tag 7, Drill 3), `-verify_hostname` and `-verify_ip`
 |---|---|
 | `bash -n` on every `.sh`, `zsh -n` on the two `.zsh` fragments | all pass |
 | YAML / JSON parse | all pass |
-| `bao policy fmt` (2.7.1) on a copy of every policy | all valid; six are not in `fmt` layout (one-line blocks in `bao-admin.hcl`, aligned `=`) — left as printed |
+| `bao policy fmt` (2.7.1) on a copy of every policy | all 17 valid; seven are not in `fmt` layout (one-line blocks in `bao-admin.hcl` and `wettkampf.hcl`, aligned `=`) — left as printed |
 | `helm template openbao openbao/openbao --version 0.30.2` with every values file | all render; service names `openbao`, `openbao-active`, `openbao-standby`, `openbao-internal`, ConfigMap `openbao-config`, `updateStrategy: OnDelete` |
 | Unsealer config from the rendered ConfigMap, `bao` 2.7.1 | starts on pebbledb, init 1/1, transit key and periodic orphan token as on Tag 10 |
 | Raft config of Tag 8 from the rendered ConfigMap, local single node with the book's lab CA | starts sealed (exit 2), init 5/3, unseal, Raft leader |
 | Raft config of Tag 12 (2.7.1) with the transit seal against the local unsealer | init with recovery keys, seal type `transit`, audit devices `stdout/` and `datei/`, unauthenticated metrics, restart auto-unseals, snapshot holds `meta.json state.bin SHA256SUMS SHA256SUMS.sealed` |
 | Self-init config of Tag 13 | static seal, initialised, `admin` logs in with `bao-admin` |
+| Tag 14 on a local Raft node in Tag 13's state (policy `bao-admin`, OpenTofu applied as `admin`) | `vorbereitung.sh` and the `bao` steps of Szenarien 4, 5, 6 and 8 run as `wettkampf`; Szenario 5's `-force` restore into a fresh node, then login and `kv get`; `tofu plan -detailed-exitcode` exits 0 after Szenario 6 and after the clean-up |
+| Tag 14, Szenario 7 with OpenSSL 3.6.4 and Tag 7's `openbao.ext` | expired certificate carries all ten SANs, `Verify return code: 10`; renewed certificate verifies for `openbao-2.openbao-internal` after `SIGHUP` |
 | `tofu validate` on `tofu/main.tf`, with and without the challenge fragment | valid |
 | `kubeconform` on `agent-pod.yaml`, `cronjob.yaml`, ESO manifests | valid |
 

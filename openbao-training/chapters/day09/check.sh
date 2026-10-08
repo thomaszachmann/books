@@ -10,4 +10,4 @@ check "3 Voter" \
      | jq "[.data.config.servers[]|select(.voter)]|length")" -eq 3 ]'
 check "Autopilot healthy" \
   '[ "$(bao operator raft autopilot state -format=json | jq .Healthy)" = true ]'
-check "Testdaten lesbar" 'bao kv get secret/failover-test'
+check "Testdaten lesbar" 'bao kv get -mount=secret failover-test'

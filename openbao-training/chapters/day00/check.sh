@@ -5,4 +5,5 @@ for t in bao kind kubectl helm jq curl docker; do
 done
 [ -d ~/bao-lab/k8s ] && echo "✔ ~/bao-lab" || echo "✘ ~/bao-lab fehlt"
 docker info >/dev/null 2>&1 && echo "✔ Docker-Daemon" || echo "✘ Docker-Daemon"
+openssl version | grep -q '^OpenSSL 3' && echo "✔ OpenSSL 3" || echo "✘ OpenSSL 3"
 type labenv >/dev/null 2>&1 && echo "✔ labenv" || echo "✘ labenv"
