@@ -29,8 +29,10 @@ erlaubt(image) if {
 deny contains msg if {
 	some c in container
 	not erlaubt(c.image)
-	msg := sprintf("Container '%s': Image '%s' nicht aus erlaubter Registry",
-		[c.name, c.image])
+	msg := sprintf(
+		"Container '%s': Image '%s' nicht aus erlaubter Registry",
+		[c.name, c.image],
+	)
 }
 
 deny contains msg if {
@@ -54,8 +56,10 @@ deny contains msg if {
 deny contains msg if {
 	pod_spec
 	not pod_spec.securityContext.runAsNonRoot
-	msg := sprintf("%s '%s': runAsNonRoot muss true sein",
-		[input.kind, input.metadata.name])
+	msg := sprintf(
+		"%s '%s': runAsNonRoot muss true sein",
+		[input.kind, input.metadata.name],
+	)
 }
 
 warn contains msg if {

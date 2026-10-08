@@ -15,51 +15,23 @@ a shebang and a one-line source comment on the three `erzeuge-*.sh`
 wrappers, and the `.tmpl` suffix on files whose heredoc expands a shell
 variable.
 
+## Fixed in the manuscript (2026-10-08)
+
+The eight inconsistencies found while extracting are fixed in the book;
+the files here were regenerated from the corrected manuscript.
+
+1. **Chapter 9, Steps 9, 10, 12** — `policy/k8s.rego` and `policy/k8s_test.rego` are printed as `opa fmt` (OPA 1.4.2) writes them; `opa fmt --list --fail` is silent, `opa test` passes 5/5.
+2. **Chapter 8, Steps 3 and 9; Chapter 11, Steps 5–6** — Chapter 8 creates `.semgrep/python-sicherheit.yaml` and `.checkov.yaml` (baseline + one justified skip) and uses them in its pipeline; Chapter 11 copies exactly these files.
+3. **Chapters 6 and 11** — the GitLab project is `root/demo-app` everywhere, as Chapter 1's push-to-create makes it (JWT `bound_claims`, API URL `root%2Fdemo-app`).
+4. **Chapter 11, Step 2** — `app.py` stays unchanged; the version is set via `APP_VERSION` (Dockerfile `ARG`/`ENV`, build argument in `build:image`, `env` in the deployment).
+5. **Chapter 11, Step 11** — creates `root/demo-deploy` by push-to-create and switches the Chapter 1 Argo CD application `demo-app` to it (`argocd repo add`, `argocd app set`).
+6. **Chapters 7 and 8, Step 12** — the CI fragments use Chapter 1's job `build`, `IMAGE_NAME` and the artefact `image-digest.txt` (`needs: [build]`, same branch rule); Chapter 8's stages are `test, build, security`.
+7. **Chapters 8, 10, 11** — the YAML ignore file is `.trivyignore.yaml` throughout.
+8. **Chapter 9, Step 12** — the job image is built in the chapter from `Dockerfile.policy-tools` (alpine 3.20, OPA 1.4.2, conftest 0.56.0, Kyverno CLI 1.13.4, SHA-256 pinned) and pushed as `reg-build:5000/tools/policy-tools:1.0.0`, like Chapter 7's tools image.
+
 ## Found while extracting — open, not changed
 
-These are inconsistencies in the manuscript itself. The code here keeps
-the book's text until the manuscript is fixed.
-
-**Chapter 9, Step 12** — `opa fmt --list --fail policy/` in the
-`policy-check` job fails against the book's own `policy/k8s.rego` and
-`policy/k8s_test.rego` with OPA 1.4.2: `opa fmt` wants trailing commas in
-the multi-line `sprintf(...)` calls and object literals. `opa test` (5/5)
-and `opa check` pass. Either format the two printed files with `opa fmt -w`
-or drop `--fail` from the job.
-
-**Chapter 11, Step 5** — `test:sast` runs `semgrep scan --config .semgrep/`
-and `test:iac` runs `checkov --config-file .checkov.yaml`. The text says
-both come "from Chapter 8", but Chapter 8 uses `--config p/python`,
-`semgrep-rules/` and `k8s/.checkov.baseline`, and creates neither
-`.semgrep/` nor `.checkov.yaml`. The same holds for `semgrep-rules/` in the
-Chapter 8 pipeline.
-
-**Chapter 1 vs. Chapters 6 and 11** — GitLab's push-to-create in Chapter 1
-makes the project `root/demo-app`; Chapter 6 (JWT role) and Chapter 11
-(`project_path`, API URL `seclab%2Fdemo-app`) assume `seclab/demo-app`.
-Chapter 11 states the assumption; the JWT `bound_claims` will not match a
-`root/demo-app` project.
-
-**Chapter 11, Step 2** — "change the return value of `/version` to
-`1.1.0`": `app.py` from Chapter 0 returns the environment variable
-`APP_VERSION` with the default `"1.0.0"`. The change meant is presumably the
-default, or `APP_VERSION` in `k8s/deployment.yaml`.
-
-**Chapter 11, Step 11** — the deploy repository `~/seclab/demo-deploy` is
-used but never created in any chapter.
-
-**Chapter 8, Step 12** — the `security` stage fragment has `needs:
-[build-image]`, a job it does not define. **Chapter 7, Step 12** — the `sbom`
-job uses `${IMAGE_REF}` and `needs: ["build"]`; the Chapter 1 pipeline
-defines `IMAGE_NAME`, not `IMAGE_REF`. Both are fragments meant to be merged
-into a pipeline; the names still do not line up.
-
-**Chapter 8 vs. Chapter 10** — Chapter 8 writes `trivyignore.yaml`;
-Chapter 10's `exceptions:validate` job and `CODEOWNERS` watch
-`.trivyignore.yaml`. Chapter 11 settles on `.trivyignore.yaml`.
-
-**Chapter 9, Step 12** — `${MIRROR}/seclab/policy-tools:1.0` ("eigenes
-Image mit kyverno, conftest, opa") is not built anywhere in the book.
+None.
 
 ## Format
 

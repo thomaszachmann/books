@@ -7,7 +7,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
 FROM ${BASE_REGISTRY}/library/python:3.12-slim
-ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+ARG APP_VERSION=1.1.0
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 APP_VERSION=${APP_VERSION}
 COPY --from=build /install /usr/local
 WORKDIR /app
 COPY app.py .

@@ -1,6 +1,6 @@
 policy-check:
   stage: security
-  image: ${MIRROR}/seclab/policy-tools:1.0   # eigenes Image mit kyverno, conftest, opa
+  image: reg-build:5000/tools/policy-tools:1.0.0   # Dockerfile.policy-tools
   script:
     - opa fmt --list --fail policy/
     - opa test policy/

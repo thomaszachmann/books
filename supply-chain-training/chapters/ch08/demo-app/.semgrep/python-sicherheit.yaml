@@ -1,0 +1,15 @@
+rules:
+  - id: subprocess-shell-true
+    languages: [python]
+    severity: ERROR
+    message: >-
+      subprocess mit shell=True: Eingaben koennen weitere Befehle einschleusen.
+      Argumente als Liste uebergeben, ohne shell=True.
+    pattern: subprocess.$FUNC(..., shell=True, ...)
+  - id: requests-ohne-tls-pruefung
+    languages: [python]
+    severity: ERROR
+    message: >-
+      verify=False schaltet die Zertifikatspruefung ab.
+      Interne CA mit verify="/pfad/zur/ca.pem" angeben.
+    pattern: requests.$FUNC(..., verify=False, ...)

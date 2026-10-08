@@ -1,12 +1,16 @@
 variables:
   DT_URL: "http://dtrack-apiserver.example.internal:8080"
   # DT_API_KEY: als maskierte, geschützte CI/CD-Variable oder aus Vault
+  SYFT_REGISTRY_INSECURE_USE_HTTP: "true"   # reg-build spricht nur HTTP (Lab)
 
 sbom:
-  stage: test
+  stage: build
   image: reg-build:5000/tools/sbom:1.0.0
   needs: ["build"]
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH   # wie der Job build
   script:
+    - IMAGE_REF="${IMAGE_NAME}@$(cat image-digest.txt)"
     - syft "registry:${IMAGE_REF}" -o cyclonedx-json=sbom.cdx.json
         -o spdx-json=sbom.spdx.json
     - >

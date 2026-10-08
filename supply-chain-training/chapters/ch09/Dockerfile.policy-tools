@@ -1,0 +1,20 @@
+# Werkzeug-Image fuer den Job policy-check (Kapitel 9)
+FROM alpine:3.20
+ARG OPA_URL=https://github.com/open-policy-agent/opa/releases/download/v1.4.2
+ARG CT_URL=https://github.com/open-policy-agent/conftest/releases/download/v0.56.0
+ARG KY_URL=https://github.com/kyverno/kyverno/releases/download/v1.13.4
+WORKDIR /tmp
+RUN apk add --no-cache ca-certificates curl \
+ && curl -fsSLo opa "$OPA_URL/opa_linux_amd64_static" \
+ && curl -fsSLo conftest.tgz "$CT_URL/conftest_0.56.0_Linux_x86_64.tar.gz" \
+ && curl -fsSLo kyverno.tgz "$KY_URL/kyverno-cli_v1.13.4_linux_x86_64.tar.gz" \
+ && printf '%s  %s\n' \
+      2c0ccdbbe0b8e2a5d12d9c42d92f1f34f494ffb32d1f3c4ddc36101be637d66f opa \
+      620f41640d63bbde1646a108ce2816ba54c980466ceebb7e754dda2d508e8cd5 conftest.tgz \
+      abd318dbb971ab6de2bbe3b7226f4a03230d5c9c651df8a29b6b5e085a55aeeb kyverno.tgz \
+    | sha256sum -c - \
+ && tar -xzf conftest.tgz conftest && tar -xzf kyverno.tgz kyverno \
+ && install -m 0755 opa conftest kyverno /usr/local/bin/ \
+ && rm -f opa conftest kyverno conftest.tgz kyverno.tgz
+WORKDIR /
+USER 10001

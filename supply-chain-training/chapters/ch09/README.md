@@ -14,6 +14,7 @@ Starts from Chapter 0. Installs Kyverno; Gatekeeper runs briefly in a second clu
 | `policy/k8s.rego` | Schritt 9 | `~/seclab/kap09/policy/` |
 | `policy/k8s_test.rego` | Schritt 10 | `~/seclab/kap09/policy/` |
 | `gk-template.yaml`, `gk-constraint.yaml` | Schritt 11 | `~/seclab/kap09/` |
+| `Dockerfile.policy-tools` | Schritt 12 | `~/seclab/kap09/` — `docker build --platform linux/amd64 -t localhost:5001/tools/policy-tools:1.0.0 - < Dockerfile.policy-tools` |
 | `gitlab-ci-policy-check.yml` | Schritt 12 | job for `.gitlab-ci.yml` |
 
-The policies are printed in `Audit` mode; Schritt 6 switches them to `Enforce` with `sed`. `opa test policy/` passes 5/5; for `opa fmt --fail` see `../../ERRATA.md`.
+The policies are printed in `Audit` mode; Schritt 6 switches them to `Enforce` with `sed`. The Rego files are printed as `opa fmt` writes them: `opa fmt --list --fail policy/` is silent and `opa test policy/` passes 5/5 (OPA 1.4.2).

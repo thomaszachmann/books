@@ -2,7 +2,7 @@
 
 **Kapitel 11: Abschlussprojekt – die ganze Kette**
 
-Assumes Chapters 0–10: Nexus, Vault, Dependency-Track, both registries, Kyverno and Argo CD running, GitLab project `seclab/demo-app`, deploy repository `seclab/demo-deploy`.
+Assumes Chapters 0–10: Nexus, Vault, Dependency-Track, both registries, Kyverno and Argo CD running, GitLab project `root/demo-app` (Chapter 1). Schritt 11 creates the deploy repository `root/demo-deploy` and points the Argo CD application `demo-app` at it.
 
 | File | Book step | Goes to |
 |---|---|---|
@@ -13,4 +13,4 @@ Assumes Chapters 0–10: Nexus, Vault, Dependency-Track, both registries, Kyvern
 | `demo-app/.gitlab-ci.yml` | Schritt 5 | `~/seclab/demo-app/` |
 | `zielzone-policies.yaml` | Schritt 10 | `~/seclab/kap11/` — then replace `PLATZHALTER` with `cosign.pub` using the book's `yq` command |
 
-The Dependency-Track key goes into Vault as `<API-Key aus Kapitel 7>`; `GITLAB_TOKEN` is `<dein Lab-Token>`. Neither is stored here. `.semgrep/` and `.checkov.yaml` are referenced by the pipeline but not defined in the book — see `../../ERRATA.md`.
+The Dependency-Track key goes into Vault as `<API-Key aus Kapitel 7>`; `GITLAB_TOKEN` is `<dein Lab-Token>`. Neither is stored here. `.semgrep/`, `.checkov.yaml` and `k8s/.checkov.baseline` are copied from Chapter 8 in Schritt 5 (see `../ch08/demo-app/`). The version comes from `APP_VERSION` (Dockerfile `ARG`/`ENV`, pipeline build argument, deployment `env`); `app.py` is unchanged.

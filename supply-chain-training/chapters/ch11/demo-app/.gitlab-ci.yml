@@ -98,6 +98,7 @@ build:image:
         --build-arg BASE_REGISTRY="$MIRROR"
         --build-arg PIP_INDEX_URL="$PIP_INDEX_URL"
         --build-arg PIP_TRUSTED_HOST="$PIP_TRUSTED_HOST"
+        --build-arg APP_VERSION="$APP_VERSION"
         --label org.opencontainers.image.version="$APP_VERSION"
         --label org.opencontainers.image.revision="$CI_COMMIT_SHA"
         --label org.opencontainers.image.source="$CI_PROJECT_URL"

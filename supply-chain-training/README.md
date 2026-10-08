@@ -94,10 +94,12 @@ chapters/
          gitleaks pre-commit hook + CI job                     secrets
   ch07/  Dependency-Track compose, Dockerfile.tools,
          SBOM CI jobs                                          SBOM
-  ch08/  vulnerable app.py, .trivyignore, trivyignore.yaml,
-         terraform/main.tf, security stage                     scanners, triage
+  ch08/  vulnerable app.py, .semgrep/ rules, .trivyignore,
+         .trivyignore.yaml, .checkov.yaml, terraform/main.tf,
+         security stage                                        scanners, triage
   ch09/  Kyverno policies + tests, Rego + tests,
-         Gatekeeper template/constraint, policy CI job         policy as code
+         Gatekeeper template/constraint, policy-tools
+         Dockerfile, policy CI job                             policy as code
   ch10/  PolicyException, meta-policy, exceptions.yaml,
          check scripts, CronJob, CODEOWNERS, templates         exceptions
   ch11/  demo-app/Dockerfile + full .gitlab-ci.yml,
@@ -131,9 +133,9 @@ programmatically, not retyped:
   `/ping` route inserted where the book says — above the `if __name__`
   block. It is **deliberately vulnerable**; Chapter 8 fixes it.
 
-Nothing is invented. Things the book uses but never creates — `.semgrep/`,
-`.checkov.yaml`, the `demo-deploy` repository, the `policy-tools` image —
-are not here; [`ERRATA.md`](ERRATA.md) lists them.
+Nothing is invented. The book's corrections of 2026-10-08 are listed in
+[`ERRATA.md`](ERRATA.md). The `demo-deploy` repository (Chapter 11,
+Schritt 11) is created with `git` commands and has no file of its own here.
 
 Left out on purpose:
 

@@ -50,7 +50,7 @@ cosign v3 replace them with the `OFFLINE` array from Chapter 5, Step 1.
 | `gitlab/gitlab-ce`, `gitlab/gitlab-runner` | `latest` — the book says to pin a release outside the lab | 1 |
 | `gcr.io/kaniko-project/executor` | `v1.23.2-debug` | 1 |
 | `jenkins/jenkins` | `lts-jdk21` | 1 |
-| `alpine` | `3.20` | 1, 7 |
+| `alpine` | `3.20` | 1, 7, 9 |
 | Argo CD | `stable/manifests/install.yaml` | 1 |
 | `hadolint/hadolint` | untagged | 2 |
 | `sonatype/nexus3` | untagged | 3 |
@@ -59,6 +59,7 @@ cosign v3 replace them with the `OFFLINE` array from Chapter 5, Step 1.
 | `postgres` | `16` | 6 |
 | `dependencytrack/apiserver`, `dependencytrack/frontend` | `latest` | 7 |
 | `anchore/syft` (copied into `Dockerfile.tools`) | `v1.18.0` | 7 |
+| OPA, conftest, Kyverno CLI (downloaded into `Dockerfile.policy-tools`, SHA-256 pinned) | `1.4.2`, `0.56.0`, `1.13.4` | 9 |
 | `alpine/k8s` | `1.31.13` | 10, 11 |
 
 Python packages of the demo app (Chapter 0): `flask==3.0.3`,

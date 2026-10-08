@@ -11,9 +11,9 @@ deployment(image, non_root) := {
 		"containers": [{
 			"name": "app",
 			"image": image,
-			"resources": {"limits": {"cpu": "100m", "memory": "64Mi"}}
-		}]
-	}}}
+			"resources": {"limits": {"cpu": "100m", "memory": "64Mi"}},
+		}],
+	}}},
 }
 
 test_gutes_deployment_erlaubt if {

@@ -1,0 +1,8 @@
+# Gemeinsame Checkov-Einstellungen fuer demo-app (Kapitel 8)
+# Jede Ausnahme mit Begruendung und Ticket; die Frist steht im Ticket.
+baseline: k8s/.checkov.baseline
+compact: true
+skip-check:
+  # CKV_K8S_15 (imagePullPolicy Always): Images werden per Digest
+  # referenziert (Kapitel 11), Always bringt keinen Gewinn. SEC-147
+  - CKV_K8S_15

@@ -1,9 +1,10 @@
-stages: [build, security, publish]
+stages: [test, build, security]
 
 variables:
-  MIRROR: "nexus.seclab.local:8082"          # Docker-Proxy aus Kapitel 3
-  IMAGE_REF: "reg-build:5000/demo-app:${CI_COMMIT_SHORT_SHA}"
+  MIRROR: "nexus:8082"                        # Docker-Proxy aus Kapitel 3
+  IMAGE_NAME: "reg-build:5000/demo-app"       # wie in Kapitel 1
   TRIVY_NO_PROGRESS: "true"
+  TRIVY_INSECURE: "true"                      # reg-build spricht nur HTTP (Lab)
   TRIVY_CACHE_DIR: ".trivycache"
   TRIVY_DB_REPOSITORY: "reg-build:5000/aquasecurity/trivy-db:2"
 
@@ -19,9 +20,9 @@ sast-semgrep:
   <<: *reports
   script:
     - mkdir -p reports
-    - semgrep scan --config semgrep-rules/ --metrics=off
+    - semgrep scan --config .semgrep/ --metrics=off
         --json --output reports/semgrep.json .
-    - semgrep scan --config semgrep-rules/ --metrics=off --error
+    - semgrep scan --config .semgrep/ --metrics=off --error
         --severity ERROR --sarif --output reports/semgrep.sarif .
 
 sca-trivy-fs:
@@ -31,20 +32,23 @@ sca-trivy-fs:
   script:
     - mkdir -p reports
     - trivy fs --scanners vuln --format json -o reports/trivy-fs.json .
-    - trivy fs --scanners vuln --skip-db-update --ignorefile trivyignore.yaml
+    - trivy fs --scanners vuln --skip-db-update --ignorefile .trivyignore.yaml
         --severity HIGH,CRITICAL --ignore-unfixed --exit-code 1 .
 
 image-trivy:
   stage: security
   image: { name: "${MIRROR}/aquasec/trivy:0.58.1", entrypoint: [""] }
-  needs: [build-image]
+  needs: [build]                              # Job aus Kapitel 1
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH   # wie der Job build
   <<: *reports
   script:
     - mkdir -p reports
+    - IMAGE_REF="$IMAGE_NAME@$(cat image-digest.txt)"
     - trivy image --format json -o reports/trivy-image.json "$IMAGE_REF"
     - trivy convert --format sarif -o reports/trivy-image.sarif
         reports/trivy-image.json
-    - trivy image --skip-db-update --ignorefile trivyignore.yaml
+    - trivy image --skip-db-update --ignorefile .trivyignore.yaml
         --severity CRITICAL --ignore-unfixed --exit-code 1 "$IMAGE_REF"
 
 iac-trivy-config:
@@ -54,7 +58,7 @@ iac-trivy-config:
   script:
     - mkdir -p reports
     - trivy config --format sarif -o reports/trivy-config.sarif .
-    - trivy config --ignorefile trivyignore.yaml
+    - trivy config --ignorefile .trivyignore.yaml
         --severity HIGH,CRITICAL --exit-code 1 .
 
 iac-checkov:
@@ -63,5 +67,5 @@ iac-checkov:
   <<: *reports
   script:
     - mkdir -p reports
-    - checkov -d k8s/ --baseline k8s/.checkov.baseline --quiet
+    - checkov -d k8s/ --config-file .checkov.yaml --quiet
         -o cli -o sarif --output-file-path console,reports/

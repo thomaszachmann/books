@@ -1,7 +1,9 @@
 sbom-gate:
-  stage: test
+  stage: build
   image: reg-build:5000/tools/sbom:1.0.0
   needs: ["sbom"]
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   script:
     - TOKEN=$(jq -r .token dt-upload.json)
     - |

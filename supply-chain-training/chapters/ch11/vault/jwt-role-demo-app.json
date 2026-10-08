@@ -3,7 +3,7 @@
   "user_claim": "sub",
   "bound_audiences": ["http://vault:8200"],
   "bound_claims": {
-    "project_path": "seclab/demo-app",
+    "project_path": "root/demo-app",
     "ref_protected": "true"
   },
   "token_policies": ["demo-app-ci"],
