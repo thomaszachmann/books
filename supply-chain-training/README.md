@@ -2,7 +2,7 @@
 
 Working code for the labs in **Sichere Lieferketten zum Anfassen** by
 Thomas Zachmann — a German-language, hands-on training camp for software
-supply-chain security: twelve chapters (0–11) and three appendices.
+supply-chain security: twelve chapters (0–11) and four appendices.
 
 > **Status: free edition, October 2026.** The files below are extracted verbatim from the
 > manuscript. They have been syntax-checked, but the labs have **not yet
