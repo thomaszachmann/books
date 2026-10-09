@@ -10,8 +10,8 @@ from there.
 
 | Book | PDF | EPUB |
 |---|---|---|
-| *Sichere Lieferketten zum Anfassen* (German, 376 pages) | [**PDF**](https://github.com/thomaszachmann/books/releases/download/supply-chain-training-2026.10/Sichere-Lieferketten-zum-Anfassen.pdf) | [EPUB](https://github.com/thomaszachmann/books/releases/download/supply-chain-training-2026.10/Sichere-Lieferketten-zum-Anfassen.epub) |
-| *OpenBao zum Anfassen* (German, 172 pages) | [**PDF**](https://github.com/thomaszachmann/books/releases/download/openbao-training-2026.10/OpenBao-zum-Anfassen.pdf) | [EPUB](https://github.com/thomaszachmann/books/releases/download/openbao-training-2026.10/OpenBao-zum-Anfassen.epub) |
+| *Sichere Lieferketten zum Anfassen* (German, 384 pages) | [**PDF**](https://github.com/thomaszachmann/books/releases/download/supply-chain-training-2026.10/Sichere-Lieferketten-zum-Anfassen.pdf) | [EPUB](https://github.com/thomaszachmann/books/releases/download/supply-chain-training-2026.10/Sichere-Lieferketten-zum-Anfassen.epub) |
+| *OpenBao zum Anfassen* (German, 173 pages) | [**PDF**](https://github.com/thomaszachmann/books/releases/download/openbao-training-2026.10/OpenBao-zum-Anfassen.pdf) | [EPUB](https://github.com/thomaszachmann/books/releases/download/openbao-training-2026.10/OpenBao-zum-Anfassen.epub) |
 
 Edition October 2026, licensed [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/).
 All editions: [releases](https://github.com/thomaszachmann/books/releases).
@@ -108,7 +108,7 @@ pinned versions.
 
 **Ein Trainingslager für sichere Software-Lieferketten — in German**
 
-Twelve chapters and three appendices, all on a laptop: two local
+Twelve chapters and four appendices, all on a laptop: two local
 registries as build and target zone, a kind cluster, GitLab, Nexus,
 Vault, Dependency-Track, Kyverno and Argo CD — from the first pipeline to
 offline signing, zone transfer, SBOMs, scanner triage, policy as code and
