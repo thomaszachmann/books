@@ -1,0 +1,13 @@
+# Challenge Tag 13: Rewrite mit Capture Group, case-insensitive wie ingress-nginx
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: HTTPRouteFilter
+metadata:
+  name: api-regex-rewrite
+  namespace: shop
+spec:
+  urlRewrite:
+    path:
+      type: ReplaceRegexMatch
+      replaceRegexMatch:
+        pattern: '(?i)^/api/v1(/|$)(.*)'
+        substitution: '/\2'

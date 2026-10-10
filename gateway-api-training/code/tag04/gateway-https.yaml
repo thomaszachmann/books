@@ -1,0 +1,39 @@
+# Gateway web mit HTTPS-Listenern; cert-manager erzeugt die Secrets
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: web
+  namespace: infra
+  annotations:
+    cert-manager.io/cluster-issuer: lab-ca
+spec:
+  gatewayClassName: eg
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-shop
+      protocol: HTTPS
+      port: 443
+      hostname: shop.gw.localtest.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: shop-gw-tls
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-api
+      protocol: HTTPS
+      port: 443
+      hostname: api.gw.localtest.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: api-gw-tls
+      allowedRoutes:
+        namespaces:
+          from: All

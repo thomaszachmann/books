@@ -1,0 +1,12 @@
+rke2_version: v1.36.5+rke2r1
+rke2_vip: 10.10.20.10
+rke2_api_fqdn: rke2.lab.internal
+rke2_iface: eth0             # Proxmox-Cloud-Init benennt die NIC eth0
+# Lab-Wert! Echt: per ansible-vault oder Umgebungsvariable
+rke2_token: >-
+  {{ lookup('ansible.builtin.env', 'RKE2_TOKEN')
+     | default('rke2-lab-token-1234', true) }}
+kube_vip_version: v1.2.4
+# Tag 9 setzt das auf "true", sobald die Gateway-API-CRDs da sind
+cilium_gateway_class_create: auto
+rke2_first_server: "{{ groups['rke2_servers'][0] }}"

@@ -1,0 +1,28 @@
+# Lastprofil für die Drills (Tag 11): Route mit ca. 10 % Fehlern.
+# shop-broken zeigt auf einen Port, auf dem niemand lauscht -> 503 (UF).
+apiVersion: v1
+kind: Service
+metadata:
+  name: shop-broken
+  namespace: shop
+spec:
+  selector: {app: shop, version: v2}
+  ports:
+    - {name: http, port: 80, targetPort: 9999}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: shop-beta
+  namespace: shop
+spec:
+  parentRefs:
+    - name: web
+      namespace: infra
+      sectionName: http
+  hostnames:
+    - beta.apps.lab.internal
+  rules:
+    - backendRefs:
+        - {name: shop-v2, port: 80, weight: 90}
+        - {name: shop-broken, port: 80, weight: 10}

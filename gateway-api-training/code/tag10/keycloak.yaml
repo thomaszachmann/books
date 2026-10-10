@@ -1,0 +1,110 @@
+# Keycloak (Lab, start-dev, H2 in-memory) mit Realm "lab"
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: keycloak
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: realm-lab
+  namespace: keycloak
+data:
+  lab-realm.json: |
+    {
+      "realm": "lab",
+      "enabled": true,
+      "clients": [
+        {
+          "clientId": "portal",
+          "publicClient": false,
+          "secret": "lab-portal-secret-1234",
+          "standardFlowEnabled": true,
+          "directAccessGrantsEnabled": true,
+          "redirectUris": ["https://portal.apps.lab.internal/oauth2/callback"]
+        },
+        {
+          "clientId": "api-client",
+          "publicClient": false,
+          "secret": "lab-api-secret-1234",
+          "standardFlowEnabled": false,
+          "directAccessGrantsEnabled": false,
+          "serviceAccountsEnabled": true
+        }
+      ],
+      "users": [
+        {
+          "username": "thomas",
+          "enabled": true,
+          "email": "thomas@lab.internal",
+          "emailVerified": true,
+          "firstName": "Thomas",
+          "lastName": "Lab",
+          "credentials": [
+            {"type": "password", "value": "lab-pass-1234", "temporary": false}
+          ]
+        }
+      ]
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+  namespace: keycloak
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: keycloak}
+  template:
+    metadata:
+      labels: {app: keycloak}
+    spec:
+      containers:
+        - name: keycloak
+          image: quay.io/keycloak/keycloak:26.8.0
+          args: [start-dev, --import-realm]
+          env:
+            - {name: KC_BOOTSTRAP_ADMIN_USERNAME, value: admin}
+            - {name: KC_BOOTSTRAP_ADMIN_PASSWORD, value: lab-admin-1234}
+            - {name: KC_HOSTNAME, value: "https://keycloak.apps.lab.internal"}
+            - {name: KC_PROXY_HEADERS, value: xforwarded}
+            - {name: KC_HTTP_ENABLED, value: "true"}
+            - {name: KC_HEALTH_ENABLED, value: "true"}
+          ports:
+            - {name: http, containerPort: 8080}
+            - {name: mgmt, containerPort: 9000}
+          readinessProbe:
+            httpGet: {path: /health/ready, port: mgmt}
+            initialDelaySeconds: 20
+          resources:
+            requests: {cpu: 200m, memory: 512Mi}
+            limits: {memory: 1Gi}
+          volumeMounts:
+            - {name: realm, mountPath: /opt/keycloak/data/import}
+      volumes:
+        - name: realm
+          configMap: {name: realm-lab}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak
+  namespace: keycloak
+spec:
+  selector: {app: keycloak}
+  ports:
+    - {name: http, port: 8080, targetPort: http}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: keycloak
+  namespace: keycloak
+spec:
+  parentRefs:
+    - {name: web, namespace: infra, sectionName: https}
+  hostnames: [keycloak.apps.lab.internal]
+  rules:
+    - backendRefs:
+        - {name: keycloak, port: 8080}

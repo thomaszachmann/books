@@ -1,0 +1,21 @@
+# 90/10-Canary: 10 % der Requests gehen an shop-v2
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: shop
+  namespace: shop
+spec:
+  parentRefs:
+    - name: web
+      namespace: infra
+      sectionName: https-shop
+  hostnames:
+    - shop.gw.localtest.me
+  rules:
+    - backendRefs:
+        - name: shop-v1
+          port: 80
+          weight: 90
+        - name: shop-v2
+          port: 80
+          weight: 10

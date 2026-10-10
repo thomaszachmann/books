@@ -1,0 +1,14 @@
+# Das Shop-Team verwaltet ein eigenes Zertifikat im eigenen Namespace
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: shop-own
+  namespace: shop
+spec:
+  secretName: shop-own-tls
+  dnsNames:
+    - promo.gw.localtest.me
+    - aktion.gw.localtest.me
+  issuerRef:
+    name: lab-ca
+    kind: ClusterIssuer

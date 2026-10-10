@@ -1,0 +1,17 @@
+# Route auf das TLS-Backend (ohne Policy: 400)
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: secure-api
+  namespace: shop
+spec:
+  parentRefs:
+    - name: web
+      namespace: infra
+      sectionName: https-api
+  rules:
+    - matches:
+        - path: {type: PathPrefix, value: /secure}
+      backendRefs:
+        - name: secure
+          port: 443

@@ -1,0 +1,16 @@
+# Legacy-Controller für den Parallelbetrieb auf RKE2 (Tag 13).
+# ingress-nginx ist seit März 2026 retired: 4.15.1/v1.15.1 ist das letzte Release.
+controller:
+  ingressClassResource:
+    name: nginx
+    default: false
+  service:
+    type: LoadBalancer
+    externalTrafficPolicy: Cluster       # Cilium L2 wie beim Gateway
+    annotations:
+      lbipam.cilium.io/ips: 10.10.20.110
+  allowSnippetAnnotations: true          # nur für den Altbestand-Test (Snippets!)
+  config:
+    annotations-risk-level: Critical     # sonst lehnt v1.12+ Snippets ab
+  admissionWebhooks:
+    enabled: true

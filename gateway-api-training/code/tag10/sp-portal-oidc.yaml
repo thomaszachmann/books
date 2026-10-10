@@ -1,0 +1,25 @@
+# OIDC-Login (Authorization Code Flow) fuer portal.apps.lab.internal
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: portal-oidc
+  namespace: shop
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: portal
+  oidc:
+    provider:
+      issuer: https://keycloak.apps.lab.internal/realms/lab
+      backendRefs:
+        - group: gateway.envoyproxy.io
+          kind: Backend
+          name: keycloak
+          port: 443
+    clientID: portal
+    clientSecret:
+      name: portal-oidc            # Key client-secret
+    redirectURL: https://portal.apps.lab.internal/oauth2/callback
+    logoutPath: /logout
+    scopes: [openid, email]

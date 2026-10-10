@@ -1,0 +1,17 @@
+# TLS-Passthrough: Envoy schaut nur auf SNI, entschlüsselt nicht
+apiVersion: gateway.networking.k8s.io/v1
+kind: TLSRoute
+metadata:
+  name: secure
+  namespace: shop
+spec:
+  parentRefs:
+    - name: web
+      namespace: infra
+      sectionName: tls-secure
+  hostnames:
+    - secure.gw.localtest.me
+  rules:
+    - backendRefs:
+        - name: secure
+          port: 443

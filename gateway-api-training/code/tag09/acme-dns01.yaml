@@ -1,0 +1,22 @@
+# Optional: echte Zertifikate per ACME DNS-01 (Beispiel Cloudflare).
+# Token als Secret: kubectl -n cert-manager create secret generic \
+#   cloudflare-api-token --from-literal=api-token="$CF_API_TOKEN"
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+spec:
+  acme:
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: admin@example.org
+    privateKeySecretRef:
+      name: letsencrypt-staging-key
+    solvers:
+      - dns01:
+          cloudflare:
+            apiTokenSecretRef:
+              name: cloudflare-api-token
+              key: api-token
+        selector:
+          dnsZones:
+            - example.org

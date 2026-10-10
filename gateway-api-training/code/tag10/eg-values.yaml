@@ -1,0 +1,10 @@
+# Envoy Gateway v1.9.2 – Erweiterungen fuer Tag 10
+config:
+  envoyGateway:
+    rateLimit:
+      backend:
+        type: Redis
+        redis:
+          url: redis.redis-system.svc.cluster.local:6379
+    extensionApis:
+      enableBackend: true      # Backend-CRD (FQDN-Backends, Drill 6)

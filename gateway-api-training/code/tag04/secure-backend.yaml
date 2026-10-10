@@ -1,0 +1,64 @@
+# Backend, das selbst TLS spricht (Port 8443) – für Passthrough und BackendTLSPolicy
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: secure-backend
+  namespace: shop
+spec:
+  secretName: secure-backend-tls
+  dnsNames:
+    - secure.gw.localtest.me
+    - secure.shop.svc
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: lab-ca
+    kind: ClusterIssuer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: secure
+  namespace: shop
+  labels: {app: secure}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: secure}
+  template:
+    metadata:
+      labels: {app: secure}
+    spec:
+      containers:
+        - name: echo
+          image: registry.k8s.io/gateway-api/echo-basic:v1.6.0
+          env:
+            - {name: SERVICE_NAME, value: secure}
+            - {name: TLS_SERVER_CERT, value: /tls/tls.crt}
+            - {name: TLS_SERVER_PRIVKEY, value: /tls/tls.key}
+            - name: POD_NAME
+              valueFrom: {fieldRef: {fieldPath: metadata.name}}
+            - name: NAMESPACE
+              valueFrom: {fieldRef: {fieldPath: metadata.namespace}}
+          ports:
+            - {name: https, containerPort: 8443}
+          volumeMounts:
+            - {name: tls, mountPath: /tls, readOnly: true}
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {memory: 64Mi}
+      volumes:
+        - name: tls
+          secret: {secretName: secure-backend-tls}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: secure
+  namespace: shop
+  labels: {app: secure}
+spec:
+  selector: {app: secure}
+  ports:
+    - {name: https, port: 443, targetPort: https}

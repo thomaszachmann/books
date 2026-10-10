@@ -1,0 +1,19 @@
+# Ein fremdes Team versucht, sich an den Shop-Listener zu hängen
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: kapern
+  namespace: rogue
+spec:
+  parentRefs:
+    - name: web
+      namespace: infra
+      sectionName: https-shop
+  hostnames:
+    - shop.gw.localtest.me
+  rules:
+    - matches:
+        - path: {type: PathPrefix, value: /admin}
+      backendRefs:
+        - name: irgendwas
+          port: 80

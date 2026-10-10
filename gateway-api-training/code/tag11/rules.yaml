@@ -1,0 +1,50 @@
+# Recording- und Alert-Regeln für Gateway und Routen (Tag 11)
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: gateway-api
+  namespace: monitoring
+spec:
+  groups:
+    - name: gateway-api.rules
+      rules:
+        - record: route:rps:rate5m
+          expr: |
+            sum by (envoy_cluster_name) (
+              rate(envoy_cluster_upstream_rq_total[5m]))
+        - record: route:error5xx:ratio5m
+          expr: |
+            sum by (envoy_cluster_name) (
+              rate(envoy_cluster_upstream_rq_xx{envoy_response_code_class="5"}[5m]))
+            /
+            sum by (envoy_cluster_name) (
+              rate(envoy_cluster_upstream_rq_xx[5m]))
+        - record: route:latency:p95_5m
+          expr: |
+            histogram_quantile(0.95, sum by (envoy_cluster_name, le) (
+              rate(envoy_cluster_upstream_rq_time_bucket[5m])))
+    - name: gateway-api.alerts
+      rules:
+        - alert: GatewayNotProgrammed
+          expr: gatewayapi_gateway_status{type="Programmed"} == 0
+          for: 5m
+          labels: {severity: critical}
+          annotations:
+            summary: "Gateway {{ $labels.name }} nicht Programmed"
+        - alert: HTTPRouteNotAccepted
+          expr: gatewayapi_httproute_accepted == 0
+          for: 5m
+          labels: {severity: warning}
+          annotations:
+            summary: "HTTPRoute {{ $labels.namespace }}/{{ $labels.name }} abgelehnt"
+        - alert: RouteHigh5xx
+          expr: route:error5xx:ratio5m > 0.05
+          for: 10m
+          labels: {severity: warning}
+          annotations:
+            summary: "{{ $labels.envoy_cluster_name }}: über 5 % 5xx"
+        - alert: EnvoyGatewayXdsNack
+          expr: increase(xds_nack_total[10m]) > 0
+          labels: {severity: warning}
+          annotations:
+            summary: "Envoy hat xDS-Updates abgelehnt (NACK)"

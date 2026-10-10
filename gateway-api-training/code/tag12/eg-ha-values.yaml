@@ -1,0 +1,5 @@
+# Envoy Gateway Controller hochverfügbar (Tag 12), zusätzlich zu tag10/eg-values.yaml
+deployment:
+  replicas: 2              # Leader Election ist Standard, einer arbeitet
+podDisruptionBudget:
+  minAvailable: 1

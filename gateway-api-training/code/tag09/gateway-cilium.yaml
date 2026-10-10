@@ -1,0 +1,19 @@
+# Zweites Gateway mit der Cilium-GatewayClass, feste IP .101
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: web-cilium
+  namespace: infra
+spec:
+  gatewayClassName: cilium
+  infrastructure:
+    annotations:
+      lbipam.cilium.io/ips: 10.10.20.101
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      hostname: "*.cilium.apps.lab.internal"
+      allowedRoutes:
+        namespaces:
+          from: All

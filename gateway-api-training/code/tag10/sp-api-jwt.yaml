@@ -1,0 +1,25 @@
+# JWT-Pruefung fuer api.apps.lab.internal gegen Keycloak-Realm "lab"
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: api-jwt
+  namespace: shop
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: api
+  jwt:
+    providers:
+      - name: keycloak
+        issuer: https://keycloak.apps.lab.internal/realms/lab
+        remoteJWKS:
+          uri: >-
+            https://keycloak.apps.lab.internal/realms/lab/protocol/openid-connect/certs
+          backendRefs:
+            - group: gateway.envoyproxy.io
+              kind: Backend
+              name: keycloak
+              port: 443
+        claimToHeaders:
+          - {claim: azp, header: X-Client-Id}
