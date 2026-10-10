@@ -1,0 +1,16 @@
+# Tag 5, Drill 7: Baseline-Tier - Default Deny, den Teams per NetworkPolicy öffnen
+apiVersion: policy.networking.k8s.io/v1alpha2
+kind: ClusterNetworkPolicy
+metadata:
+  name: baseline-deny
+spec:
+  tier: Baseline
+  priority: 50
+  subject:
+    namespaces:
+      matchLabels: {guard-lab: demo}
+  ingress:
+  - name: deny-all-pods
+    action: Deny
+    from:
+    - namespaces: {}

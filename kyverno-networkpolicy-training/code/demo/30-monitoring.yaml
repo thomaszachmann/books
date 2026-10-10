@@ -1,0 +1,39 @@
+# monitoring/scraper: simulierter Prometheus, holt alle 10 s /metrics (Port 9113)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scraper
+  namespace: monitoring
+  labels: {app: scraper, tier: monitoring}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: scraper}
+  template:
+    metadata:
+      labels: {app: scraper, tier: monitoring}
+    spec:
+      terminationGracePeriodSeconds: 1
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 100
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+      - name: scraper
+        image: curlimages/curl:8.22.0
+        command: [sh, -c]
+        args:
+        - |
+          while true; do
+            for ns in shop tenant-a tenant-b; do
+              if curl -s -m 2 -o /dev/null http://api.$ns.svc.cluster.local:9113/metrics
+              then echo "ok   $ns"; else echo "FAIL $ns"; fi
+            done
+            sleep 10
+          done
+        resources:
+          requests: {cpu: 5m, memory: 8Mi}
+          limits: {memory: 32Mi}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities: {drop: [ALL]}

@@ -1,0 +1,47 @@
+# vllm-code nur von LiteLLM und Prometheus erreichbar; Tabby spricht nur LiteLLM
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: vllm-code-ingress
+  namespace: ki-models
+spec:
+  podSelector:
+    matchLabels:
+      app: vllm-code
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchExpressions:
+              - key: kubernetes.io/metadata.name
+                operator: In
+                values: ["ki-gateway", "monitoring"]
+      ports:
+        - port: 8000
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: tabby-egress
+  namespace: ki-code
+spec:
+  podSelector:
+    matchLabels:
+      app: tabby
+  policyTypes: ["Egress"]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ki-gateway
+      ports:
+        - port: 4000

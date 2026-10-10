@@ -1,0 +1,45 @@
+# Tag 9: sichere Defaults für Pods in Demo-Namespaces setzen (nur wenn nicht gesetzt)
+apiVersion: policies.kyverno.io/v1
+kind: MutatingPolicy
+metadata:
+  name: pod-defaults
+spec:
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: [v1]
+        operations: [CREATE]
+        resources: [pods]
+    namespaceSelector:
+      matchLabels:
+        guard-lab: demo
+  mutations:
+    - patchType: ApplyConfiguration
+      applyConfiguration:
+        expression: >-
+          Object{
+            metadata: Object.metadata{
+              labels: {"guard-lab/defaults": "applied"}
+            },
+            spec: Object.spec{
+              securityContext: Object.spec.securityContext{
+                runAsNonRoot: object.spec.?securityContext.?runAsNonRoot
+                  .orValue(true),
+                seccompProfile: Object.spec.securityContext.seccompProfile{
+                  type: object.spec.?securityContext.?seccompProfile.?type
+                    .orValue("RuntimeDefault")
+                }
+              }
+            }
+          }
+    - patchType: JSONPatch
+      jsonPatch:
+        expression: >-
+          object.spec.containers.map(c, object.spec.containers.indexOf(c))
+          .filter(i, object.spec.containers[i].image.contains("@sha256:") &&
+            object.spec.containers[i].imagePullPolicy == "Always")
+          .map(i, JSONPatch{
+            op: "replace",
+            path: "/spec/containers/" + string(i) + "/imagePullPolicy",
+            value: "IfNotPresent"
+          })

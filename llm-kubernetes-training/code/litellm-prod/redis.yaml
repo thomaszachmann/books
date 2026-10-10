@@ -1,0 +1,58 @@
+# Redis für gemeinsame Rate-Limits, Cooldowns und Cache (Tag 12)
+# Bewusst ohne Persistenz: Inhalt ist flüchtig, Spend liegt in Postgres.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: ki-gateway
+  labels:
+    app: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+      containers:
+        - name: redis
+          image: redis:8.8-alpine
+          args: ["--requirepass", "$(REDIS_PASSWORD)", "--maxmemory", "256mb",
+                 "--maxmemory-policy", "allkeys-lru", "--save", ""]
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: litellm-env
+                  key: REDIS_PASSWORD
+          ports:
+            - name: redis
+              containerPort: 6379
+          readinessProbe:
+            tcpSocket:
+              port: redis
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 384Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: ki-gateway
+spec:
+  selector:
+    app: redis
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: redis

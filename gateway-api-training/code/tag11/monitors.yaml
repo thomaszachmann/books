@@ -1,0 +1,33 @@
+# Scrape-Ziele für Envoy Gateway (Tag 11)
+# Datenebene: alle Envoy-Proxy-Pods, Port "metrics" (19001)
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: envoy-proxy
+  namespace: envoy-gateway-system
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: envoy
+      app.kubernetes.io/component: proxy
+  namespaceSelector:
+    any: true
+  podMetricsEndpoints:
+    - port: metrics
+      path: /stats/prometheus
+      interval: 15s
+---
+# Control Plane: envoy-gateway-Service, Port "metrics" (19001)
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: envoy-gateway
+  namespace: envoy-gateway-system
+spec:
+  selector:
+    matchLabels:
+      control-plane: envoy-gateway
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s

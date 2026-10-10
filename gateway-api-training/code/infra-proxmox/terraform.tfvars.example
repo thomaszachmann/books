@@ -1,0 +1,5 @@
+pve_endpoint   = "https://pve.lab.internal:8006/"
+pve_node       = "pve"
+ssh_public_key = "ssh-ed25519 AAAA... thomas@laptop"
+# pve_api_token kommt aus der Umgebung: export TF_VAR_pve_api_token=...
+# Format: export TF_VAR_pve_api_token='tofu@pve!provider=<uuid>'

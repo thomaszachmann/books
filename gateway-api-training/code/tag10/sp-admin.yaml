@@ -1,0 +1,24 @@
+# Basic Auth + IP-Allow-List fuer /admin (Secret: siehe Drill 5)
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: shop-admin
+  namespace: shop
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: shop-admin
+  basicAuth:
+    users:
+      name: shop-admin-users       # Key .htpasswd, {SHA}-Hashes
+    forwardUsernameHeader: X-Auth-User
+  authorization:
+    defaultAction: Deny
+    rules:
+      - name: heimnetz
+        action: Allow
+        principal:
+          clientCIDRs:
+            - 10.10.20.0/24
+            - 192.168.178.0/24     # Laptop-Netz anpassen

@@ -1,0 +1,39 @@
+# Tag 11: E2E-Test gegen einen echten Cluster mit Kyverno
+apiVersion: chainsaw.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: image-hygiene
+spec:
+  namespaceTemplate:
+    metadata:
+      labels:
+        guard-lab: demo
+  steps:
+  - name: policy-bereit
+    try:
+    - apply:
+        file: ../../policies/image-hygiene.yaml
+    - assert:
+        resource:
+          apiVersion: policies.kyverno.io/v1
+          kind: ValidatingPolicy
+          metadata:
+            name: image-hygiene
+          status:
+            conditionStatus:
+              ready: true
+  - name: guter-pod-darf
+    try:
+    - apply:
+        file: pod-good.yaml
+    - assert:
+        file: pod-good.yaml
+  - name: latest-wird-abgelehnt
+    try:
+    - apply:
+        file: pod-latest.yaml
+        expect:
+        - check:
+            ($error != null): true
+    - error:
+        file: pod-latest.yaml

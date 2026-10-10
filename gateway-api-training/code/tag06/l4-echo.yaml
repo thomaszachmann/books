@@ -1,0 +1,70 @@
+# TCP- und UDP-Echo: gleiches Image echo-basic, anderer Modus
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tcp-echo
+  namespace: payments
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: tcp-echo}
+  template:
+    metadata:
+      labels: {app: tcp-echo}
+    spec:
+      containers:
+      - name: echo
+        image: registry.k8s.io/gateway-api/echo-basic:v1.6.0
+        env:
+        - {name: TCP_ECHO_SERVER, value: "1"}
+        - {name: TCP_PORT, value: "9100"}
+        - {name: SERVICE_NAME, value: tcp-echo}
+        - name: POD_NAME
+          valueFrom: {fieldRef: {fieldPath: metadata.name}}
+        resources:
+          requests: {cpu: 10m, memory: 16Mi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tcp-echo
+  namespace: payments
+spec:
+  selector: {app: tcp-echo}
+  ports:
+  - {name: tcp, port: 9100, targetPort: 9100, protocol: TCP}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: udp-echo
+  namespace: payments
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: udp-echo}
+  template:
+    metadata:
+      labels: {app: udp-echo}
+    spec:
+      containers:
+      - name: echo
+        image: registry.k8s.io/gateway-api/echo-basic:v1.6.0
+        env:
+        - {name: UDP_ECHO_SERVER, value: "1"}
+        - {name: UDP_PORT, value: "9200"}
+        - {name: SERVICE_NAME, value: udp-echo}
+        - name: POD_NAME
+          valueFrom: {fieldRef: {fieldPath: metadata.name}}
+        resources:
+          requests: {cpu: 10m, memory: 16Mi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: udp-echo
+  namespace: payments
+spec:
+  selector: {app: udp-echo}
+  ports:
+  - {name: udp, port: 9200, targetPort: 9200, protocol: UDP}

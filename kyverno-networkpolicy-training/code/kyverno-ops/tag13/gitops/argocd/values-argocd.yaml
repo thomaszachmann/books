@@ -1,0 +1,9 @@
+# Tag 13: schlankes Argo CD für das Lab (ohne Dex, ohne Notifications).
+# Kyverno-Reports schließt Argo CD >= 3.0 schon per Default von der Verwaltung aus.
+dex:
+  enabled: false
+notifications:
+  enabled: false
+configs:
+  params:
+    server.insecure: true

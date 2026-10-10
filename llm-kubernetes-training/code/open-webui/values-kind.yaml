@@ -1,0 +1,75 @@
+# Open WebUI im kind-Lab (Tag 5) – Chart open-webui/open-webui 16.6.0
+# Modelle ausschließlich über LiteLLM; Secrets vorher anlegen (owui-secrets)
+image:
+  useSlim: true                  # ghcr.io/open-webui/open-webui:0.11.4-slim
+ollama:
+  enabled: false                 # kein eigenes Ollama im Chart
+pipelines:
+  enabled: false
+websocket:
+  enabled: false                 # ein Replica: kein Redis nötig
+
+openaiBaseApiUrl: http://litellm.ki-gateway:4000/v1
+openaiApiKeyExistingSecret: owui-secrets
+openaiApiKeyExistingSecretKey: litellm-key
+
+persistence:
+  enabled: true
+  size: 2Gi
+  storageClass: standard         # SQLite + Uploads + Vektoren unter /app/backend/data
+
+ingress:
+  enabled: true
+  class: nginx
+  host: chat.ki.localtest.me
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: 20m
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+
+startupProbe:                    # erster Start: DB-Migrationen
+  httpGet: {path: /health, port: http}
+  periodSeconds: 10
+  failureThreshold: 30
+readinessProbe:
+  httpGet: {path: /health, port: http}
+  periodSeconds: 10
+livenessProbe:
+  httpGet: {path: /health, port: http}
+  periodSeconds: 20
+  timeoutSeconds: 5
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 768Mi
+  limits:
+    memory: 1536Mi
+
+extraEnvVars:
+  - name: WEBUI_URL
+    value: http://chat.ki.localtest.me
+  - name: WEBUI_SECRET_KEY       # signiert die Login-Tokens (JWT)
+    valueFrom:
+      secretKeyRef: {name: owui-secrets, key: webui-secret}
+  - name: WEBUI_ADMIN_EMAIL      # erster Admin ohne Klick-Registrierung
+    value: admin@ki.lab
+  - name: WEBUI_ADMIN_PASSWORD
+    valueFrom:
+      secretKeyRef: {name: owui-secrets, key: admin-password}
+  - name: DEFAULT_USER_ROLE
+    value: pending
+  - name: BYPASS_MODEL_ACCESS_CONTROL   # Lab: Rechte regelt LiteLLM
+    value: "true"
+  - name: ENABLE_EVALUATION_ARENA_MODELS
+    value: "false"
+  - name: RAG_EMBEDDING_ENGINE   # Embeddings über LiteLLM statt im Pod
+    value: openai
+  - name: RAG_EMBEDDING_MODEL
+    value: embed
+  - name: RAG_OPENAI_API_BASE_URL
+    value: http://litellm.ki-gateway:4000/v1
+  - name: RAG_OPENAI_API_KEY
+    valueFrom:
+      secretKeyRef: {name: owui-secrets, key: litellm-key}
+  - name: ENABLE_VERSION_UPDATE_CHECK
+    value: "false"

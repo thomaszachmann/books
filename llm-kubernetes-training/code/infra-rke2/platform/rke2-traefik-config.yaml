@@ -1,0 +1,14 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: rke2-traefik
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    ingressClass:
+      isDefaultClass: true
+    service:
+      spec:
+        type: LoadBalancer
+      annotations:
+        lbipam.cilium.io/ips: "10.10.20.100"

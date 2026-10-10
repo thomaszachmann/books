@@ -1,0 +1,3 @@
+---
+# Treiber-Branch im Gast (Tag 10). DRA braucht >= 580.
+nvidia_host_driver_branch: "580-server"

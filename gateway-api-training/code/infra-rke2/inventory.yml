@@ -1,0 +1,15 @@
+# erzeugt mit: tofu -chdir=../infra-proxmox output -raw inventory
+all:
+  vars:
+    ansible_user: ubuntu
+  children:
+    rke2_servers:
+      hosts:
+        rke2-cp-1: { ansible_host: 10.10.20.11 }
+        rke2-cp-2: { ansible_host: 10.10.20.12 }
+        rke2-cp-3: { ansible_host: 10.10.20.13 }
+    rke2_agents:
+      hosts:
+        rke2-wk-1: { ansible_host: 10.10.20.21 }
+        rke2-wk-2: { ansible_host: 10.10.20.22 }
+        rke2-wk-3: { ansible_host: 10.10.20.23 }

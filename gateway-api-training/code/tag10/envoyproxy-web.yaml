@@ -1,0 +1,21 @@
+# EnvoyProxy web-proxy, Stand Tag 10: Tag-9-Werte + Replikas/Ressourcen
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: web-proxy
+  namespace: infra
+spec:
+  provider:
+    type: Kubernetes
+    kubernetes:
+      envoyDeployment:
+        replicas: 2
+        container:
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {memory: 512Mi}
+      envoyService:
+        type: LoadBalancer
+        externalTrafficPolicy: Cluster   # Pflicht mit Cilium L2
+        annotations:
+          lbipam.cilium.io/ips: 10.10.20.100

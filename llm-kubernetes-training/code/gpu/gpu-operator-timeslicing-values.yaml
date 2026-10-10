@@ -1,0 +1,5 @@
+# Overlay zu gpu-operator-values.yaml: Device Plugin liest time-slicing-config
+devicePlugin:
+  config:
+    name: time-slicing-config
+    default: any

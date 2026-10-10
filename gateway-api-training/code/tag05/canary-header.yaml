@@ -1,0 +1,28 @@
+# Header-Canary: Tester mit x-canary: always landen immer auf v2
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: shop
+  namespace: shop
+spec:
+  parentRefs:
+    - name: web
+      namespace: infra
+      sectionName: https-shop
+  hostnames:
+    - shop.gw.localtest.me
+  rules:
+    - matches:
+        - headers:
+            - name: x-canary
+              value: always
+      backendRefs:
+        - name: shop-v2
+          port: 80
+    - backendRefs:
+        - name: shop-v1
+          port: 80
+          weight: 100
+        - name: shop-v2
+          port: 80
+          weight: 0

@@ -1,0 +1,29 @@
+# Envoy holt JWKS/Tokens ueber HTTPS von keycloak.apps.lab.internal
+# und vertraut dafuer der Lab-CA (ConfigMap lab-ca, siehe Drill 6)
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: Backend
+metadata:
+  name: keycloak
+  namespace: shop
+spec:
+  endpoints:
+    - fqdn:
+        hostname: keycloak.apps.lab.internal
+        port: 443
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: BackendTLSPolicy
+metadata:
+  name: keycloak
+  namespace: shop
+spec:
+  targetRefs:
+    - group: gateway.envoyproxy.io
+      kind: Backend
+      name: keycloak
+  validation:
+    hostname: keycloak.apps.lab.internal
+    caCertificateRefs:
+      - group: ""
+        kind: ConfigMap
+        name: lab-ca

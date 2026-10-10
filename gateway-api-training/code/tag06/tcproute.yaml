@@ -1,0 +1,14 @@
+# TCPRoute (v1 seit Gateway API v1.6)
+apiVersion: gateway.networking.k8s.io/v1
+kind: TCPRoute
+metadata:
+  name: tcp-echo
+  namespace: payments
+spec:
+  parentRefs:
+    - name: web
+      namespace: infra
+      sectionName: tcp
+  rules:
+    - backendRefs:
+        - {name: tcp-echo, port: 9100}

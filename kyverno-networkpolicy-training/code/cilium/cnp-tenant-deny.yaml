@@ -1,0 +1,38 @@
+# Tag 5, Drill 5: Admin-Tier - Mandanten dürfen sich nie erreichen
+apiVersion: policy.networking.k8s.io/v1alpha2
+kind: ClusterNetworkPolicy
+metadata:
+  name: tenant-a-isolation
+spec:
+  tier: Admin
+  priority: 10
+  subject:
+    namespaces:
+      matchLabels: {tenant: a}
+  ingress:
+  - name: deny-other-tenants
+    action: Deny
+    from:
+    - namespaces:
+        matchExpressions:
+        - {key: tenant, operator: Exists}
+        - {key: tenant, operator: NotIn, values: [a]}
+---
+apiVersion: policy.networking.k8s.io/v1alpha2
+kind: ClusterNetworkPolicy
+metadata:
+  name: tenant-b-isolation
+spec:
+  tier: Admin
+  priority: 10
+  subject:
+    namespaces:
+      matchLabels: {tenant: b}
+  ingress:
+  - name: deny-other-tenants
+    action: Deny
+    from:
+    - namespaces:
+        matchExpressions:
+        - {key: tenant, operator: Exists}
+        - {key: tenant, operator: NotIn, values: [b]}

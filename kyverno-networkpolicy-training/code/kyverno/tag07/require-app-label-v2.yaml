@@ -1,0 +1,24 @@
+# Tag 7 (Challenge): app-Label Pflicht, nicht leer, max. 30 Zeichen
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: require-app-label
+spec:
+  validationActions: [Deny]
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [pods]
+    namespaceSelector:
+      matchLabels:
+        guard-lab: demo
+  variables:
+    - name: app
+      expression: "object.metadata.?labels[?'app'].orValue('')"
+  validations:
+    - expression: "variables.app != '' && size(variables.app) <= 30"
+      messageExpression: >-
+        'Pod ' + object.metadata.name + ': Label app fehlt, ist leer oder zu lang ('
+        + string(size(variables.app)) + ' Zeichen, max. 30).'

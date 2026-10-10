@@ -1,0 +1,14 @@
+all:
+  vars:
+    ansible_user: ubuntu
+  children:
+    rke2_servers:
+      hosts:
+%{ for name, ip in servers ~}
+        ${name}: { ansible_host: ${ip} }
+%{ endfor ~}
+    rke2_agents:
+      hosts:
+%{ for name, ip in agents ~}
+        ${name}: { ansible_host: ${ip} }
+%{ endfor ~}

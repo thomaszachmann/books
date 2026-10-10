@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tenant-c
+  labels: {guard-lab: demo, tenant: c}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: scratch
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: worker, namespace: shop, labels: {app: worker}}
+spec:
+  selector: {matchLabels: {app: worker}}
+  template:
+    metadata: {labels: {app: worker}}
+    spec:
+      containers: [{name: w, image: "nginxinc/nginx-unprivileged:1.31-alpine"}]

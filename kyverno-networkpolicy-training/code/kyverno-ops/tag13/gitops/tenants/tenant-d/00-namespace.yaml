@@ -1,0 +1,15 @@
+# Mandanten-Onboarding: genau dieses Objekt reicht, Kyverno erledigt den Rest
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tenant-d
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  labels:
+    guard-lab: demo
+    team: tenant-d
+    tenant: d
+    # identisch mit der Kyverno-Mutation, sonst meldet Argo CD OutOfSync
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/warn: restricted

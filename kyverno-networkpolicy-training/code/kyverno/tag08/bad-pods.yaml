@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: root-shell
+  namespace: shop
+  labels: {app: debug}
+spec:
+  hostPID: true
+  containers:
+    - name: sh
+      image: nginxinc/nginx-unprivileged:1.31-alpine
+      securityContext: {privileged: true}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: lazy
+  namespace: shop
+  labels: {app: lazy}
+spec:
+  containers:
+    - name: web
+      image: nginxinc/nginx-unprivileged:1.31-alpine

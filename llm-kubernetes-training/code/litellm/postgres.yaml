@@ -1,0 +1,66 @@
+# Postgres für LiteLLM (Virtual Keys, Budgets, Spend-Logs) – nur Lab!
+# Produktion: CloudNativePG mit Backups (Tag 12)
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: ki-gateway
+spec:
+  selector:
+    app: postgres
+  ports:
+    - name: pg
+      port: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: ki-gateway
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:17-alpine
+          env:
+            - name: POSTGRES_DB
+              value: litellm
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef: {name: litellm-pg, key: username}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: litellm-pg, key: password}
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          ports:
+            - name: pg
+              containerPort: 5432
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "litellm", "-d", "litellm"]
+            periodSeconds: 10
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {memory: 512Mi}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: standard
+        resources:
+          requests:
+            storage: 1Gi

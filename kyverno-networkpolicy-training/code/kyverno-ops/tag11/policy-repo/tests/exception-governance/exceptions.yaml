@@ -1,0 +1,25 @@
+apiVersion: policies.kyverno.io/v1
+kind: PolicyException
+metadata: {name: ok, namespace: policy-exceptions}
+spec:
+  policyRefs: [{name: image-hygiene, kind: ValidatingPolicy}]
+  matchConditions: [{name: alle, expression: "true"}]
+  expiresAt: "2026-12-31T23:59:59Z"
+  properties: {ticket: SEC-1, owner: team-shop}
+---
+apiVersion: policies.kyverno.io/v1
+kind: PolicyException
+metadata: {name: ohne-ticket, namespace: policy-exceptions}
+spec:
+  policyRefs: [{name: image-hygiene, kind: ValidatingPolicy}]
+  matchConditions: [{name: alle, expression: "true"}]
+  expiresAt: "2026-12-31T23:59:59Z"
+---
+apiVersion: policies.kyverno.io/v1
+kind: PolicyException
+metadata: {name: fuer-immer, namespace: policy-exceptions}
+spec:
+  policyRefs: [{name: image-hygiene, kind: ValidatingPolicy}]
+  matchConditions: [{name: alle, expression: "true"}]
+  expiresAt: "2099-01-01T00:00:00Z"
+  properties: {ticket: SEC-2, owner: team-shop}

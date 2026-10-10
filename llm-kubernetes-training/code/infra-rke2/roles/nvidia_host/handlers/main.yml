@@ -1,0 +1,4 @@
+---
+- name: Reboot GPU node
+  ansible.builtin.reboot:
+    reboot_timeout: 600

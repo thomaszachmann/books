@@ -1,0 +1,26 @@
+# Tag 4, Drill 3: shop/api nimmt nur noch frontend (8080) und scraper (9113) an
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: api-l4
+  namespace: shop
+spec:
+  endpointSelector:
+    matchLabels:
+      app: api
+  ingress:
+  - fromEndpoints:
+    - matchLabels:
+        app: frontend          # ohne Namespace-Label: nur aus shop
+    toPorts:
+    - ports:
+      - port: "8080"
+        protocol: TCP
+  - fromEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: monitoring
+        app: scraper
+    toPorts:
+    - ports:
+      - port: "9113"
+        protocol: TCP

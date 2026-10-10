@@ -1,0 +1,73 @@
+# Embedding-Server (all-MiniLM-L6-v2, 384 Dimensionen) für den Alias "embed"
+# OpenAI-API: http://llamacpp-embed.ki-models:8080/v1, Modellname all-minilm
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llamacpp-embed
+  namespace: ki-models
+  labels:
+    app: llamacpp-embed
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: llamacpp-embed
+  template:
+    metadata:
+      labels:
+        app: llamacpp-embed
+    spec:
+      nodeSelector:
+        ki-lab/role: models
+      containers:
+        - name: server
+          image: ghcr.io/ggml-org/llama.cpp:server-b11515
+          args:
+            - --hf-repo
+            - second-state/All-MiniLM-L6-v2-Embedding-GGUF
+            - --hf-file
+            - all-MiniLM-L6-v2-Q8_0.gguf
+            - --alias
+            - all-minilm
+            - --embeddings
+            - --ctx-size
+            - "512"
+            - --threads
+            - "1"
+            - --metrics
+          env:
+            - name: LLAMA_CACHE
+              value: /models
+          ports:
+            - name: http
+              containerPort: 8080
+          resources:
+            requests: {cpu: 250m, memory: 256Mi}
+            limits: {cpu: "1", memory: 512Mi}
+          startupProbe:
+            httpGet: {path: /health, port: http}
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet: {path: /health, port: http}
+            periodSeconds: 10
+          volumeMounts:
+            - name: models
+              mountPath: /models
+      volumes:
+        - name: models
+          emptyDir:
+            sizeLimit: 200Mi    # 25 MB Modell, Download dauert Sekunden
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: llamacpp-embed
+  namespace: ki-models
+spec:
+  selector:
+    app: llamacpp-embed
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

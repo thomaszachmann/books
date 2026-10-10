@@ -1,0 +1,11 @@
+# Tag 6: kind in GitLab CI (Docker-in-Docker) - API-Server über den Service "docker"
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+networking:
+  apiServerAddress: "0.0.0.0"   # nur im Wegwerf-CI-Job vertretbar
+  apiServerPort: 6443
+kubeadmConfigPatches:
+- |
+  kind: ClusterConfiguration
+  apiServer:
+    certSANs: ["docker"]

@@ -1,0 +1,19 @@
+# Tabby gegen LiteLLM – landet als Secret im Pod unter /data/config.toml
+[model.completion.http]
+kind = "vllm/completion"
+model_name = "code"
+api_endpoint = "http://litellm.ki-gateway:4000/v1"
+api_key = "__LITELLM_TABBY_KEY__"
+prompt_template = "<|fim_prefix|>{prefix}<|fim_suffix|>{suffix}<|fim_middle|>"
+
+[model.chat.http]
+kind = "openai/chat"
+model_name = "code"
+api_endpoint = "http://litellm.ki-gateway:4000/v1"
+api_key = "__LITELLM_TABBY_KEY__"
+
+[model.embedding.http]
+kind = "openai/embedding"
+model_name = "embed"
+api_endpoint = "http://litellm.ki-gateway:4000/v1"
+api_key = "__LITELLM_TABBY_KEY__"

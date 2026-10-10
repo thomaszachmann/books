@@ -1,0 +1,102 @@
+# Gateway web, Stand Tag 7: jeder Listener nur für die Teams, denen er gehört
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: web
+  namespace: infra
+  annotations:
+    cert-manager.io/cluster-issuer: lab-ca
+spec:
+  gatewayClassName: eg
+  allowedListeners:            # ListenerSets nur aus App-Team-Namespaces
+    namespaces:
+      from: Selector
+      selector:
+        matchLabels:
+          gw-lab/team: shop
+  listeners:
+    - name: http               # nur der HTTPS-Redirect aus infra
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: Same
+    - name: https-shop
+      protocol: HTTPS
+      port: 443
+      hostname: shop.gw.localtest.me
+      tls:
+        certificateRefs:
+          - name: shop-gw-tls
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              gw-lab/team: shop
+    - name: https-api          # geteilt: shop und payments
+      protocol: HTTPS
+      port: 443
+      hostname: api.gw.localtest.me
+      tls:
+        certificateRefs:
+          - name: api-gw-tls
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchExpressions:
+              - key: gw-lab/team
+                operator: In
+                values: [shop, payments]
+        kinds:
+          - kind: HTTPRoute
+    - name: tls-secure
+      protocol: TLS
+      port: 8443
+      hostname: secure.gw.localtest.me
+      tls:
+        mode: Passthrough
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              gw-lab/team: shop
+    - name: https-grpc
+      protocol: HTTPS
+      port: 443
+      hostname: grpc.gw.localtest.me
+      tls:
+        certificateRefs:
+          - name: grpc-gw-tls
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              gw-lab/team: payments
+        kinds:
+          - kind: GRPCRoute
+    - name: tcp
+      protocol: TCP
+      port: 9100
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              gw-lab/team: payments
+        kinds:
+          - kind: TCPRoute
+    - name: udp
+      protocol: UDP
+      port: 9200
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels:
+              gw-lab/team: payments
+        kinds:
+          - kind: UDPRoute

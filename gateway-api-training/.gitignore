@@ -1,0 +1,45 @@
+# The labs run in ~/gw-lab, not here. Tag 8-13 work inside ~/gw-lab/code/...,
+# so if you copy or clone this directory there, these are what the labs
+# generate - own values, state, hashes, certificates, downloads.
+# None of it belongs in Git.
+
+# Tag 8 - OpenTofu (infra-proxmox): eigene Werte, Plan, State
+terraform.tfvars
+*.plan
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+
+# Tag 8, 9 - Sicherungen von sed -i.bak (terraform.tfvars, group_vars/all.yml)
+*.bak
+
+# Tag 8 - Kubeconfig (das Buch legt sie nach ~/.kube/rke2-lab.yaml)
+rke2-lab.yaml
+rke2.yaml
+kubeconfig*
+
+# Tag 4, 9 - Lab-CA und Zertifikate (lab-ca.crt, rke2-lab-ca.crt)
+*.crt
+*.key
+*.pem
+*.csr
+
+# Tag 10 - Basic-Auth-Hashes
+.htpasswd
+
+# Tag 11 - von dashboards.sh geladene Grafana-Dashboards
+dashboards/
+
+# Tag 12 - Conformance-Report, Testsuite-Checkout, Exporte
+eg-report.yaml
+lab-report.yaml
+gateway-api/
+gitops-export/
+vorher/
+pods.before
+binding-backup.yaml
+
+# Tag 13 - Ausgaben von ingress2gateway
+i2gw-*.yaml
+i2gw-*.txt

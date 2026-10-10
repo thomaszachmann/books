@@ -1,0 +1,32 @@
+# Tag 6: GitHub Actions - nach .github/workflows/np-tests.yaml kopieren
+name: np-tests
+on:
+  pull_request:
+    paths: ["code/**"]
+  workflow_dispatch:
+jobs:
+  matrix:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash               # = bash -eo pipefail: tee schluckt den rc nicht
+    steps:
+    - uses: actions/checkout@v7
+    - uses: helm/kind-action@v1.15.1      # kindnet setzt NetworkPolicies durch
+      with:
+        version: v0.33.0
+        cluster_name: np-ci
+    - name: Demo-App ausrollen
+      run: |
+        kubectl apply -f code/demo/
+        kubectl wait --for=condition=Ready pod --all -A --timeout=300s
+    - name: Policies anwenden
+      run: kubectl apply -f code/np-tests/policies/
+    - name: Testmatrix
+      env:
+        CC: ${{ github.workspace }}/code/demo/conncheck.sh
+      run: |
+        sleep 5
+        code/np-tests/np-matrix.sh --md code/np-tests/matrix.tsv \
+          | tee -a "$GITHUB_STEP_SUMMARY"

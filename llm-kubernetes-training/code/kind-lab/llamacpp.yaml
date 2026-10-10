@@ -1,0 +1,104 @@
+# llama.cpp-Server mit kleinem Modell (CPU) – Namespace ki-models
+# OpenAI-API: http://llamacpp.ki-models:8080/v1, Modellname qwen2.5-0.5b
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: model-cache
+  namespace: ki-models
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: standard
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llamacpp
+  namespace: ki-models
+  labels:
+    app: llamacpp
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate            # RWO-PVC: nie zwei Pods gleichzeitig
+  selector:
+    matchLabels:
+      app: llamacpp
+  template:
+    metadata:
+      labels:
+        app: llamacpp
+    spec:
+      nodeSelector:
+        ki-lab/role: models
+      containers:
+        - name: server
+          image: ghcr.io/ggml-org/llama.cpp:server-b11515
+          imagePullPolicy: IfNotPresent
+          args:
+            - --hf-repo
+            - Qwen/Qwen2.5-0.5B-Instruct-GGUF:Q4_K_M
+            - --alias
+            - qwen2.5-0.5b
+            - --ctx-size
+            - "4096"
+            - --parallel
+            - "2"
+            - --threads
+            - "2"
+            - --metrics
+          env:
+            - name: LLAMA_CACHE
+              value: /models
+          ports:
+            - name: http
+              containerPort: 8080
+          resources:
+            requests:
+              cpu: "1"
+              memory: 1Gi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          startupProbe:          # Download + Laden: bis zu 10 min
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+          volumeMounts:
+            - name: models
+              mountPath: /models
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: model-cache
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: llamacpp
+  namespace: ki-models
+  labels:
+    app: llamacpp
+spec:
+  selector:
+    app: llamacpp
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

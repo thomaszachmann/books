@@ -1,0 +1,96 @@
+# Schlanker kube-prometheus-stack für das Lab (Tag 11)
+# Operator + Prometheus + kube-state-metrics; Grafana kommt in Drill 8 dazu.
+grafana:
+  enabled: false
+alertmanager:
+  enabled: false
+nodeExporter:
+  enabled: false
+defaultRules:
+  create: false
+kubeApiServer: {enabled: false}
+kubelet: {enabled: false}
+kubeControllerManager: {enabled: false}
+coreDns: {enabled: false}
+kubeEtcd: {enabled: false}
+kubeScheduler: {enabled: false}
+kubeProxy: {enabled: false}
+prometheus:
+  prometheusSpec:
+    retention: 6h
+    scrapeInterval: 15s
+    # Monitore/Regeln aus allen Namespaces, ohne release-Label
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    resources:
+      requests: {cpu: 100m, memory: 256Mi}
+kube-state-metrics:
+  collectors: [deployments, pods, horizontalpodautoscalers]
+  rbac:
+    extraRules:
+      - apiGroups: [gateway.networking.k8s.io]
+        resources: [gatewayclasses, gateways, httproutes, grpcroutes]
+        verbs: [list, watch]
+  customResourceState:
+    enabled: true
+    config:
+      kind: CustomResourceStateMetrics
+      spec:
+        resources:
+          - groupVersionKind:
+              group: gateway.networking.k8s.io
+              version: v1
+              kind: Gateway
+            metricNamePrefix: gatewayapi_gateway
+            labelsFromPath:
+              name: [metadata, name]
+              namespace: [metadata, namespace]
+            metrics:
+              - name: status
+                help: Gateway-Conditions (1 = True)
+                each:
+                  type: Gauge
+                  gauge:
+                    path: [status, conditions]
+                    labelsFromPath:
+                      type: [type]
+                    valueFrom: [status]
+              - name: listener_attached_routes
+                help: Anzahl angehängter Routen pro Listener
+                each:
+                  type: Gauge
+                  gauge:
+                    path: [status, listeners]
+                    labelsFromPath:
+                      listener: [name]
+                    valueFrom: [attachedRoutes]
+          - groupVersionKind:
+              group: gateway.networking.k8s.io
+              version: v1
+              kind: HTTPRoute
+            metricNamePrefix: gatewayapi_httproute
+            labelsFromPath:
+              name: [metadata, name]
+              namespace: [metadata, namespace]
+            metrics:
+              - name: accepted
+                help: Accepted-Condition pro Parent (1 = True)
+                each:
+                  type: Gauge
+                  gauge:
+                    path: [status, parents]
+                    labelsFromPath:
+                      gateway: [parentRef, name]
+                      listener: [parentRef, sectionName]
+                    valueFrom: [conditions, "[type=Accepted]", status]
+              - name: resolved_refs
+                help: ResolvedRefs-Condition pro Parent (1 = True)
+                each:
+                  type: Gauge
+                  gauge:
+                    path: [status, parents]
+                    labelsFromPath:
+                      gateway: [parentRef, name]
+                      listener: [parentRef, sectionName]
+                    valueFrom: [conditions, "[type=ResolvedRefs]", status]

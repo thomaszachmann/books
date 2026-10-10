@@ -1,0 +1,13 @@
+# NVIDIA GPU Operator v26.7.1 auf RKE2 (Tag 10)
+# Treiber liegt im Gast (Rolle nvidia_host), der Operator macht den Rest.
+driver:
+  enabled: false
+toolkit:
+  env:
+    # RKE2 betreibt sein eigenes containerd unter /run/k3s
+    - name: CONTAINERD_SOCKET
+      value: /run/k3s/containerd/containerd.sock
+dcgmExporter:
+  serviceMonitor:
+    enabled: true           # kube-prometheus-stack aus Tag 9 sammelt ihn ein
+    interval: 15s

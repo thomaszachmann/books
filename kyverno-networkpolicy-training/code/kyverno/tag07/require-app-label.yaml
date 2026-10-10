@@ -1,0 +1,19 @@
+# Tag 7: erste ValidatingPolicy - jeder Pod in Demo-Namespaces braucht das Label app
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: require-app-label
+spec:
+  validationActions: [Audit]
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [pods]
+    namespaceSelector:
+      matchLabels:
+        guard-lab: demo
+  validations:
+    - expression: "has(object.metadata.labels) && 'app' in object.metadata.labels"
+      message: "Pod braucht das Label app (z. B. app=api)."

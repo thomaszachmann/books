@@ -1,0 +1,46 @@
+# Secrets aus OpenBao per External Secrets Operator (Tag 12, optional)
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: litellm-eso
+  namespace: ki-gateway
+---
+apiVersion: external-secrets.io/v1
+kind: SecretStore
+metadata:
+  name: openbao
+  namespace: ki-gateway
+spec:
+  provider:
+    vault:                     # OpenBao spricht die Vault-API
+      server: https://bao.lab.internal:8200
+      path: secret
+      version: v2
+      caProvider:
+        type: ConfigMap
+        name: lab-ca
+        key: ca.crt
+      auth:
+        kubernetes:
+          mountPath: kubernetes
+          role: litellm
+          serviceAccountRef:
+            name: litellm-eso
+            audiences: ["openbao"]
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: litellm-env
+  namespace: ki-gateway
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: SecretStore
+    name: openbao
+  target:
+    name: litellm-env
+    creationPolicy: Owner
+  dataFrom:
+    - extract:
+        key: ki-gateway/litellm   # Keys = Env-Namen

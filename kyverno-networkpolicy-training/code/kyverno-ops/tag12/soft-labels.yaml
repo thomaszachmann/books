@@ -1,0 +1,19 @@
+# Tag 12: unkritische Policy - bei Kyverno-Ausfall nicht blockieren
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: soft-team-label
+spec:
+  failurePolicy: Ignore
+  webhookConfiguration:
+    timeoutSeconds: 3
+  validationActions: [Audit]
+  matchConstraints:
+    resourceRules:
+    - apiGroups: [apps]
+      apiVersions: [v1]
+      operations: [CREATE, UPDATE]
+      resources: [deployments]
+  validations:
+  - expression: "'team' in object.metadata.?labels.orValue({})"
+    message: Deployments sollten ein Label team tragen.

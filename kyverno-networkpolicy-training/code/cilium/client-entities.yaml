@@ -1,0 +1,19 @@
+# Tag 4, Drill 7: Entities statt IP-Listen - API-Server und Ziele im Cluster
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: client-entities
+  namespace: default
+spec:
+  endpointSelector:
+    matchLabels:
+      app: client
+  egress:
+  - toEntities:
+    - kube-apiserver           # egal, welche IP der API-Server gerade hat
+    toPorts:
+    - ports:
+      - port: "6443"
+        protocol: TCP
+  - toEntities:
+    - host                     # der eigene Node (z. B. node-local Agents)

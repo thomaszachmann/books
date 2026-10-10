@@ -1,0 +1,18 @@
+apiVersion: cli.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: delete-finished-pods
+policies: [../delete-finished-pods.yaml]
+resources: [pods-sample.yaml]
+variables: values.yaml
+results:
+- isDeletingPolicy: true
+  policy: delete-finished-pods
+  kind: Pod
+  resources: [tenant-a/job-done]
+  result: pass
+- isDeletingPolicy: true
+  policy: delete-finished-pods
+  kind: Pod
+  resources: [tenant-a/api-running]
+  result: fail

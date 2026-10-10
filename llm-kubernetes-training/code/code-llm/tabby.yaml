@@ -1,0 +1,104 @@
+# Tabby (Alternative zu Continue) im Namespace ki-code – Modelle über LiteLLM
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: tabby-data
+  namespace: ki-code
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tabby
+  namespace: ki-code
+  labels:
+    app: tabby
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: tabby
+  template:
+    metadata:
+      labels:
+        app: tabby
+    spec:
+      containers:
+        - name: tabby
+          image: tabbyml/tabby:0.32.0
+          args: ["serve", "--port", "8080"]
+          env:
+            - name: TABBY_DISABLE_USAGE_COLLECTION
+              value: "1"
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /v1/health
+              port: http
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              memory: 2Gi
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: config
+              mountPath: /data/config.toml
+              subPath: config.toml
+              readOnly: true
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: tabby-data
+        - name: config
+          secret:
+            secretName: tabby-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tabby
+  namespace: ki-code
+spec:
+  selector:
+    app: tabby
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tabby
+  namespace: ki-code
+  annotations:
+    cert-manager.io/cluster-issuer: lab-ca
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts: ["code.lab.internal"]
+      secretName: code-lab-internal-tls
+  rules:
+    - host: code.lab.internal
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: tabby
+                port:
+                  name: http

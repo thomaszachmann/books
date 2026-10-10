@@ -1,0 +1,45 @@
+# The labs run in ~/guard-lab, not here. If you work inside this directory
+# anyway, these are what the labs generate - keys, certificates, reports,
+# rendered output. None of it belongs in Git.
+
+# Tag 10, 14 - Lab-Registry: selbstsigniertes Zertifikat + Schlüssel
+# (setup-registry.sh legt certs/ im aktuellen Ordner an)
+certs/
+*.key
+*.crt
+*.pem
+
+# Tag 10 - cosign: Schlüsselpaare (cosign.key/.pub, fremd.key/.pub),
+# Signing-Config, SBOM, Policy mit eingebettetem Public Key
+cosign.key
+cosign.pub
+fremd.key
+fremd.pub
+*.pub
+offline.json
+sbom.spdx.json
+*.spdx.json
+verify-shop-images.yaml
+
+# Tag 11 - JUnit-Berichte (ci/kyverno-junit.sh, chainsaw --report-name)
+reports/
+chainsaw.xml
+*.junit.xml
+
+# Tag 12 - gerenderte Helm-Ausgabe und Dashboard
+ha.yaml
+pr.yaml
+k-3.9.*.yaml
+dashboard.json
+
+# Tag 6 - Hubble-Flows (IPs, Namen, URLs) und Testläufe
+flows.json
+run.txt
+
+# Tag 2 - Sicherungskopien von sed -i.bak
+*.bak
+
+# Sicherheitsnetz: kind schreibt den Kontext nach ~/.kube/config;
+# eine Kopie davon gehört nie hierher
+kubeconfig
+*.kubeconfig

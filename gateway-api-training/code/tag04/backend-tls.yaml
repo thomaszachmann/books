@@ -1,0 +1,18 @@
+# Gateway -> Backend wieder verschlüsselt (CA aus ConfigMap lab-ca)
+apiVersion: gateway.networking.k8s.io/v1
+kind: BackendTLSPolicy
+metadata:
+  name: secure
+  namespace: shop
+spec:
+  targetRefs:
+    - group: ""
+      kind: Service
+      name: secure
+      sectionName: https
+  validation:
+    caCertificateRefs:
+      - group: ""
+        kind: ConfigMap
+        name: lab-ca
+    hostname: secure.shop.svc

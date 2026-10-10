@@ -1,0 +1,22 @@
+# Tag 12: fertige Pods in Mandanten-Namespaces nach einer Stunde entfernen
+apiVersion: policies.kyverno.io/v1
+kind: DeletingPolicy
+metadata:
+  name: delete-finished-pods
+spec:
+  schedule: "*/15 * * * *"
+  matchConstraints:
+    resourceRules:
+    - apiGroups: [""]
+      apiVersions: [v1]
+      resources: [pods]
+    namespaceSelector:
+      matchExpressions:
+      - {key: tenant, operator: Exists}
+  conditions:
+  - name: fertig
+    expression: >-
+      object.status.?phase.orValue('') in ['Succeeded', 'Failed']
+  - name: aelter-als-1h
+    expression: >-
+      time.now() - timestamp(object.metadata.creationTimestamp) > duration('1h')

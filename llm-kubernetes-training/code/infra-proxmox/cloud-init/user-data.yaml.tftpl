@@ -1,0 +1,21 @@
+#cloud-config
+hostname: ${hostname}
+fqdn: ${hostname}.${domain}
+manage_etc_hosts: true
+timezone: Europe/Berlin
+users:
+  - name: ubuntu
+    groups: [sudo]
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    lock_passwd: true
+    ssh_authorized_keys:
+      - ${ssh_key}
+package_update: true
+packages:
+  - qemu-guest-agent
+  - open-iscsi
+  - nfs-common
+  - curl
+runcmd:
+  - systemctl enable --now qemu-guest-agent iscsid

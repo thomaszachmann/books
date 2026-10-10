@@ -1,0 +1,41 @@
+---
+- name: Ersten RKE2-Server initialisieren
+  hosts: rke2_servers[0]
+  become: true
+  roles:
+    - rke2_server
+
+- name: Weitere Server einzeln joinen
+  hosts: rke2_servers[1:]
+  become: true
+  serial: 1
+  roles:
+    - rke2_server
+
+- name: Agents joinen
+  hosts: rke2_agents
+  become: true
+  serial: 2
+  roles:
+    - rke2_agent
+
+- name: Kubeconfig auf den Laptop holen
+  hosts: rke2_servers[0]
+  become: true
+  tasks:
+    - name: Kubeconfig lesen
+      ansible.builtin.slurp:
+        src: /etc/rancher/rke2/rke2.yaml
+      register: rke2_kubeconfig
+
+    - name: Kubeconfig lokal schreiben (VIP-Hostname, Kontext rke2-lab)
+      become: false
+      delegate_to: localhost
+      ansible.builtin.copy:
+        dest: "{{ kubeconfig_local }}"
+        mode: "0600"
+        content: >-
+          {{ rke2_kubeconfig.content | b64decode
+             | replace('https://127.0.0.1:6443',
+                       'https://' ~ rke2_vip_hostname ~ ':6443')
+             | regex_replace('(?m): default$', ': ' ~ kubeconfig_context) }}

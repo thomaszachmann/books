@@ -1,0 +1,39 @@
+# kube-prometheus-stack, minimal für das Lab
+grafana:
+  adminPassword: lab-grafana-1234     # Lab-Wert!
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    hosts: ["grafana.lab.internal"]
+    annotations:
+      cert-manager.io/cluster-issuer: lab-ca
+    tls:
+      - secretName: grafana-tls
+        hosts: ["grafana.lab.internal"]
+prometheus:
+  prometheusSpec:
+    retention: 7d
+    # ServiceMonitors aller Namespaces einsammeln (vLLM, LiteLLM, DCGM ...)
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: longhorn
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 20Gi
+alertmanager:
+  alertmanagerSpec:
+    replicas: 1
+# RKE2 bindet diese Komponenten an 127.0.0.1 bzw. kube-proxy fehlt (Cilium)
+kubeProxy:
+  enabled: false
+kubeEtcd:
+  enabled: false
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false

@@ -1,0 +1,57 @@
+# LiteLLM Proxy – Lab-Konfiguration (Tag 4)
+# Backends kommen aus Umgebungsvariablen:
+#   CHAT_API_BASE  = http://llamacpp.ki-models:8080/v1        (Tag 2)
+#   LARGE_API_BASE = wie CHAT_API_BASE (eigene Variable für den Fallback-Drill)
+#   EMBED_API_BASE = http://llamacpp-embed.ki-models:8080/v1  (Tag 4)
+# Im kind-Lab zeigen chat-small, chat-large und code auf dasselbe
+# 0,5B-Modell. Ab Tag 11/12 tauschst du nur diese Datei, nie die Clients.
+model_list:
+  - model_name: chat-small
+    litellm_params:
+      model: openai/qwen2.5-0.5b
+      api_base: os.environ/CHAT_API_BASE
+      api_key: "none"                # llama.cpp ohne --api-key
+      rpm: 60                        # Kapazität dieses Deployments
+      input_cost_per_token: 0.000001   # Lab-Preise, damit Budgets greifen
+      output_cost_per_token: 0.000002
+    model_info:
+      mode: chat
+  - model_name: chat-large
+    litellm_params:
+      model: openai/qwen2.5-0.5b
+      api_base: os.environ/LARGE_API_BASE
+      api_key: "none"
+      timeout: 120
+      input_cost_per_token: 0.000003
+      output_cost_per_token: 0.000006
+    model_info:
+      mode: chat
+  - model_name: code
+    litellm_params:
+      model: openai/qwen2.5-0.5b
+      api_base: os.environ/CHAT_API_BASE
+      api_key: "none"
+    model_info:
+      mode: chat
+  - model_name: embed
+    litellm_params:
+      model: openai/all-minilm
+      api_base: os.environ/EMBED_API_BASE
+      api_key: "none"
+    model_info:
+      mode: embedding
+
+router_settings:
+  num_retries: 2                     # erneute Versuche bei 5xx/Timeout
+  timeout: 60                        # Sekunden pro Versuch
+  fallbacks:
+    - chat-large: ["chat-small"]
+    - code: ["chat-small"]
+
+litellm_settings:
+  drop_params: true                  # unbekannte OpenAI-Parameter verwerfen
+  callbacks: ["prometheus"]          # /metrics aktivieren
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+  database_url: os.environ/DATABASE_URL

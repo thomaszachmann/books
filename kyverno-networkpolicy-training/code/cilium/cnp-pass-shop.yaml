@@ -1,0 +1,17 @@
+# Tag 5, Drill 6: Admin-Tier - für shop entscheidet das Team selbst (Pass)
+apiVersion: policy.networking.k8s.io/v1alpha2
+kind: ClusterNetworkPolicy
+metadata:
+  name: shop-delegate-monitoring
+spec:
+  tier: Admin
+  priority: 15                 # kleiner = früher geprüft: vor monitoring-accept
+  subject:
+    namespaces:
+      matchLabels: {kubernetes.io/metadata.name: shop}
+  ingress:
+  - name: pass-monitoring
+    action: Pass
+    from:
+    - namespaces:
+        matchLabels: {purpose: monitoring}

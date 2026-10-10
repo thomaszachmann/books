@@ -1,0 +1,103 @@
+# LiteLLM Proxy im Namespace ki-gateway – Service litellm:4000
+# Vorher: Secret litellm-secrets, Secret litellm-pg, ConfigMap litellm-config
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: litellm
+  namespace: ki-gateway
+  labels:
+    app: litellm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: litellm
+  template:
+    metadata:
+      labels:
+        app: litellm
+    spec:
+      containers:
+        - name: litellm
+          image: ghcr.io/berriai/litellm:v1.104.2
+          args: ["--config", "/etc/litellm/config.yaml", "--port", "4000"]
+          env:
+            - name: CHAT_API_BASE
+              value: http://llamacpp.ki-models:8080/v1
+            - name: LARGE_API_BASE
+              value: http://llamacpp.ki-models:8080/v1
+            - name: EMBED_API_BASE
+              value: http://llamacpp-embed.ki-models:8080/v1
+            - name: LITELLM_MASTER_KEY
+              valueFrom:
+                secretKeyRef: {name: litellm-secrets, key: master-key}
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef: {name: litellm-pg, key: username}
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef: {name: litellm-pg, key: password}
+            - name: DATABASE_URL
+              value: postgresql://$(DB_USER):$(DB_PASS)@postgres:5432/litellm
+          ports:
+            - name: http
+              containerPort: 4000
+          startupProbe:            # Prisma-Migrationen beim ersten Start
+            httpGet: {path: /health/readiness, port: http}
+            periodSeconds: 10
+            failureThreshold: 30
+          readinessProbe:
+            httpGet: {path: /health/readiness, port: http}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /health/liveliness, port: http}
+            periodSeconds: 15
+            timeoutSeconds: 5
+          resources:
+            requests: {cpu: 250m, memory: 768Mi}
+            limits: {memory: 1536Mi}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/litellm
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: litellm-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: litellm
+  namespace: ki-gateway
+  labels:
+    app: litellm
+spec:
+  selector:
+    app: litellm
+  ports:
+    - name: http
+      port: 4000
+      targetPort: http
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: litellm
+  namespace: ki-gateway
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"   # lange Antworten
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"      # Streaming
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: llm.ki.localtest.me
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: litellm
+                port:
+                  name: http

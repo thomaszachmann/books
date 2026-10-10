@@ -12,6 +12,9 @@ from there.
 |---|---|---|
 | *Sichere Lieferketten zum Anfassen* (German, 376 pages) | [**PDF**](https://github.com/thomaszachmann/books/releases/download/supply-chain-training-2026.10/Sichere-Lieferketten-zum-Anfassen.pdf) | [EPUB](https://github.com/thomaszachmann/books/releases/download/supply-chain-training-2026.10/Sichere-Lieferketten-zum-Anfassen.epub) |
 | *OpenBao zum Anfassen* (German, 172 pages) | [**PDF**](https://github.com/thomaszachmann/books/releases/download/openbao-training-2026.10/OpenBao-zum-Anfassen.pdf) | [EPUB](https://github.com/thomaszachmann/books/releases/download/openbao-training-2026.10/OpenBao-zum-Anfassen.epub) |
+| *LLMs auf Kubernetes zum Anfassen* (German, 244 pages) | [**PDF**](https://github.com/thomaszachmann/books/releases/download/llm-kubernetes-training-2026.10/LLMs-auf-Kubernetes-zum-Anfassen.pdf) | [EPUB](https://github.com/thomaszachmann/books/releases/download/llm-kubernetes-training-2026.10/LLMs-auf-Kubernetes-zum-Anfassen.epub) |
+| *Gateway API zum Anfassen* (German, 227 pages) | [**PDF**](https://github.com/thomaszachmann/books/releases/download/gateway-api-training-2026.10/Gateway-API-zum-Anfassen.pdf) | [EPUB](https://github.com/thomaszachmann/books/releases/download/gateway-api-training-2026.10/Gateway-API-zum-Anfassen.epub) |
+| *Kyverno & NetworkPolicies zum Anfassen* (German, 209 pages) | [**PDF**](https://github.com/thomaszachmann/books/releases/download/kyverno-networkpolicy-training-2026.10/Kyverno-NetworkPolicies-zum-Anfassen.pdf) | [EPUB](https://github.com/thomaszachmann/books/releases/download/kyverno-networkpolicy-training-2026.10/Kyverno-NetworkPolicies-zum-Anfassen.epub) |
 
 Edition October 2026, licensed [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/).
 All editions: [releases](https://github.com/thomaszachmann/books/releases).
@@ -25,6 +28,9 @@ All editions: [releases](https://github.com/thomaszachmann/books/releases).
 | *Kubernetes on-premises* | [`kubernetes-on-premises/`](kubernetes-on-premises/) | early draft | — |
 | *Sichere Lieferketten zum Anfassen* (German) | [`supply-chain-training/`](supply-chain-training/) | **free download** | [PDF](https://github.com/thomaszachmann/books/releases/download/supply-chain-training-2026.10/Sichere-Lieferketten-zum-Anfassen.pdf) · [EPUB](https://github.com/thomaszachmann/books/releases/download/supply-chain-training-2026.10/Sichere-Lieferketten-zum-Anfassen.epub) |
 | *OpenBao zum Anfassen* (German) | [`openbao-training/`](openbao-training/) | **free download** | [PDF](https://github.com/thomaszachmann/books/releases/download/openbao-training-2026.10/OpenBao-zum-Anfassen.pdf) · [EPUB](https://github.com/thomaszachmann/books/releases/download/openbao-training-2026.10/OpenBao-zum-Anfassen.epub) |
+| *LLMs auf Kubernetes zum Anfassen* (German) | [`llm-kubernetes-training/`](llm-kubernetes-training/) | **free download** | [PDF](https://github.com/thomaszachmann/books/releases/download/llm-kubernetes-training-2026.10/LLMs-auf-Kubernetes-zum-Anfassen.pdf) · [EPUB](https://github.com/thomaszachmann/books/releases/download/llm-kubernetes-training-2026.10/LLMs-auf-Kubernetes-zum-Anfassen.epub) |
+| *Gateway API zum Anfassen* (German) | [`gateway-api-training/`](gateway-api-training/) | **free download** | [PDF](https://github.com/thomaszachmann/books/releases/download/gateway-api-training-2026.10/Gateway-API-zum-Anfassen.pdf) · [EPUB](https://github.com/thomaszachmann/books/releases/download/gateway-api-training-2026.10/Gateway-API-zum-Anfassen.epub) |
+| *Kyverno & NetworkPolicies zum Anfassen* (German) | [`kyverno-networkpolicy-training/`](kyverno-networkpolicy-training/) | **free download** | [PDF](https://github.com/thomaszachmann/books/releases/download/kyverno-networkpolicy-training-2026.10/Kyverno-NetworkPolicies-zum-Anfassen.pdf) · [EPUB](https://github.com/thomaszachmann/books/releases/download/kyverno-networkpolicy-training-2026.10/Kyverno-NetworkPolicies-zum-Anfassen.epub) |
 
 The *Status* column describes how far each **manuscript** has come, not the
 code — the labs in a directory are usually complete well before the text
@@ -155,16 +161,89 @@ The book itself, free: **[PDF](https://github.com/thomaszachmann/books/releases/
 
 ---
 
+## LLMs auf Kubernetes zum Anfassen
+
+**Ein Trainingslager für LLMs auf Kubernetes — in German**
+
+Sixteen days and two appendices. Part A runs on a laptop: a kind
+cluster, llama.cpp in a pod, vLLM basics, LiteLLM as a gateway and Open
+WebUI. The later parts build six VMs on Proxmox with OpenTofu, an RKE2 HA
+cluster with Ansible and the NVIDIA GPU Operator, then run vLLM on GPUs,
+LiteLLM with virtual keys and budgets, a team chat with Keycloak and RAG on
+Qdrant, a code assistant, and eight disaster drills.
+
+```bash
+git clone https://github.com/thomaszachmann/books.git
+mkdir -p ~/ki-lab/code
+cp -R books/llm-kubernetes-training/code/. ~/ki-lab/code/
+```
+
+Then start with Tag 0. The book works in `~/ki-lab`; `code/` goes to `~/ki-lab/code`. See [`llm-kubernetes-training/README.md`](llm-kubernetes-training/README.md).
+
+The book itself, free: **[PDF](https://github.com/thomaszachmann/books/releases/download/llm-kubernetes-training-2026.10/LLMs-auf-Kubernetes-zum-Anfassen.pdf)** · [EPUB](https://github.com/thomaszachmann/books/releases/download/llm-kubernetes-training-2026.10/LLMs-auf-Kubernetes-zum-Anfassen.epub)
+
+---
+
+## Gateway API zum Anfassen
+
+**Ein Trainingslager für die Kubernetes Gateway API — in German**
+
+Fifteen days and two appendices. Days 0–7 run on kind with Envoy Gateway:
+Gateway and HTTPRoute, filters, TLS with cert-manager, canary and
+blue-green, gRPC, TCP and UDP, multi-tenancy with ReferenceGrant and
+ListenerSet. Days 8–14 move to an RKE2 cluster on Proxmox with Cilium:
+Envoy Gateway policies, observability, HA and upgrades, the migration from
+ingress-nginx, and eight disaster drills.
+
+```bash
+git clone https://github.com/thomaszachmann/books.git
+mkdir -p ~/gw-lab/code
+cp -R books/gateway-api-training/code/. ~/gw-lab/code/
+```
+
+Then start with Tag 0. The book works in `~/gw-lab`; `code/` goes to `~/gw-lab/code`. See [`gateway-api-training/README.md`](gateway-api-training/README.md).
+
+The book itself, free: **[PDF](https://github.com/thomaszachmann/books/releases/download/gateway-api-training-2026.10/Gateway-API-zum-Anfassen.pdf)** · [EPUB](https://github.com/thomaszachmann/books/releases/download/gateway-api-training-2026.10/Gateway-API-zum-Anfassen.epub)
+
+---
+
+## Kyverno & NetworkPolicies zum Anfassen
+
+**Ein Trainingslager für Policy as Code und Netzwerksegmentierung — in German**
+
+Fifteen days on three kind clusters, plus a cheat sheet and a final exam.
+NetworkPolicies with default deny, DNS and egress; Cilium with L7 rules,
+toFQDNs and Hubble; cluster-wide rules; policy tests against a target
+matrix in CI. Then Kyverno with ValidatingPolicy, MutatingPolicy and
+GeneratingPolicy, signed images with cosign and SBOM attestations,
+`kyverno test` and Chainsaw, HA and upgrades, tenant onboarding with Argo CD,
+and eight disaster drills.
+
+```bash
+git clone https://github.com/thomaszachmann/books.git
+mkdir -p ~/guard-lab/code
+cp -R books/kyverno-networkpolicy-training/code/demo ~/guard-lab/code/
+```
+
+Then start with Tag 0. The book works in `~/guard-lab` and copies `kyverno/` and `kyverno-ops/` on Tag 7 and Tag 11. See [`kyverno-networkpolicy-training/README.md`](kyverno-networkpolicy-training/README.md).
+
+The book itself, free: **[PDF](https://github.com/thomaszachmann/books/releases/download/kyverno-networkpolicy-training-2026.10/Kyverno-NetworkPolicies-zum-Anfassen.pdf)** · [EPUB](https://github.com/thomaszachmann/books/releases/download/kyverno-networkpolicy-training-2026.10/Kyverno-NetworkPolicies-zum-Anfassen.epub)
+
+---
+
 ## Licence
 
 Code in this repository is MIT licensed — see [`LICENSE`](LICENSE). The
 text of the books is not covered by that licence. The German training books
-*Sichere Lieferketten zum Anfassen* and *OpenBao zum Anfassen* are free to
-download from the [releases](https://github.com/thomaszachmann/books/releases)
+*Sichere Lieferketten zum Anfassen*, *OpenBao zum Anfassen*, *LLMs auf
+Kubernetes zum Anfassen*, *Gateway API zum Anfassen* and *Kyverno &
+NetworkPolicies zum Anfassen* are free to download from the [releases](https://github.com/thomaszachmann/books/releases)
 under [CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/);
 the other books are not included here.
 
 HashiCorp and Vault are trademarks of HashiCorp, Inc. OpenBao, Harbor and
-Kubernetes are projects and trademarks of the Linux Foundation. Docker is a
-trademark of Docker, Inc. This repository is an independent publication and
+Kubernetes are projects and trademarks of the Linux Foundation. Cilium, Envoy and
+Kyverno are projects of the Cloud Native Computing Foundation. Proxmox is a
+trademark of Proxmox Server Solutions GmbH, NVIDIA of NVIDIA Corporation.
+Docker is a trademark of Docker, Inc. This repository is an independent publication and
 is not affiliated with, authorized by, or endorsed by any of them.

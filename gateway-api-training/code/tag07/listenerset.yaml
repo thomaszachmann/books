@@ -1,0 +1,39 @@
+# Self-Service: das Shop-Team bringt Listener und Zertifikat selbst mit
+apiVersion: gateway.networking.k8s.io/v1
+kind: ListenerSet
+metadata:
+  name: shop-promo
+  namespace: shop
+spec:
+  parentRef:
+    name: web
+    namespace: infra
+    kind: Gateway
+    group: gateway.networking.k8s.io
+  listeners:
+    - name: https-promo
+      protocol: HTTPS
+      port: 443
+      hostname: promo.gw.localtest.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            group: ""
+            name: shop-own-tls
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: promo
+  namespace: shop
+spec:
+  parentRefs:
+    - name: shop-promo
+      kind: ListenerSet
+      group: gateway.networking.k8s.io
+      sectionName: https-promo
+  rules:
+    - backendRefs:
+        - name: shop-v2
+          port: 80

@@ -1,0 +1,15 @@
+---
+rke2_version: v1.36.4+rke2r1   # Tag 8 Drill 7: Upgrade auf v1.36.5
+# Lab-Wert! In echt: export RKE2_TOKEN=$(openssl rand -hex 32)
+rke2_token: >-
+  {{ lookup('ansible.builtin.env', 'RKE2_TOKEN')
+     | default('rke2-lab-token-1234', true) }}
+rke2_vip: 10.10.20.10
+rke2_vip_hostname: rke2.lab.internal
+rke2_vip_interface: eth0
+rke2_first_server: "{{ groups['rke2_servers'][0] }}"
+# Server nur für Control-Plane-Pods (CriticalAddonsOnly)
+rke2_server_taint: true
+kube_vip_version: v1.2.4
+kubeconfig_local: "~/ki-lab/rke2.yaml"
+kubeconfig_context: rke2-lab

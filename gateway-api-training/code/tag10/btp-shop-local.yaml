@@ -1,0 +1,17 @@
+# BackendTrafficPolicy Stufe 1: lokales Rate Limit (pro Envoy-Pod)
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: shop
+  namespace: shop
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: shop
+  rateLimit:
+    local:
+      rules:
+        - limit:
+            requests: 10
+            unit: Second

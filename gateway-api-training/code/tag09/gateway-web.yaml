@@ -1,0 +1,33 @@
+# Gateway des Plattform-Teams auf RKE2: Envoy Gateway, feste IP .100
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: web
+  namespace: infra
+  annotations:
+    cert-manager.io/cluster-issuer: lab-ca
+spec:
+  gatewayClassName: eg
+  infrastructure:
+    parametersRef:
+      group: gateway.envoyproxy.io
+      kind: EnvoyProxy
+      name: web-proxy
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https
+      protocol: HTTPS
+      port: 443
+      hostname: "*.apps.lab.internal"
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: apps-wildcard-tls
+      allowedRoutes:
+        namespaces:
+          from: All

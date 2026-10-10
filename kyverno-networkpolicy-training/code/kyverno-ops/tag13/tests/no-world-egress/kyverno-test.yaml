@@ -1,0 +1,20 @@
+apiVersion: cli.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: no-world-egress
+policies:
+- ../../policies/no-world-egress.yaml
+resources:
+- netpols.yaml
+variables: values.yaml
+results:
+- isValidatingPolicy: true
+  policy: no-world-egress
+  kind: NetworkPolicy
+  resources: [tenant-a/api-to-db, tenant-a/dns-ueberall]
+  result: pass
+- isValidatingPolicy: true
+  policy: no-world-egress
+  kind: NetworkPolicy
+  resources: [tenant-a/internet, tenant-a/alles-raus]
+  result: fail

@@ -1,0 +1,36 @@
+# Tag 4, Challenge: wie api-l7.yaml, zusätzlich scraper nur GET /metrics
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: api-l4                 # gleicher Name: ersetzt die L4-Regel
+  namespace: shop
+spec:
+  endpointSelector:
+    matchLabels:
+      app: api
+  ingress:
+  - fromEndpoints:
+    - matchLabels:
+        app: frontend
+    toPorts:
+    - ports:
+      - port: "8080"
+        protocol: TCP
+      rules:
+        http:
+        - method: GET
+          path: "/api/.*"      # Regex, verankert auf den ganzen Pfad
+        - method: GET
+          path: "/healthz"
+  - fromEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: monitoring
+        app: scraper
+    toPorts:
+    - ports:
+      - port: "9113"
+        protocol: TCP
+      rules:
+        http:
+        - method: GET
+          path: "/metrics"

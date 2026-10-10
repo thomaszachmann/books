@@ -1,0 +1,34 @@
+# Tag 8: Labels als Vertrag - Namespaces brauchen team, Deployments app und tier
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: require-labels
+spec:
+  validationActions: [Deny]
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [namespaces]
+      - apiGroups: [apps]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [deployments]
+    namespaceSelector:
+      matchLabels:
+        guard-lab: demo
+  variables:
+    - name: required
+      expression: >-
+        object.kind == 'Namespace' ? ['team'] : ['app', 'tier']
+    - name: missing
+      expression: >-
+        variables.required.filter(l,
+          !(l in object.metadata.?labels.orValue({})))
+  validations:
+    - expression: "size(variables.missing) == 0"
+      messageExpression: >-
+        object.kind + ' ' + object.metadata.name + ': Labels fehlen: '
+        + variables.missing.join(', ')
+      reason: Invalid

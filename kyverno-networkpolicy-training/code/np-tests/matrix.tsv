@@ -1,0 +1,10 @@
+# von                 nach                                 soll
+default/client        http://frontend.shop                 allow
+default/client        http://api.shop                      deny
+default/client        tcp://db.shop:5432                   deny
+shop/frontend         http://api.shop                      allow
+shop/frontend         tcp://db.shop:5432                   deny
+shop/api              tcp://db.shop:5432                   allow
+monitoring/scraper    http://api.shop:9113/metrics         allow
+monitoring/scraper    http://api.shop                      deny
+tenant-a/api          http://api.shop                      deny

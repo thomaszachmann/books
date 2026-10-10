@@ -1,0 +1,21 @@
+# Plattform-Team: infra · App-Teams: shop, payments
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: infra
+  labels:
+    gw-lab/team: platform
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: shop
+  labels:
+    gw-lab/team: shop
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: payments
+  labels:
+    gw-lab/team: payments

@@ -1,0 +1,76 @@
+# Nachbearbeitete Ausgabe von ingress2gateway (Tag 13): hängt am Gateway infra/web
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: legacy
+  namespace: shop
+spec:
+  parentRefs:
+    - name: web                  # statt generiertem Gateway "nginx"
+      namespace: infra
+  hostnames:
+    - legacy.apps.lab.internal
+  rules:
+    - name: api                  # war: Regex /api/v1(/|$)(.*) + rewrite-target /$2
+      matches:
+        - path: {type: PathPrefix, value: /api/v1}
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            path: {type: ReplacePrefixMatch, replacePrefixMatch: /}
+        - type: ResponseHeaderModifier   # war: configuration-snippet
+          responseHeaderModifier:
+            set:
+              - {name: X-Legacy, value: "true"}
+      backendRefs:
+        - {name: shop-v1, port: 80}
+    - name: web                  # war: Ingress shop + shop-canary (20 %)
+      matches:
+        - path: {type: PathPrefix, value: /}
+      filters:
+        - type: CORS
+          cors:
+            allowOrigins: ["https://portal.apps.lab.internal"]
+            allowMethods: [GET, POST, PUT, DELETE, PATCH, OPTIONS]
+            allowHeaders: [Authorization, Content-Type]
+            allowCredentials: true
+            maxAge: 86400
+      timeouts:
+        request: 30s             # war: proxy-read-timeout 30
+      backendRefs:
+        - {name: shop-v1, port: 80, weight: 80}
+        - {name: shop-v2, port: 80, weight: 20}
+---
+# war: proxy-body-size 8m
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: legacy-web
+  namespace: shop
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: legacy
+      sectionName: web
+  requestBuffer:
+    limit: 8Mi
+---
+# war: whitelist-source-range
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: legacy-api
+  namespace: shop
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: legacy
+      sectionName: api
+  authorization:
+    defaultAction: Deny
+    rules:
+      - action: Allow
+        principal:
+          clientCIDRs: [10.0.0.0/8, 192.168.0.0/16]

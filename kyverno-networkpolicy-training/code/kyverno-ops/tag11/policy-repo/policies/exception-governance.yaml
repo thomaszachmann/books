@@ -1,0 +1,26 @@
+# Tag 11: jede PolicyException braucht Ticket, Owner und ein Ablaufdatum <= 90 Tage
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: exception-governance
+spec:
+  validationActions: [Deny]
+  matchConstraints:
+    resourceRules:
+    - apiGroups: [policies.kyverno.io]
+      apiVersions: ["*"]
+      operations: [CREATE, UPDATE]
+      resources: [policyexceptions]
+  variables:
+  - name: props
+    expression: object.spec.?properties.orValue({})
+  validations:
+  - expression: >-
+      ['ticket', 'owner'].all(k, k in variables.props)
+    message: properties.ticket und properties.owner sind Pflicht.
+  - expression: has(object.spec.expiresAt)
+    message: Ohne spec.expiresAt keine Ausnahme.
+  - expression: >-
+      !has(object.spec.expiresAt) ||
+      timestamp(object.spec.expiresAt) < time.now() + duration('2160h')
+    message: Ausnahmen laufen spätestens nach 90 Tagen ab.

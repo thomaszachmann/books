@@ -1,0 +1,38 @@
+- name: Basis fuer alle Knoten
+  hosts: all
+  become: true
+  roles: [common]
+
+- name: Erster Server (cluster-init)
+  hosts: rke2_servers[0]
+  become: true
+  roles: [rke2_server]
+
+- name: Weitere Server, einzeln (etcd-Quorum!)
+  hosts: rke2_servers[1:]
+  become: true
+  serial: 1
+  roles: [rke2_server]
+
+- name: Agents
+  hosts: rke2_agents
+  become: true
+  roles: [rke2_agent]
+
+- name: Kubeconfig auf den Laptop holen
+  hosts: rke2_servers[0]
+  become: true
+  tasks:
+    - name: Datei rke2.yaml lesen
+      ansible.builtin.slurp:
+        src: /etc/rancher/rke2/rke2.yaml
+      register: kubeconfig_raw
+
+    - name: Kubeconfig mit VIP lokal schreiben
+      ansible.builtin.copy:
+        content: "{{ kubeconfig_raw.content | b64decode
+          | replace('127.0.0.1', rke2_vip) | replace('default', 'rke2-lab') }}"
+        dest: "{{ lookup('env', 'HOME') }}/.kube/rke2-lab.yaml"
+        mode: "0600"
+      delegate_to: localhost
+      become: false

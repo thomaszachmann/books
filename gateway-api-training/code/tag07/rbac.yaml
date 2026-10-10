@@ -1,0 +1,86 @@
+# Drei Rollen nach dem Gateway-API-Rollenmodell (Lab-Gruppen, keine echten User)
+# 1) Cluster-Operator: GatewayClasses (cluster-weit)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: gw-cluster-operator
+rules:
+- apiGroups: ["gateway.networking.k8s.io"]
+  resources: ["gatewayclasses"]
+  verbs: ["*"]
+- apiGroups: ["gateway.networking.k8s.io"]
+  resources: ["gateways", "httproutes", "grpcroutes", "listenersets"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: gw-cluster-operator
+subjects:
+- {kind: Group, name: team-cluster, apiGroup: rbac.authorization.k8s.io}
+roleRef:
+  {kind: ClusterRole, name: gw-cluster-operator,
+   apiGroup: rbac.authorization.k8s.io}
+---
+# 2) Plattform-Team: Gateways und Zertifikate nur in infra
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: gw-infra
+  namespace: infra
+rules:
+- apiGroups: ["gateway.networking.k8s.io"]
+  resources: ["gateways", "referencegrants"]
+  verbs: ["*"]
+- apiGroups: ["cert-manager.io"]
+  resources: ["certificates"]
+  verbs: ["*"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: gw-infra
+  namespace: infra
+subjects:
+- {kind: Group, name: team-infra, apiGroup: rbac.authorization.k8s.io}
+roleRef: {kind: Role, name: gw-infra, apiGroup: rbac.authorization.k8s.io}
+---
+# 3) App-Team shop: nur Routen (und ListenerSets) im eigenen Namespace
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: gw-app-dev
+  namespace: shop
+rules:
+- apiGroups: ["gateway.networking.k8s.io"]
+  resources: ["httproutes", "grpcroutes", "listenersets"]
+  verbs: ["*"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: gw-app-dev
+  namespace: shop
+subjects:
+- {kind: Group, name: team-shop, apiGroup: rbac.authorization.k8s.io}
+roleRef: {kind: Role, name: gw-app-dev, apiGroup: rbac.authorization.k8s.io}
+---
+# App-Teams dürfen Gateways in infra lesen (Status, Listener), nicht ändern
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: gw-viewer
+  namespace: infra
+rules:
+- apiGroups: ["gateway.networking.k8s.io"]
+  resources: ["gateways"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: gw-viewer
+  namespace: infra
+subjects:
+- {kind: Group, name: team-shop, apiGroup: rbac.authorization.k8s.io}
+roleRef: {kind: Role, name: gw-viewer, apiGroup: rbac.authorization.k8s.io}

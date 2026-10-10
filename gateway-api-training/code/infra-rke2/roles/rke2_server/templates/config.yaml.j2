@@ -1,0 +1,17 @@
+# {{ ansible_managed }}
+token: {{ rke2_token }}
+{% if inventory_hostname != rke2_first_server %}
+server: https://{{ rke2_vip }}:9345
+{% endif %}
+node-ip: {{ ansible_host }}
+tls-san:
+  - {{ rke2_vip }}
+  - {{ rke2_api_fqdn }}
+cni: cilium
+disable-kube-proxy: true
+ingress-controller: none
+node-taint:
+  - "CriticalAddonsOnly=true:NoExecute"
+write-kubeconfig-mode: "0600"
+etcd-snapshot-schedule-cron: "0 */6 * * *"
+etcd-snapshot-retention: 8

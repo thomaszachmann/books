@@ -1,0 +1,36 @@
+# Demo-Anwendung "Kyverno & NetworkPolicies zum Anfassen" - Namespaces
+# Alle Demo-Namespaces tragen guard-lab=demo (praktisch für namespaceSelector).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: shop
+  labels:
+    guard-lab: demo
+    team: shop
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tenant-a
+  labels:
+    guard-lab: demo
+    team: tenant-a
+    tenant: a
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tenant-b
+  labels:
+    guard-lab: demo
+    team: tenant-b
+    tenant: b
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    guard-lab: demo
+    team: platform
+    purpose: monitoring

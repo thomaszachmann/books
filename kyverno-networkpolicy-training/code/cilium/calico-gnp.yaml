@@ -1,0 +1,24 @@
+# Tag 5, Drill 8: Vergleich - Mandanten-Trennung als Calico GlobalNetworkPolicy
+apiVersion: projectcalico.org/v3
+kind: Tier
+metadata:
+  name: platform
+spec:
+  order: 100                   # vor Tier "default" (dort liegen die NetworkPolicies)
+  defaultAction: Pass
+---
+apiVersion: projectcalico.org/v3
+kind: GlobalNetworkPolicy
+metadata:
+  name: platform.tenant-a-isolation   # Präfix = Tier-Name (ältere Calico-Versionen)
+spec:
+  tier: platform
+  order: 10                    # kleiner = früher geprüft
+  namespaceSelector: tenant == 'a'
+  types:
+  - Ingress
+  ingress:
+  - action: Deny
+    source:
+      namespaceSelector: has(tenant) && tenant != 'a'
+  - action: Pass               # Rest: weiter zum nächsten Tier (NetworkPolicies)

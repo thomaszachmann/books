@@ -1,0 +1,23 @@
+# Cilium LB-IPAM: Pool fuer LoadBalancer-Services + L2-Announcements (ARP)
+apiVersion: cilium.io/v2
+kind: CiliumLoadBalancerIPPool
+metadata:
+  name: lab-pool
+spec:
+  blocks:
+    - start: 10.10.20.100
+      stop: 10.10.20.120
+---
+apiVersion: cilium.io/v2alpha1
+kind: CiliumL2AnnouncementPolicy
+metadata:
+  name: lab-l2
+spec:
+  nodeSelector:              # nur Worker antworten per ARP
+    matchExpressions:
+      - key: node-role.kubernetes.io/control-plane
+        operator: DoesNotExist
+  interfaces:
+    - ^eth0$
+  loadBalancerIPs: true
+  externalIPs: false

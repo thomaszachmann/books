@@ -1,0 +1,27 @@
+# Tag 9: allow-monitoring aus netpol-templates in jeden Tenant-Namespace klonen
+apiVersion: policies.kyverno.io/v1
+kind: GeneratingPolicy
+metadata:
+  name: clone-monitoring
+spec:
+  evaluation:
+    synchronize:
+      enabled: true
+    generateExisting:
+      enabled: true
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [namespaces]
+    objectSelector:
+      matchExpressions:
+        - {key: tenant, operator: Exists}
+  variables:
+    - name: source
+      expression: >-
+        resource.Get("networking.k8s.io/v1", "networkpolicies",
+          "netpol-templates", "allow-monitoring")
+  generate:
+    - expression: generator.Apply(object.metadata.name, [variables.source])

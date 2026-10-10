@@ -1,0 +1,15 @@
+# Postgres für Open WebUI via CloudNativePG (Secret owui-db-app, Key "uri")
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: owui-db
+  namespace: ki-chat
+spec:
+  instances: 2
+  storage:
+    storageClass: longhorn
+    size: 5Gi
+  bootstrap:
+    initdb:
+      database: openwebui
+      owner: openwebui
