@@ -1,0 +1,19 @@
+# vLLM production-stack: ein Modell + Router (nur helm template im kind-Lab)
+servingEngineSpec:
+  runtimeClassName: ""            # RKE2 + GPU Operator: "nvidia" (Tag 10)
+  modelSpec:
+    - name: qwen3-8b
+      repository: vllm/vllm-openai
+      tag: v0.31.0
+      modelURL: Qwen/Qwen3-8B
+      replicaCount: 1
+      requestCPU: 4
+      requestMemory: 24Gi
+      requestGPU: 1
+      pvcStorage: 40Gi
+      vllmConfig:
+        maxModelLen: 8192
+        gpuMemoryUtilization: 0.90
+        enablePrefixCaching: true
+routerSpec:
+  routingLogic: prefixaware       # statt roundrobin: Prefix-Cache-Treffer

@@ -1,0 +1,20 @@
+---
+- name: RKE2 installieren (Tasks aus rke2_server)
+  ansible.builtin.include_role:
+    name: rke2_server
+    tasks_from: install.yml
+  vars:
+    rke2_server_install_type: agent
+
+- name: Agent-config.yaml schreiben
+  ansible.builtin.template:
+    src: config.yaml.j2
+    dest: /etc/rancher/rke2/config.yaml
+    mode: "0600"
+  notify: Restart rke2-agent
+
+- name: Rke2-agent starten
+  ansible.builtin.systemd_service:
+    name: rke2-agent
+    enabled: true
+    state: started

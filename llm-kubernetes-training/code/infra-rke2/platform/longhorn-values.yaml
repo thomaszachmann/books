@@ -1,0 +1,8 @@
+persistence:
+  defaultClass: true
+  defaultClassReplicaCount: 2   # nur 3 Agents im Lab
+preUpgradeChecker:
+  jobEnabled: true
+defaultSettings:
+  # GPU-Node bekommt in Tag 10 den Taint nvidia.com/gpu – Longhorn soll dort bleiben
+  taintToleration: "nvidia.com/gpu:NoSchedule"

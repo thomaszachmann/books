@@ -1,0 +1,122 @@
+# vLLM Chat-Modell auf rke2-gpu-1 (Tag 11)
+# Qwen3-8B in FP8 (Apache-2.0, ~9 GB Gewichte) auf einer L4 mit 24 GB
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vllm-chat-cache
+  namespace: ki-models
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 60Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm-chat
+  namespace: ki-models
+  labels:
+    app: vllm-chat
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0              # nie zwei Pods gleichzeitig auf der einen GPU
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: vllm-chat
+  template:
+    metadata:
+      labels:
+        app: vllm-chat
+    spec:
+      runtimeClassName: nvidia
+      nodeSelector:
+        nvidia.com/gpu.present: "true"
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: vllm
+          image: vllm/vllm-openai:v0.31.0
+          args:                  # Entrypoint des Images ist "vllm serve"
+            - Qwen/Qwen3-8B-FP8
+            - --served-model-name=qwen3-8b
+            - --max-model-len=16384
+            - --gpu-memory-utilization=0.80
+            - --max-num-seqs=32
+            - --enable-prefix-caching
+            - --enable-auto-tool-choice
+            - --tool-call-parser=hermes
+            - --reasoning-parser=qwen3
+            - --port=8000
+          env:
+            - name: HF_HOME
+              value: /models
+            - name: HF_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: hf-token
+                  key: token
+                  optional: true       # Qwen ist nicht gated
+          ports:
+            - name: http
+              containerPort: 8000
+          startupProbe:          # Download + Laden + CUDA-Graphs: bis 15 min
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            failureThreshold: 90
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 20
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "2"
+              memory: 12Gi
+            limits:
+              memory: 20Gi
+              nvidia.com/gpu: "1"
+          volumeMounts:
+            - name: cache
+              mountPath: /models
+            - name: shm
+              mountPath: /dev/shm
+      volumes:
+        - name: cache
+          persistentVolumeClaim:
+            claimName: vllm-chat-cache
+        - name: shm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vllm-chat
+  namespace: ki-models
+  labels:
+    app: vllm-chat
+spec:
+  selector:
+    app: vllm-chat
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http

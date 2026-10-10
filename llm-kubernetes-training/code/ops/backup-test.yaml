@@ -1,0 +1,36 @@
+# Restore-Probe (Tag 15): kleines Longhorn-Volume mit einer Datei
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: backup-test
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: daten
+  namespace: backup-test
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: schreiber
+  namespace: backup-test
+spec:
+  containers:
+    - name: sh
+      image: busybox:1.37
+      command: ["sh", "-c",
+                "[ -f /data/probe.txt ] || date > /data/probe.txt; sleep 86400"]
+      volumeMounts:
+        - name: daten
+          mountPath: /data
+  volumes:
+    - name: daten
+      persistentVolumeClaim:
+        claimName: daten

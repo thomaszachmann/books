@@ -1,0 +1,9 @@
+# Alternative: Operator-verwalteter Treiber (Treiber-Container statt Paket)
+# Nur nutzen, wenn im Gast KEIN NVIDIA-Treiber installiert ist.
+driver:
+  enabled: true
+  version: "595.91.07"      # Chart-Default v26.7.1, prüfen
+toolkit:
+  env:
+    - name: CONTAINERD_SOCKET
+      value: /run/k3s/containerd/containerd.sock

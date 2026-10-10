@@ -1,0 +1,63 @@
+# LiteLLM Helm-Chart 1.104.2 (oci://ghcr.io/berriai/litellm-helm), Tag 12
+replicaCount: 2
+image:
+  tag: "1.104.2"
+  pullPolicy: IfNotPresent
+proxyConfigMap:
+  create: false
+  name: litellm-config        # aus config.yaml (kubectl create configmap)
+masterkeySecretName: litellm-env
+masterkeySecretKey: PROXY_MASTER_KEY
+environmentSecrets:
+  - litellm-env               # MISTRAL_API_KEY, REDIS_PASSWORD, PROXY_MASTER_KEY
+envVars:
+  VLLM_CHAT_API_BASE: http://vllm-chat.ki-models:8000/v1
+  REDIS_HOST: redis.ki-gateway
+  REDIS_PORT: "6379"
+db:
+  deployStandalone: false
+  useExisting: true
+  endpoint: litellm-db-rw     # CNPG-Service des Primary
+  database: litellm
+  secret:
+    name: litellm-db-app      # von CNPG erzeugt
+    usernameKey: username
+    passwordKey: password
+migrationJob:
+  hooks:
+    argocd:
+      enabled: false
+    helm:
+      enabled: true           # Job als pre-install/pre-upgrade-Hook
+ingress:
+  enabled: true
+  className: traefik
+  annotations:
+    cert-manager.io/cluster-issuer: lab-ca
+  hosts:
+    - host: llm.lab.internal
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: litellm-tls
+      hosts: ["llm.lab.internal"]
+serviceMonitor:
+  enabled: true
+  interval: 30s
+pdb:
+  enabled: true
+  minAvailable: 1
+topologySpreadConstraints:
+  - maxSkew: 1
+    topologyKey: kubernetes.io/hostname
+    whenUnsatisfiable: ScheduleAnyway
+    labelSelector:
+      matchLabels:
+        app.kubernetes.io/name: litellm
+resources:
+  requests:
+    cpu: 250m
+    memory: 768Mi
+  limits:
+    memory: 2Gi

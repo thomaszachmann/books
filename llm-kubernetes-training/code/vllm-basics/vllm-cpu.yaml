@@ -1,0 +1,74 @@
+# OPTIONAL: vLLM auf CPU in kind (Image ca. 1,1 GB komprimiert, arm64/x86_64)
+# Passt in die ResourceQuota von ki-models neben llamacpp (Tag 1/2).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm-cpu
+  namespace: ki-models
+  labels:
+    app: vllm-cpu
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vllm-cpu
+  template:
+    metadata:
+      labels:
+        app: vllm-cpu
+    spec:
+      nodeSelector:
+        ki-lab/role: models
+      containers:
+        - name: vllm
+          image: vllm/vllm-openai-cpu:v0.31.0
+          args:
+            - Qwen/Qwen2.5-0.5B-Instruct
+            - --served-model-name=qwen2.5-0.5b-vllm
+            - --dtype=bfloat16
+            - --max-model-len=2048
+            - --max-num-seqs=4
+          env:
+            - name: VLLM_CPU_KVCACHE_SPACE   # GiB für den KV-Cache
+              value: "1"
+            - name: HF_HOME
+              value: /data/hf
+          ports:
+            - name: http
+              containerPort: 8000
+          resources:
+            requests: {cpu: "2", memory: 3Gi}
+            limits: {cpu: "2", memory: 4Gi}
+          startupProbe:
+            httpGet: {path: /health, port: http}
+            periodSeconds: 10
+            failureThreshold: 60
+          readinessProbe:
+            httpGet: {path: /health, port: http}
+            periodSeconds: 10
+          volumeMounts:
+            - name: cache
+              mountPath: /data
+            - name: shm
+              mountPath: /dev/shm
+      volumes:
+        - name: cache
+          emptyDir:
+            sizeLimit: 2Gi
+        - name: shm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vllm-cpu
+  namespace: ki-models
+spec:
+  selector:
+    app: vllm-cpu
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http

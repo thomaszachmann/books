@@ -1,0 +1,101 @@
+# Embedding-Modell BAAI/bge-m3 (MIT, 1024 Dimensionen) mit vLLM auf der GPU
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vllm-embed-cache
+  namespace: ki-models
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm-embed
+  namespace: ki-models
+  labels:
+    app: vllm-embed
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: vllm-embed
+  template:
+    metadata:
+      labels:
+        app: vllm-embed
+    spec:
+      runtimeClassName: nvidia
+      nodeSelector:
+        nvidia.com/gpu.present: "true"
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+      containers:
+        - name: vllm
+          image: vllm/vllm-openai:v0.31.0
+          args:
+            - BAAI/bge-m3
+            - --runner=pooling
+            - --served-model-name=bge-m3
+            - --max-model-len=8192
+            - --gpu-memory-utilization=0.12
+            - --port=8000
+          env:
+            - name: HF_HOME
+              value: /models
+          ports:
+            - name: http
+              containerPort: 8000
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            failureThreshold: 60
+          resources:
+            requests:
+              cpu: "1"
+              memory: 4Gi
+            limits:
+              memory: 8Gi
+              nvidia.com/gpu: "1"
+          volumeMounts:
+            - name: cache
+              mountPath: /models
+            - name: shm
+              mountPath: /dev/shm
+      volumes:
+        - name: cache
+          persistentVolumeClaim:
+            claimName: vllm-embed-cache
+        - name: shm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vllm-embed
+  namespace: ki-models
+  labels:
+    app: vllm-embed               # ServiceMonitor vllm (Tag 11)
+spec:
+  selector:
+    app: vllm-embed
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http

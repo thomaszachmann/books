@@ -1,0 +1,20 @@
+# KEDA skaliert vllm-chat nach Warteschlange (Tag 11)
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: vllm-chat
+  namespace: ki-models
+spec:
+  scaleTargetRef:
+    name: vllm-chat
+  minReplicaCount: 1
+  maxReplicaCount: 2           # Lab: zweite Replika braucht eine zweite GPU!
+  pollingInterval: 15
+  cooldownPeriod: 300          # Modell-Laden ist teuer: langsam herunterskalieren
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: http://kube-prometheus-stack-prometheus.monitoring:9090
+        query: sum(vllm:num_requests_waiting{namespace="ki-models",
+          model_name="qwen3-8b"})
+        threshold: "5"

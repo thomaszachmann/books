@@ -1,0 +1,8 @@
+---
+# Tag 10: NVIDIA-Treiber im Gast der GPU-VMs
+- name: NVIDIA-Treiber auf GPU-Nodes
+  hosts: gpu_nodes
+  become: true
+  serial: 1
+  roles:
+    - nvidia_host

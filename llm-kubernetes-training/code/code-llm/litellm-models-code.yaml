@@ -1,0 +1,14 @@
+# Ergänzung für model_list in code/litellm-prod/config.yaml (Tag 12)
+  - model_name: code
+    litellm_params:
+      model: hosted_vllm/qwen2.5-coder-7b     # --served-model-name
+      api_base: http://vllm-code.ki-models:8000/v1
+      timeout: 30
+    model_info:
+      mode: chat
+  - model_name: embed
+    litellm_params:
+      model: hosted_vllm/bge-m3
+      api_base: http://vllm-embed.ki-models:8000/v1
+    model_info:
+      mode: embedding

@@ -1,0 +1,12 @@
+# DRA-Modus (experimentell in v26.7): GPUCluster statt ClusterPolicy
+# Kein In-place-Wechsel: Operator vorher deinstallieren!
+# Ohne Device Plugin und Toolkit: der DRA-Treiber liefert CDI-Specs selbst.
+clusterPolicy:
+  deployCR: false
+gpuCluster:
+  deployCR: true
+driver:
+  enabled: false            # Treiber aus der Rolle nvidia_host (>= 580)
+draDriver:
+  computeDomains:
+    enabled: false          # nur für Multi-Node-NVLink (GB200 & Co.)

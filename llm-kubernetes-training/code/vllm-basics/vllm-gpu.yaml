@@ -1,0 +1,95 @@
+# vLLM auf einer GPU (Vorlage für Tag 11) – Qwen3-8B, OpenAI-API auf :8000
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: hf-cache
+  namespace: ki-models
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 40Gi             # Qwen3-8B in bf16: ca. 16 GiB
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm-chat
+  namespace: ki-models
+  labels:
+    app: vllm-chat
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate              # eine GPU, ein RWO-Cache
+  selector:
+    matchLabels:
+      app: vllm-chat
+  template:
+    metadata:
+      labels:
+        app: vllm-chat
+    spec:
+      containers:
+        - name: vllm
+          image: vllm/vllm-openai:v0.31.0
+          args:
+            - Qwen/Qwen3-8B
+            - --served-model-name=qwen3-8b
+            - --max-model-len=8192
+            - --gpu-memory-utilization=0.90
+            - --max-num-seqs=32
+            - --kv-cache-dtype=fp8
+          env:
+            - name: HF_HOME
+              value: /data/hf
+            - name: VLLM_API_KEY
+              valueFrom:
+                secretKeyRef: {name: vllm-api, key: key, optional: true}
+            - name: HF_TOKEN
+              valueFrom:
+                secretKeyRef: {name: hf-token, key: token, optional: true}
+          ports:
+            - name: http
+              containerPort: 8000
+          resources:
+            requests: {cpu: "4", memory: 24Gi, nvidia.com/gpu: "1"}
+            limits: {memory: 32Gi, nvidia.com/gpu: "1"}
+          startupProbe:          # Download + Laden + CUDA-Graphen
+            httpGet: {path: /health, port: http}
+            periodSeconds: 10
+            failureThreshold: 90
+          readinessProbe:
+            httpGet: {path: /health, port: http}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /health, port: http}
+            periodSeconds: 20
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: cache
+              mountPath: /data
+            - name: shm
+              mountPath: /dev/shm
+      volumes:
+        - name: cache
+          persistentVolumeClaim:
+            claimName: hf-cache
+        - name: shm               # PyTorch braucht mehr als 64 MiB /dev/shm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vllm-chat
+  namespace: ki-models
+  labels:
+    app: vllm-chat
+spec:
+  selector:
+    app: vllm-chat
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http

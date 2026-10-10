@@ -1,0 +1,39 @@
+# Velero 1.18 (Chart vmware-tanzu/velero 12.2.1) gegen Garage-S3 (Tag 15)
+initContainers:
+  - name: velero-plugin-for-aws
+    image: velero/velero-plugin-for-aws:v1.14.4
+    volumeMounts:
+      - mountPath: /target
+        name: plugins
+configuration:
+  backupStorageLocation:
+    - name: default
+      default: true
+      provider: aws
+      bucket: ki-lab-backup
+      prefix: velero
+      config:
+        region: garage
+        s3ForcePathStyle: "true"
+        s3Url: http://s3.lab.internal:3900
+  uploaderType: kopia
+  defaultVolumesToFsBackup: true    # PVC-Inhalte per node-agent (kopia)
+credentials:
+  existingSecret: velero-s3         # Key "cloud" im AWS-Credentials-Format
+snapshotsEnabled: false             # Longhorn ohne CSI-Snapshot-Klasse im Lab
+deployNodeAgent: true
+metrics:
+  serviceMonitor:
+    enabled: true
+schedules:
+  ki-taeglich:
+    schedule: "0 2 * * *"
+    template:
+      ttl: 168h
+      includedNamespaces:
+        - ki-gateway
+        - ki-chat
+        - ki-code
+        - keycloak
+        - cert-manager
+        - monitoring

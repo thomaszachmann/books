@@ -1,0 +1,35 @@
+# Namespaces für das KI-Lab (Teil A und Teil B-D identisch)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ki-models
+  labels:
+    ki-lab/layer: models
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ki-gateway
+  labels:
+    ki-lab/layer: gateway
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ki-chat
+  labels:
+    ki-lab/layer: apps
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ki-code
+  labels:
+    ki-lab/layer: apps
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    ki-lab/layer: platform

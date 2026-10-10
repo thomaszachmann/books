@@ -1,0 +1,103 @@
+# Code-Modell Qwen2.5-Coder-7B-Instruct-AWQ (Apache-2.0, ~5,6 GB) auf rke2-gpu-1
+# GPU-Budget L4 24 GB: chat 0.50 + embed 0.12 + code 0.33 (siehe Tag 14)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vllm-code-cache
+  namespace: ki-models
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vllm-code
+  namespace: ki-models
+  labels:
+    app: vllm-code
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: vllm-code
+  template:
+    metadata:
+      labels:
+        app: vllm-code
+    spec:
+      runtimeClassName: nvidia
+      nodeSelector:
+        nvidia.com/gpu.present: "true"
+      tolerations:
+        - key: nvidia.com/gpu
+          operator: Exists
+          effect: NoSchedule
+      containers:
+        - name: vllm
+          image: vllm/vllm-openai:v0.31.0
+          args:                  # Entrypoint des Images ist "vllm serve"
+            - Qwen/Qwen2.5-Coder-7B-Instruct-AWQ
+            - --served-model-name=qwen2.5-coder-7b
+            - --max-model-len=8192
+            - --gpu-memory-utilization=0.33
+            - --max-num-seqs=16
+            - --enable-prefix-caching
+            - --port=8000
+          env:
+            - name: HF_HOME
+              value: /models
+          ports:
+            - name: http
+              containerPort: 8000
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            failureThreshold: 90
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: "2"
+              memory: 8Gi
+            limits:
+              memory: 16Gi
+              nvidia.com/gpu: "1"
+          volumeMounts:
+            - name: cache
+              mountPath: /models
+            - name: shm
+              mountPath: /dev/shm
+      volumes:
+        - name: cache
+          persistentVolumeClaim:
+            claimName: vllm-code-cache
+        - name: shm
+          emptyDir:
+            medium: Memory
+            sizeLimit: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vllm-code
+  namespace: ki-models
+  labels:
+    app: vllm-code               # ServiceMonitor vllm (Tag 11)
+spec:
+  selector:
+    app: vllm-code
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http

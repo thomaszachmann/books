@@ -1,0 +1,46 @@
+# ~/.continue/config.yaml – Continue (VS Code) gegen LiteLLM auf RKE2
+# Key steht in ~/.continue/.env: LITELLM_CODE_KEY=sk-...
+# __HOME__ beim Kopieren durch dein Home ersetzen (sed, siehe Tag 14)
+name: Lab Code-LLM
+version: 1.0.0
+schema: v1
+models:
+  - name: Lab Code (Chat)
+    provider: openai
+    model: code
+    apiBase: https://llm.lab.internal/v1
+    apiKey: ${{ secrets.LITELLM_CODE_KEY }}
+    requestOptions:
+      caBundlePath: __HOME__/ki-lab/lab-ca.crt
+    roles:
+      - chat
+      - edit
+      - apply
+    defaultCompletionOptions:
+      temperature: 0.2
+      maxTokens: 1024
+  - name: Lab Code (Autocomplete)
+    provider: openai
+    model: code
+    apiBase: https://llm.lab.internal/v1
+    apiKey: ${{ secrets.LITELLM_CODE_KEY }}
+    requestOptions:
+      caBundlePath: __HOME__/ki-lab/lab-ca.crt
+    useLegacyCompletionsEndpoint: true
+    roles:
+      - autocomplete
+    promptTemplates:
+      autocomplete: "<|fim_prefix|>{{{prefix}}}<|fim_suffix|>{{{suffix}}}<|fim_middle|>"
+    autocompleteOptions:
+      debounceDelay: 250
+      maxPromptTokens: 1024
+      onlyMyCode: true
+  - name: Lab Embed
+    provider: openai
+    model: embed
+    apiBase: https://llm.lab.internal/v1
+    apiKey: ${{ secrets.LITELLM_CODE_KEY }}
+    requestOptions:
+      caBundlePath: __HOME__/ki-lab/lab-ca.crt
+    roles:
+      - embed
