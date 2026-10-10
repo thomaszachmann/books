@@ -1,0 +1,42 @@
+# Tag 8: Pod Security "baseline" als ValidatingPolicy (Auszug der wichtigsten Regeln)
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: pss-baseline
+spec:
+  validationActions: [Deny]
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [pods]
+    namespaceSelector:
+      matchExpressions:
+        - {key: kubernetes.io/metadata.name, operator: NotIn, values: [kube-system]}
+  variables:
+    - name: allContainers
+      expression: >-
+        object.spec.containers
+        + object.spec.?initContainers.orValue([])
+        + object.spec.?ephemeralContainers.orValue([])
+  validations:
+    - expression: >-
+        !object.spec.?hostNetwork.orValue(false) &&
+        !object.spec.?hostPID.orValue(false) &&
+        !object.spec.?hostIPC.orValue(false)
+      message: "hostNetwork, hostPID und hostIPC sind verboten."
+    - expression: >-
+        variables.allContainers.all(c,
+          !c.?securityContext.?privileged.orValue(false))
+      messageExpression: >-
+        'privileged ist verboten: ' + variables.allContainers
+        .filter(c, c.?securityContext.?privileged.orValue(false))
+        .map(c, c.name).join(', ')
+    - expression: >-
+        object.spec.?volumes.orValue([]).all(v, !has(v.hostPath))
+      message: "hostPath-Volumes sind verboten."
+    - expression: >-
+        variables.allContainers.all(c, c.?ports.orValue([])
+          .all(p, p.?hostPort.orValue(0) == 0))
+      message: "hostPort ist verboten."

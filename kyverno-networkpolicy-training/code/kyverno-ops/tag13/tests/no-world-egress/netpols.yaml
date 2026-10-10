@@ -1,0 +1,45 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: api-to-db, namespace: tenant-a}
+spec:
+  podSelector: {matchLabels: {app: api}}
+  policyTypes: [Egress]
+  egress:
+  - to: [{podSelector: {matchLabels: {app: db}}}]
+    ports: [{port: 5432, protocol: TCP}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: internet, namespace: tenant-a}
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+  - to: [{ipBlock: {cidr: 0.0.0.0/0, except: [10.0.0.0/8]}}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: alles-raus, namespace: tenant-a}
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+  - {}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: dns-ueberall, namespace: tenant-a}
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+  - ports: [{port: 53, protocol: UDP}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: internet, namespace: shop}
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+  - to: [{ipBlock: {cidr: 0.0.0.0/0}}]

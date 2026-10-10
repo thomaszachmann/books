@@ -1,0 +1,9 @@
+apiVersion: cli.kyverno.io/v1alpha1
+kind: Value
+metadata:
+  name: values
+namespaceSelector:
+- name: shop
+  labels: {guard-lab: demo}
+- name: sandbox
+  labels: {team: sandbox}

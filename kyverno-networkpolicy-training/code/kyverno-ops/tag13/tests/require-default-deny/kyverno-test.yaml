@@ -1,0 +1,20 @@
+apiVersion: cli.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: require-default-deny
+policies:
+- ../../policies/require-default-deny.yaml
+resources:
+- namespaces.yaml
+context: context.yaml
+results:
+- isValidatingPolicy: true
+  policy: require-default-deny
+  kind: Namespace
+  resources: [tenant-a]
+  result: pass
+- isValidatingPolicy: true
+  policy: require-default-deny
+  kind: Namespace
+  resources: [tenant-b]
+  result: fail

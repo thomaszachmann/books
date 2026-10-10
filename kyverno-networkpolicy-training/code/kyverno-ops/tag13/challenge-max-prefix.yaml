@@ -1,0 +1,22 @@
+# Tag 13 (Challenge): ipBlock im Egress höchstens /16 breit
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: egress-max-prefix
+spec:
+  validationActions: [Deny]
+  matchConstraints:
+    resourceRules:
+    - apiGroups: [networking.k8s.io]
+      apiVersions: [v1]
+      operations: [CREATE, UPDATE]
+      resources: [networkpolicies]
+    namespaceSelector:
+      matchExpressions:
+      - {key: tenant, operator: Exists}
+  validations:
+  - expression: >-
+      object.spec.?egress.orValue([]).all(r,
+        r.?to.orValue([]).all(p, !has(p.ipBlock) ||
+          cidr(p.ipBlock.cidr).prefixLength() >= 16))
+    message: ipBlock im Egress höchstens /16 breit.

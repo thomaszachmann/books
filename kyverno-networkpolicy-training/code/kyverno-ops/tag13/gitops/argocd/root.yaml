@@ -1,0 +1,17 @@
+# Tag 13: App-of-Apps - erst Policies (Welle -1), dann Mandanten (Welle 0)
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: guard-lab-root
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://git.example.com/guard-lab/gitops.git
+    targetRevision: main
+    path: argocd/apps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated: {prune: true, selfHeal: true}

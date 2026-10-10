@@ -1,0 +1,38 @@
+# Tag 11: Unit-Tests (kyverno CLI) und E2E-Tests (kind + Chainsaw) pro Pull Request
+name: kyverno-policies
+on:
+  pull_request:
+    paths: ["policies/**", "exceptions/**", "tests/**", "e2e/**"]
+  push:
+    branches: [main]
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    - uses: kyverno/action-install-cli@v0.2.0
+      with:
+        release: v1.19.1
+    - name: kyverno test
+      run: sh ci/kyverno-junit.sh
+    - uses: actions/upload-artifact@v7
+      if: always()
+      with:
+        name: kyverno-junit
+        path: reports/
+  e2e:
+    needs: unit
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+    - uses: helm/kind-action@v1.15.1
+      with:
+        cluster_name: policy-ci
+    - name: Kyverno installieren
+      run: |
+        helm repo add kyverno https://kyverno.github.io/kyverno/
+        helm install kyverno kyverno/kyverno -n kyverno --create-namespace \
+          --version 3.9.1 --wait --timeout 5m
+    - uses: kyverno/action-install-chainsaw@v0.2.15
+    - name: chainsaw test
+      run: chainsaw test e2e/ --report-format JUNIT-TEST --report-name chainsaw

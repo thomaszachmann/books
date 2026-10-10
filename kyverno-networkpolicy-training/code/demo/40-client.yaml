@@ -1,0 +1,23 @@
+# default/client: neutraler Test-Pod ohne Sonderrechte (ausserhalb der Demo-Namespaces)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: client
+  namespace: default
+  labels: {app: client}
+spec:
+  terminationGracePeriodSeconds: 1
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 100
+    seccompProfile: {type: RuntimeDefault}
+  containers:
+  - name: curl
+    image: curlimages/curl:8.22.0
+    command: [sleep, "86400"]
+    resources:
+      requests: {cpu: 5m, memory: 8Mi}
+      limits: {memory: 32Mi}
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities: {drop: [ALL]}

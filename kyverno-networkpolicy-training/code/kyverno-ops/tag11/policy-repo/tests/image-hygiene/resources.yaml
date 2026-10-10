@@ -1,0 +1,65 @@
+# Testobjekte für image-hygiene (Tag 8) - eine Eigenschaft pro Pod
+apiVersion: v1
+kind: Pod
+metadata: {name: good, namespace: shop}
+spec:
+  containers:
+  - name: web
+    image: nginxinc/nginx-unprivileged:1.31-alpine
+    resources: {requests: {cpu: 10m, memory: 16Mi}, limits: {memory: 64Mi}}
+---
+apiVersion: v1
+kind: Pod
+metadata: {name: latest, namespace: shop}
+spec:
+  containers:
+  - name: web
+    image: nginxinc/nginx-unprivileged:latest
+    resources: {requests: {cpu: 10m, memory: 16Mi}, limits: {memory: 64Mi}}
+---
+apiVersion: v1
+kind: Pod
+metadata: {name: notag, namespace: shop}
+spec:
+  containers:
+  - name: web
+    image: nginxinc/nginx-unprivileged
+    resources: {requests: {cpu: 10m, memory: 16Mi}, limits: {memory: 64Mi}}
+---
+apiVersion: v1
+kind: Pod
+metadata: {name: init-latest, namespace: shop}
+spec:
+  initContainers:
+  - name: init
+    image: curlimages/curl:latest
+    resources: {requests: {cpu: 10m, memory: 16Mi}, limits: {memory: 64Mi}}
+  containers:
+  - name: web
+    image: nginxinc/nginx-unprivileged:1.31-alpine
+    resources: {requests: {cpu: 10m, memory: 16Mi}, limits: {memory: 64Mi}}
+---
+apiVersion: v1
+kind: Pod
+metadata: {name: nores, namespace: shop}
+spec:
+  containers:
+  - name: web
+    image: nginxinc/nginx-unprivileged:1.31-alpine
+---
+apiVersion: v1
+kind: Pod
+metadata: {name: legacy-batch-1, namespace: shop}
+spec:
+  containers:
+  - name: job
+    image: curlimages/curl:latest
+    resources: {requests: {cpu: 10m, memory: 16Mi}, limits: {memory: 32Mi}}
+---
+apiVersion: v1
+kind: Pod
+metadata: {name: sandbox-latest, namespace: sandbox}
+spec:
+  containers:
+  - name: web
+    image: nginxinc/nginx-unprivileged:latest

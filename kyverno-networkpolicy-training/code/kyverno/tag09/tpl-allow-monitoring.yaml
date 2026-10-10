@@ -1,0 +1,16 @@
+# Tag 9: Vorlage der Plattform - Scraper aus monitoring darf Port 9113 abfragen
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-monitoring
+  namespace: netpol-templates
+spec:
+  podSelector:
+    matchLabels: {tier: api}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels: {purpose: monitoring}
+      ports:
+        - {protocol: TCP, port: 9113}

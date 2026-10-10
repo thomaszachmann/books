@@ -1,0 +1,12 @@
+# Lab-Werte (Tag 7): eine Replika je Controller, unsichere Registries erlaubt
+admissionController:
+  replicas: 1
+backgroundController:
+  replicas: 1
+cleanupController:
+  replicas: 1
+reportsController:
+  replicas: 1
+features:
+  registryClient:
+    allowInsecure: true

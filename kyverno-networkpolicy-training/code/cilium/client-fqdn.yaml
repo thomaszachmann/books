@@ -1,0 +1,29 @@
+# Tag 4, Drill 6: default/client darf raus - aber nur zu erlaubten Domains
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: client-fqdn
+  namespace: default
+spec:
+  endpointSelector:
+    matchLabels:
+      app: client
+  egress:
+  - toEndpoints:               # DNS über den DNS-Proxy von Cilium
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: kube-system
+        k8s-app: kube-dns
+    toPorts:
+    - ports:
+      - port: "53"
+        protocol: ANY
+      rules:
+        dns:
+        - matchPattern: "*"
+  - toFQDNs:
+    - matchName: example.com
+    - matchPattern: "*.github.com"
+    toPorts:
+    - ports:
+      - port: "443"
+        protocol: TCP

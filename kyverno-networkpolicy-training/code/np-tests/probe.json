@@ -1,0 +1,32 @@
+{
+  "Probes": [
+    {"Protocol": "TCP", "Port": 8080},
+    {"Protocol": "TCP", "Port": 5432}
+  ],
+  "Resources": {
+    "Namespaces": {
+      "shop": {"kubernetes.io/metadata.name": "shop", "guard-lab": "demo"},
+      "monitoring": {"kubernetes.io/metadata.name": "monitoring",
+                     "purpose": "monitoring"},
+      "default": {"kubernetes.io/metadata.name": "default"}
+    },
+    "Pods": [
+      {"Namespace": "shop", "Name": "frontend", "IP": "10.244.1.10",
+       "Labels": {"app": "frontend", "tier": "web"},
+       "Containers": [{"Name": "nginx", "Port": 8080, "PortName": "http",
+                       "Protocol": "TCP"}]},
+      {"Namespace": "shop", "Name": "api", "IP": "10.244.1.11",
+       "Labels": {"app": "api", "tier": "api"},
+       "Containers": [{"Name": "nginx", "Port": 8080, "PortName": "http",
+                       "Protocol": "TCP"}]},
+      {"Namespace": "shop", "Name": "db", "IP": "10.244.1.12",
+       "Labels": {"app": "db", "tier": "data"},
+       "Containers": [{"Name": "nginx", "Port": 5432, "PortName": "postgres",
+                       "Protocol": "TCP"}]},
+      {"Namespace": "default", "Name": "client", "IP": "10.244.2.20",
+       "Labels": {"app": "client"},
+       "Containers": [{"Name": "curl", "Port": 80, "PortName": "none",
+                       "Protocol": "TCP"}]}
+    ]
+  }
+}

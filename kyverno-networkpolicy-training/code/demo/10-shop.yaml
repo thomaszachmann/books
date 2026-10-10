@@ -1,0 +1,224 @@
+# Namespace shop: frontend (web) -> api (api) -> db (data)
+# Alle Pods erfüllen Pod Security "restricted" (wichtig ab Tag 8). Ein Image für alle.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-nginx
+  namespace: shop
+data:
+  default.conf.template: |
+    server {
+      listen 8080;
+      resolver ${NGINX_LOCAL_RESOLVERS} valid=10s ipv6=off;
+      resolver_timeout 2s;
+      set $api http://api.${POD_NAMESPACE}.svc.cluster.local;
+      location / {
+        default_type text/plain;
+        return 200 'frontend ok\n';
+      }
+      location /healthz {
+        access_log off;
+        return 200 'ok\n';
+      }
+      location /api/ {
+        proxy_connect_timeout 2s;
+        proxy_pass $api;
+      }
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-nginx
+  namespace: shop
+data:
+  default.conf.template: |
+    server {
+      listen 8080;
+      location / {
+        default_type application/json;
+        return 200 '{"svc":"api","ns":"${POD_NAMESPACE}","path":"$uri"}\n';
+      }
+      location /healthz {
+        access_log off;
+        return 200 'ok\n';
+      }
+    }
+    server {
+      listen 9113;
+      location /metrics {
+        default_type text/plain;
+        return 200 'demo_requests_total{ns="${POD_NAMESPACE}"} 42\n';
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: shop
+  labels: {app: frontend, tier: web}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: frontend}
+  template:
+    metadata:
+      labels: {app: frontend, tier: web}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+      - name: nginx
+        image: nginxinc/nginx-unprivileged:1.31-alpine
+        env:
+        - name: NGINX_ENTRYPOINT_LOCAL_RESOLVERS
+          value: "1"
+        - name: POD_NAMESPACE
+          valueFrom: {fieldRef: {fieldPath: metadata.namespace}}
+        ports:
+        - {name: http, containerPort: 8080}
+        readinessProbe:
+          httpGet: {path: /healthz, port: http}
+          periodSeconds: 5
+        resources:
+          requests: {cpu: 10m, memory: 16Mi}
+          limits: {memory: 64Mi}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities: {drop: [ALL]}
+        volumeMounts:
+        - {name: conf, mountPath: /etc/nginx/templates}
+      volumes:
+      - name: conf
+        configMap: {name: frontend-nginx}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: shop
+  labels: {app: frontend, tier: web}
+spec:
+  selector: {app: frontend}
+  ports:
+  - {name: http, port: 80, targetPort: http}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: shop
+  labels: {app: api, tier: api}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: api}
+  template:
+    metadata:
+      labels: {app: api, tier: api}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+      - name: nginx
+        image: nginxinc/nginx-unprivileged:1.31-alpine
+        env:
+        - name: POD_NAMESPACE
+          valueFrom: {fieldRef: {fieldPath: metadata.namespace}}
+        ports:
+        - {name: http, containerPort: 8080}
+        - {name: metrics, containerPort: 9113}
+        readinessProbe:
+          httpGet: {path: /healthz, port: http}
+          periodSeconds: 5
+        resources:
+          requests: {cpu: 10m, memory: 16Mi}
+          limits: {memory: 64Mi}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities: {drop: [ALL]}
+        volumeMounts:
+        - {name: conf, mountPath: /etc/nginx/templates}
+      volumes:
+      - name: conf
+        configMap: {name: api-nginx}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+  namespace: shop
+  labels: {app: api, tier: api}
+spec:
+  selector: {app: api}
+  ports:
+  - {name: http, port: 80, targetPort: http}
+  - {name: metrics, port: 9113, targetPort: metrics}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: db-nginx
+  namespace: shop
+data:
+  default.conf.template: |
+    # Simulierte Datenbank: lauscht auf 5432 wie Postgres, spricht aber HTTP.
+    # Spart ein 100-MB-Image; für NetworkPolicies zählt nur der Port.
+    server {
+      listen 5432;
+      location / {
+        default_type text/plain;
+        return 200 'db ok\n';
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db
+  namespace: shop
+  labels: {app: db, tier: data}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: db}
+  template:
+    metadata:
+      labels: {app: db, tier: data}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+      - name: nginx
+        image: nginxinc/nginx-unprivileged:1.31-alpine
+        ports:
+        - {name: postgres, containerPort: 5432}
+        readinessProbe:
+          tcpSocket: {port: postgres}
+          periodSeconds: 5
+        resources:
+          requests: {cpu: 10m, memory: 16Mi}
+          limits: {memory: 64Mi}
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities: {drop: [ALL]}
+        volumeMounts:
+        - {name: conf, mountPath: /etc/nginx/templates}
+      volumes:
+      - name: conf
+        configMap: {name: db-nginx}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db
+  namespace: shop
+  labels: {app: db, tier: data}
+spec:
+  selector: {app: db}
+  ports:
+  - {name: postgres, port: 5432, targetPort: postgres}

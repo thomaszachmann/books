@@ -1,0 +1,27 @@
+apiVersion: cli.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: image-hygiene
+policies:
+- ../../policies/image-hygiene.yaml
+resources:
+- resources.yaml
+exceptions:
+- ../../exceptions/legacy-batch.yaml
+variables: values.yaml
+results:
+- isValidatingPolicy: true
+  policy: image-hygiene
+  kind: Pod
+  resources: [good]
+  result: pass
+- isValidatingPolicy: true
+  policy: image-hygiene
+  kind: Pod
+  resources: [latest, notag, init-latest, nores]
+  result: fail
+- isValidatingPolicy: true
+  policy: image-hygiene
+  kind: Pod
+  resources: [legacy-batch-1]
+  result: skip

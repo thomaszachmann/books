@@ -1,0 +1,54 @@
+# Tag 11: dieselbe Pipeline für GitLab (Runner mit Docker-in-Docker)
+stages: [unit, e2e]
+
+variables:
+  KYVERNO: "1.19.1"
+  CHAINSAW: "0.2.15"
+  KIND: "0.33.0"
+  KUBECTL: "1.37.0"
+  HELM: "4.3.0"
+  REL: https://github.com/kyverno
+
+kyverno-test:
+  stage: unit
+  image: alpine:3.22
+  before_script:
+  - apk add --no-cache curl tar
+  - TGZ=kyverno-cli_v${KYVERNO}_linux_x86_64.tar.gz
+  - curl -sL "$REL/kyverno/releases/download/v$KYVERNO/$TGZ"
+    | tar xz -C /usr/local/bin kyverno
+  script:
+  - sh ci/kyverno-junit.sh
+  artifacts:
+    when: always
+    reports:
+      junit: reports/kyverno-*.xml
+
+chainsaw-e2e:
+  stage: e2e
+  image: docker:29
+  services: [docker:29-dind]
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+  before_script:
+  - apk add --no-cache bash curl tar
+  - B=/usr/local/bin
+  - curl -sLo $B/kind https://kind.sigs.k8s.io/dl/v$KIND/kind-linux-amd64
+  - curl -sLo $B/kubectl https://dl.k8s.io/release/v$KUBECTL/bin/linux/amd64/kubectl
+  - chmod +x $B/kind $B/kubectl
+  - curl -sL https://get.helm.sh/helm-v$HELM-linux-amd64.tar.gz
+    | tar xz -C $B --strip-components=1 linux-amd64/helm
+  - curl -sL $REL/chainsaw/releases/download/v$CHAINSAW/chainsaw_linux_amd64.tar.gz
+    | tar xz -C $B chainsaw
+  script:
+  - kind create cluster --name policy-ci --config ci/kind-dind.yaml
+  - sed -i 's#https://0.0.0.0:#https://docker:#' ~/.kube/config
+  - helm repo add kyverno https://kyverno.github.io/kyverno/
+  - helm install kyverno kyverno/kyverno -n kyverno --create-namespace
+    --version 3.9.1 --wait --timeout 5m
+  - chainsaw test e2e/ --report-format JUNIT-TEST --report-name chainsaw
+  artifacts:
+    when: always
+    reports:
+      junit: chainsaw.xml

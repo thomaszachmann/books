@@ -1,0 +1,57 @@
+# Tag 9: jeder Namespace mit Label tenant bekommt default-deny + allow-dns
+apiVersion: policies.kyverno.io/v1
+kind: GeneratingPolicy
+metadata:
+  name: tenant-netpol
+spec:
+  evaluation:
+    synchronize:
+      enabled: true
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [namespaces]
+    objectSelector:
+      matchExpressions:
+        - {key: tenant, operator: Exists}
+  variables:
+    - name: ns
+      expression: object.metadata.name
+    - name: labels
+      expression: >-
+        {"guard-lab/tenant": object.metadata.labels["tenant"]}
+    - name: policies
+      expression: >-
+        [
+          {
+            "apiVersion": dyn("networking.k8s.io/v1"),
+            "kind": dyn("NetworkPolicy"),
+            "metadata": dyn({"name": "default-deny", "labels": variables.labels}),
+            "spec": dyn({
+              "podSelector": dyn({}),
+              "policyTypes": dyn(["Ingress", "Egress"])
+            })
+          },
+          {
+            "apiVersion": dyn("networking.k8s.io/v1"),
+            "kind": dyn("NetworkPolicy"),
+            "metadata": dyn({"name": "allow-dns", "labels": variables.labels}),
+            "spec": dyn({
+              "podSelector": dyn({}),
+              "policyTypes": dyn(["Egress"]),
+              "egress": dyn([{
+                "to": [{
+                  "namespaceSelector": {"matchLabels":
+                    {"kubernetes.io/metadata.name": "kube-system"}},
+                  "podSelector": {"matchLabels": {"k8s-app": "kube-dns"}}
+                }],
+                "ports": [{"protocol": "UDP", "port": 53},
+                          {"protocol": "TCP", "port": 53}]
+              }])
+            })
+          }
+        ]
+  generate:
+    - expression: generator.Apply(variables.ns, variables.policies)

@@ -1,0 +1,19 @@
+apiVersion: cli.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: exception-governance
+policies:
+- ../../policies/exception-governance.yaml
+resources:
+- exceptions.yaml
+results:
+- isValidatingPolicy: true
+  policy: exception-governance
+  kind: PolicyException
+  resources: [ok]
+  result: pass
+- isValidatingPolicy: true
+  policy: exception-governance
+  kind: PolicyException
+  resources: [ohne-ticket, fuer-immer]
+  result: fail

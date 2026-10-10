@@ -1,0 +1,59 @@
+# Tag 13: Onboarding - ein Namespace mit Label tenant bekommt alles Weitere
+# (default-deny + allow-dns kommen aus tenant-netpol, Tag 9)
+apiVersion: policies.kyverno.io/v1
+kind: GeneratingPolicy
+metadata:
+  name: tenant-onboarding
+spec:
+  evaluation:
+    synchronize:
+      enabled: true
+    generateExisting:
+      enabled: true
+  matchConstraints:
+    resourceRules:
+    - apiGroups: [""]
+      apiVersions: [v1]
+      operations: [CREATE, UPDATE]
+      resources: [namespaces]
+    objectSelector:
+      matchExpressions:
+      - {key: tenant, operator: Exists}
+  variables:
+  - name: ns
+    expression: object.metadata.name
+  - name: team
+    expression: object.metadata.?labels.team.orValue(object.metadata.name)
+  - name: objs
+    expression: >-
+      [
+        {
+          "apiVersion": dyn("networking.k8s.io/v1"),
+          "kind": dyn("NetworkPolicy"),
+          "metadata": dyn({"name": "allow-same-namespace"}),
+          "spec": dyn({
+            "podSelector": dyn({}),
+            "policyTypes": dyn(["Ingress", "Egress"]),
+            "ingress": dyn([{"from": [{"podSelector": {}}]}]),
+            "egress": dyn([{"to": [{"podSelector": {}}]}])
+          })
+        },
+        {
+          "apiVersion": dyn("v1"),
+          "kind": dyn("ResourceQuota"),
+          "metadata": dyn({"name": "tenant-quota"}),
+          "spec": dyn({"hard": {"pods": "20", "requests.cpu": "2",
+                                "limits.memory": "4Gi"}})
+        },
+        {
+          "apiVersion": dyn("rbac.authorization.k8s.io/v1"),
+          "kind": dyn("RoleBinding"),
+          "metadata": dyn({"name": "team-edit"}),
+          "roleRef": dyn({"apiGroup": "rbac.authorization.k8s.io",
+                          "kind": "ClusterRole", "name": "edit"}),
+          "subjects": dyn([{"apiGroup": "rbac.authorization.k8s.io",
+                            "kind": "Group", "name": variables.team}])
+        }
+      ]
+  generate:
+  - expression: generator.Apply(variables.ns, variables.objs)

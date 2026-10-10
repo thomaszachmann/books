@@ -1,0 +1,43 @@
+# Tag 8: Pod Security "restricted" - Zusatzregeln, erst Audit, dann Deny
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: pss-restricted
+spec:
+  validationActions: [Audit]
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [pods]
+    namespaceSelector:
+      matchLabels:
+        guard-lab: demo
+  variables:
+    - name: allContainers
+      expression: >-
+        object.spec.containers + object.spec.?initContainers.orValue([])
+    - name: podNonRoot
+      expression: object.spec.?securityContext.?runAsNonRoot.orValue(false)
+    - name: podSeccomp
+      expression: >-
+        object.spec.?securityContext.?seccompProfile.?type.orValue('')
+  validations:
+    - expression: >-
+        variables.allContainers.all(c,
+          c.?securityContext.?runAsNonRoot.orValue(variables.podNonRoot))
+      message: "runAsNonRoot: true fehlt (Pod oder Container)."
+    - expression: >-
+        variables.allContainers.all(c,
+          c.?securityContext.?allowPrivilegeEscalation.orValue(true) == false)
+      message: "allowPrivilegeEscalation: false fehlt."
+    - expression: >-
+        variables.allContainers.all(c,
+          'ALL' in c.?securityContext.?capabilities.?drop.orValue([]))
+      message: "capabilities.drop muss ALL enthalten."
+    - expression: >-
+        variables.allContainers.all(c,
+          c.?securityContext.?seccompProfile.?type.orValue(variables.podSeccomp)
+          in ['RuntimeDefault', 'Localhost'])
+      message: "seccompProfile RuntimeDefault oder Localhost fehlt."

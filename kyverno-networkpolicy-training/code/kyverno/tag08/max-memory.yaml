@@ -1,0 +1,27 @@
+# Tag 8 (Challenge): Memory-Limit pro Container höchstens 512Mi
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: max-memory
+spec:
+  validationActions: [Deny]
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [pods]
+    namespaceSelector:
+      matchLabels:
+        guard-lab: demo
+  variables:
+    - name: tooBig
+      expression: >-
+        object.spec.containers.filter(c,
+          quantity(c.?resources.?limits[?'memory'].orValue('0'))
+          .isGreaterThan(quantity('512Mi')))
+        .map(c, c.name + '=' + c.resources.limits['memory'])
+  validations:
+    - expression: "size(variables.tooBig) == 0"
+      messageExpression: >-
+        'Memory-Limit über 512Mi: ' + variables.tooBig.join(', ')

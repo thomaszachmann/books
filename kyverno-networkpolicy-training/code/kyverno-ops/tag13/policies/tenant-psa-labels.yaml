@@ -1,0 +1,28 @@
+# Tag 13: Mandanten-Namespaces bekommen Pod Security Admission "restricted"
+apiVersion: policies.kyverno.io/v1
+kind: MutatingPolicy
+metadata:
+  name: tenant-psa-labels
+spec:
+  matchConstraints:
+    resourceRules:
+    - apiGroups: [""]
+      apiVersions: [v1]
+      operations: [CREATE, UPDATE]
+      resources: [namespaces]
+    objectSelector:
+      matchExpressions:
+      - {key: tenant, operator: Exists}
+  mutations:
+  - patchType: ApplyConfiguration
+    applyConfiguration:
+      expression: >-
+        Object{
+          metadata: Object.metadata{
+            labels: {
+              "pod-security.kubernetes.io/enforce": "restricted",
+              "pod-security.kubernetes.io/enforce-version": "latest",
+              "pod-security.kubernetes.io/warn": "restricted"
+            }
+          }
+        }

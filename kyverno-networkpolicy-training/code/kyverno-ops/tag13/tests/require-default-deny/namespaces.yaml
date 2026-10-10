@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tenant-a
+  labels: {guard-lab: demo, tenant: a}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tenant-b
+  labels: {guard-lab: demo, tenant: b}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: shop
+  labels: {guard-lab: demo, team: shop}

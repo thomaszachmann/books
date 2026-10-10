@@ -1,0 +1,30 @@
+# Eine Application pro Ordner unter tenants/ - neuer Mandant = neuer Ordner
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: tenants
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  goTemplate: true
+  generators:
+  - git:
+      repoURL: https://git.example.com/guard-lab/gitops.git
+      revision: main
+      directories:
+      - path: tenants/*
+  template:
+    metadata:
+      name: 'tenant-{{.path.basename}}'
+    spec:
+      project: default
+      source:
+        repoURL: https://git.example.com/guard-lab/gitops.git
+        targetRevision: main
+        path: '{{.path.path}}'
+      destination:
+        server: https://kubernetes.default.svc
+      syncPolicy:
+        automated: {prune: true, selfHeal: true}
+        syncOptions: [ServerSideApply=true]

@@ -1,0 +1,25 @@
+# Tag 12: kritische Regel zusätzlich als native ValidatingAdmissionPolicy
+# (wirkt im API-Server, auch wenn Kyverno ausfällt)
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: no-privileged
+spec:
+  autogen:
+    validatingAdmissionPolicy:
+      enabled: true
+  validationActions: [Deny]
+  matchConstraints:
+    resourceRules:
+    - apiGroups: [""]
+      apiVersions: [v1]
+      operations: [CREATE, UPDATE]
+      resources: [pods]
+    namespaceSelector:
+      matchLabels:
+        guard-lab: demo
+  validations:
+  - expression: >-
+      (object.spec.containers + object.spec.?initContainers.orValue([]))
+        .all(c, !(c.?securityContext.?privileged.orValue(false)))
+    message: Privilegierte Container sind verboten.

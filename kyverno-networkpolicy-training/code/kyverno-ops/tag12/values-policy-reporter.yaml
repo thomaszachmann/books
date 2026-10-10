@@ -1,0 +1,8 @@
+# Tag 12: Policy Reporter mit UI und Kyverno-Plugin, Metriken für Prometheus
+ui:
+  enabled: true
+plugin:
+  kyverno:
+    enabled: true
+metrics:
+  enabled: true

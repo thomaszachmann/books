@@ -1,0 +1,25 @@
+# Tag 6: GitLab CI - als Job in .gitlab-ci.yml übernehmen (Runner mit privileged dind)
+np-tests:
+  image: docker:29.1
+  services:
+  - name: docker:29.1-dind
+    alias: docker
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+    KUBECTL_URL: https://dl.k8s.io/release/v1.37.0/bin/linux/amd64/kubectl
+  rules:
+  - changes: ["code/**/*"]
+  before_script:
+  - apk add --no-cache bash curl
+  - curl -sLo /usr/local/bin/kind https://kind.sigs.k8s.io/dl/v0.33.0/kind-linux-amd64
+  - curl -sLo /usr/local/bin/kubectl "$KUBECTL_URL"
+  - chmod +x /usr/local/bin/kind /usr/local/bin/kubectl
+  script:
+  - kind create cluster --name np-ci --config code/np-tests/ci/kind-ci.yaml
+  - sed -i 's#https://0.0.0.0:6443#https://docker:6443#' ~/.kube/config
+  - kubectl apply -f code/demo/
+  - kubectl wait --for=condition=Ready pod --all -A --timeout=300s
+  - kubectl apply -f code/np-tests/policies/
+  - sleep 5
+  - CC=$PWD/code/demo/conncheck.sh code/np-tests/np-matrix.sh code/np-tests/matrix.tsv

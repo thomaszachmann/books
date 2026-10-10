@@ -1,0 +1,17 @@
+# Tag 12: abgelaufene PolicyExceptions stündlich löschen
+apiVersion: policies.kyverno.io/v1
+kind: DeletingPolicy
+metadata:
+  name: delete-expired-exceptions
+spec:
+  schedule: "0 * * * *"
+  matchConstraints:
+    resourceRules:
+    - apiGroups: [policies.kyverno.io]
+      apiVersions: ["*"]
+      resources: [policyexceptions]
+  conditions:
+  - name: abgelaufen
+    expression: >-
+      has(object.spec.expiresAt) &&
+      timestamp(object.spec.expiresAt) < time.now()

@@ -1,0 +1,33 @@
+# Tag 13: Mandanten dürfen kein Egress ins Internet (0.0.0.0/0, ::/0) öffnen
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: no-world-egress
+spec:
+  validationActions: [Deny]
+  matchConstraints:
+    resourceRules:
+    - apiGroups: [networking.k8s.io]
+      apiVersions: [v1]
+      operations: [CREATE, UPDATE]
+      resources: [networkpolicies]
+    namespaceSelector:
+      matchExpressions:
+      - {key: tenant, operator: Exists}
+  variables:
+  - name: egress
+    expression: >-
+      has(object.spec.egress) ? object.spec.egress : []
+  - name: world
+    expression: "['0.0.0.0/0', '::/0']"
+  validations:
+  - expression: >-
+      !variables.egress.exists(r, has(r.to) && r.to.exists(p,
+        has(p.ipBlock) && p.ipBlock.cidr in variables.world))
+    messageExpression: >-
+      'NetworkPolicy ' + object.metadata.name +
+      ': Egress nach 0.0.0.0/0 oder ::/0 ist für Mandanten verboten'
+  - expression: >-
+      variables.egress.all(r, has(r.to) && size(r.to) > 0 ||
+        (has(r.ports) && r.ports.all(p, has(p.port) && p.port == 53)))
+    message: Egress-Regel ohne 'to' erlaubt alle Ziele (nur für Port 53 ok).

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Pod
+metadata: {name: leer, namespace: shop, labels: {app: ""}}
+spec:
+  containers: [{name: c, image: "nginxinc/nginx-unprivileged:1.31-alpine"}]
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: lang
+  namespace: shop
+  labels: {app: ein-sehr-langer-app-name-der-nervt}
+spec:
+  containers: [{name: c, image: "nginxinc/nginx-unprivileged:1.31-alpine"}]

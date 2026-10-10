@@ -1,0 +1,51 @@
+# Tag 8: feste Tags, erlaubte Registries, Ressourcen - mit Variablen und Messages
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: image-hygiene
+spec:
+  validationActions: [Deny]
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [pods]
+    namespaceSelector:
+      matchLabels:
+        guard-lab: demo
+  variables:
+    - name: allowedRegistries
+      expression: "['index.docker.io', 'kind-registry:5000']"
+    - name: images
+      expression: >-
+        (object.spec.containers + object.spec.?initContainers.orValue([]))
+        .map(c, c.image)
+    - name: latest
+      expression: >-
+        variables.images.filter(i,
+          !image(i).containsDigest() && image(i).tag() == 'latest')
+    - name: foreign
+      expression: >-
+        variables.images.filter(i,
+          !(image(i).registry() in variables.allowedRegistries))
+    - name: noResources
+      expression: >-
+        object.spec.containers.filter(c,
+          !('cpu' in c.?resources.?requests.orValue({})) ||
+          !('memory' in c.?resources.?requests.orValue({})) ||
+          !('memory' in c.?resources.?limits.orValue({})))
+        .map(c, c.name)
+  validations:
+    - expression: "size(variables.latest) == 0"
+      messageExpression: >-
+        'Fester Tag oder Digest nötig, nicht :latest: '
+        + variables.latest.join(', ')
+    - expression: "size(variables.foreign) == 0"
+      messageExpression: >-
+        'Registry nicht erlaubt: ' + variables.foreign.join(', ')
+        + ' (erlaubt: ' + variables.allowedRegistries.join(', ') + ')'
+    - expression: "size(variables.noResources) == 0"
+      messageExpression: >-
+        'requests.cpu, requests.memory und limits.memory fehlen bei: '
+        + variables.noResources.join(', ')

@@ -1,0 +1,20 @@
+# Tag 11: befristete Ausnahme für einen Batch-Job mit :latest
+apiVersion: policies.kyverno.io/v1
+kind: PolicyException
+metadata:
+  name: legacy-batch-latest
+  namespace: policy-exceptions
+spec:
+  policyRefs:
+  - name: image-hygiene
+    kind: ValidatingPolicy
+  matchConditions:
+  - name: nur-shop-legacy-batch
+    expression: >-
+      object.metadata.namespace == 'shop' &&
+      object.metadata.name.startsWith('legacy-batch')
+  expiresAt: "2026-12-31T23:59:59Z"
+  properties:
+    ticket: SEC-4711
+    owner: team-shop
+    reason: Batch-Image bekommt bis Jahresende feste Tags

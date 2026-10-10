@@ -1,0 +1,30 @@
+# Tag 9 (Challenge): allowPrivilegeEscalation=false für jeden Container ergänzen
+apiVersion: policies.kyverno.io/v1
+kind: MutatingPolicy
+metadata:
+  name: no-escalation
+spec:
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: [v1]
+        operations: [CREATE]
+        resources: [pods]
+    namespaceSelector:
+      matchLabels:
+        guard-lab: demo
+  mutations:
+    - patchType: ApplyConfiguration
+      applyConfiguration:
+        expression: >-
+          Object{
+            spec: Object.spec{
+              containers: object.spec.containers.map(c, Object.spec.containers{
+                name: c.name,
+                securityContext: Object.spec.containers.securityContext{
+                  allowPrivilegeEscalation: c.?securityContext
+                    .?allowPrivilegeEscalation.orValue(false)
+                }
+              })
+            }
+          }

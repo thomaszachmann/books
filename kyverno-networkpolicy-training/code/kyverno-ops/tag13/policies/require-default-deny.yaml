@@ -1,0 +1,32 @@
+# Tag 13: jeder Mandanten-Namespace braucht eine Default-Deny-Policy (Audit + Scan)
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: require-default-deny
+spec:
+  validationActions: [Audit]
+  evaluation:
+    background:
+      enabled: true
+  matchConstraints:
+    resourceRules:
+    - apiGroups: [""]
+      apiVersions: [v1]
+      operations: [CREATE, UPDATE]
+      resources: [namespaces]
+    objectSelector:
+      matchExpressions:
+      - {key: tenant, operator: Exists}
+  variables:
+  - name: nps
+    expression: >-
+      dyn(resource.List('networking.k8s.io/v1', 'networkpolicies',
+        object.metadata.name).items)
+  validations:
+  - expression: >-
+      variables.nps.exists(np,
+        size(np.spec.podSelector) == 0 &&
+        !has(np.spec.ingress) && !has(np.spec.egress) &&
+        'Ingress' in np.spec.policyTypes && 'Egress' in np.spec.policyTypes)
+    messageExpression: >-
+      'Namespace ' + object.metadata.name + ' hat keine Default-Deny-Policy'
