@@ -2,16 +2,19 @@
 # Decode a JWT without a library. Chapter 4 does this by hand first;
 # this is the same three steps, kept for the chapters that follow.
 #
-#   ./decode-token.sh header  < tokens.json
-#   ./decode-token.sh payload < tokens.json
+#   ./decode-token.sh header  < tokens.json   (access token's header)
+#   ./decode-token.sh payload < tokens.json   (access token's payload)
+#   ./decode-token.sh id      < tokens.json   (ID token's payload)
 #   echo "$TOKEN" | ./decode-token.sh payload -
 set -euo pipefail
 
 part="${1:-payload}"
+select='.access_token // .id_token // .'
 case "$part" in
   header)  field=1 ;;
   payload) field=2 ;;
-  *) echo "usage: $0 [header|payload] [-]" >&2; exit 2 ;;
+  id)      field=2; select='.id_token' ;;
+  *) echo "usage: $0 [header|payload|id] [-]" >&2; exit 2 ;;
 esac
 
 # Base64URL is Base64 with two characters swapped and the padding
@@ -28,7 +31,7 @@ b64url() {
 if [ "${2:-}" = "-" ]; then
   token=$(cat)
 else
-  token=$(jq -r '.access_token // .id_token // .' -)
+  token=$(jq -r "$select" -)
 fi
 
 printf '%s' "$token" | cut -d. -f"$field" | b64url | base64 -d | jq .

@@ -1,11 +1,17 @@
 # The Keycloak custom resource. The operator turns this into a
-# StatefulSet, a Service, an Ingress and the configuration to match.
+# StatefulSet called `meridian` (pods meridian-0, meridian-1, ...) and a
+# Service called `meridian-service`, and keeps them in step.
+#
+# This is the SECOND Keycloak of the book, sso-k8s.meridian.test. The
+# compose Keycloak, sso.meridian.test, keeps running and stays the
+# identity provider for everything else (Chapter 15, "Two Keycloaks").
 #
 # Two fields carry the whole of Chapters 2 and 3 into the cluster:
-# spec.hostname.hostname is the issuer, and it must be a full URL; and
-# proxy headers must be set, because TLS terminates at the ingress and
-# Keycloak would otherwise conclude it is being reached over plain HTTP
-# and issue an http:// issuer.
+# spec.hostname.hostname is the issuer, and it must be a full URL - here
+# with the port, because the cluster's ingress is on 8443 everywhere
+# (k8s/kind/cluster.yaml); and proxy headers must be set, because TLS
+# terminates at the ingress and Keycloak would otherwise conclude it is
+# being reached over plain HTTP.
 apiVersion: k8s.keycloak.org/v2alpha1
 kind: Keycloak
 metadata:
@@ -23,7 +29,7 @@ spec:
       name: keycloak-db
       key: password
   hostname:
-    hostname: https://sso.meridian.test
+    hostname: https://sso-k8s.meridian.test:8443
   http:
     # TLS terminates at the Ingress below, so Keycloak speaks plain HTTP
     # inside the cluster. Production mode refuses to start without one
@@ -35,6 +41,24 @@ spec:
     enabled: false
   proxy:
     headers: xforwarded
+  # The first administrator comes from a secret you created (Chapter 15,
+  # Step 3), not from the one the operator would generate. The
+  # generated one, meridian-initial-admin, belongs to this resource:
+  # delete the resource and the operator deletes it with it, then makes
+  # a new one with a new password on the next apply - while the database
+  # still holds the old administrator. Chapter 16 deletes this resource
+  # on purpose.
+  bootstrapAdmin:
+    user:
+      secret: keycloak-admin
+  # The Meridian root, for Keycloak as a CLIENT: LDAPS to
+  # dc.meridian.test (Chapter 12's directory, reached through
+  # `make kind-link`). Every key of the secret lands in
+  # conf/truststores, the same directory compose.yaml mounts into.
+  truststores:
+    meridian:
+      secret:
+        name: meridian-ca
 ---
 # TLS terminates here, not at Keycloak.
 #
@@ -54,10 +78,10 @@ metadata:
 spec:
   ingressClassName: nginx
   tls:
-    - hosts: [sso.meridian.test]
+    - hosts: [sso-k8s.meridian.test]
       secretName: keycloak-tls
   rules:
-    - host: sso.meridian.test
+    - host: sso-k8s.meridian.test
       http:
         paths:
           - path: /

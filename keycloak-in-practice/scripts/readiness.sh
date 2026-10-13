@@ -69,17 +69,15 @@ manual() { active || return 0
 kcadm() { docker compose -f "$ROOT/compose.yaml" exec -T keycloak \
             /opt/keycloak/bin/kcadm.sh "$@" 2>/dev/null; }
 
-# Das Labor faehrt HTTPS-only. KC_HOSTNAME steht in VERSIONS.mk und
-# ist der Name, auf den das Zertifikat aus Kapitel 2 ausgestellt ist -
-# eine IP oder localhost scheitert an der Pruefung, nicht am Passwort.
-# kcadm laeuft ueber 'exec' INNERHALB des containers. Dort lauscht
-# Keycloak auf 8443; KC_HOSTNAME nennt den Port, unter dem der HOST es
-# erreicht. Von innen mit dem Host-Port anzufragen gibt 'Connection
-# refused' - dieselbe Falle wie im make-ziel kcadm-login.
+# The lab is HTTPS only. KC_HOSTNAME is in VERSIONS.mk and is the name
+# Chapter 2's certificate was issued for - an IP or localhost fails the
+# certificate check, not the password. kcadm runs through 'exec' inside
+# the container, where Keycloak listens on 443 as it does on the host,
+# so the same URL works from both sides.
 if [ -z "${KC_URL:-}" ] && [ -f "$ROOT/VERSIONS.mk" ]; then
-  KC_URL="$(awk -F= '/^KC_HOSTNAME=/{print $2}' "$ROOT/VERSIONS.mk"):8443"
+  KC_URL="$(awk -F= '/^KC_HOSTNAME=/{print $2}' "$ROOT/VERSIONS.mk")"
 fi
-KC_URL="${KC_URL:-https://localhost:8443}"
+KC_URL="${KC_URL:-https://sso.meridian.test}"
 
 HAVE_API=
 if [ -n "$KC_PASS" ] && kcadm config credentials \

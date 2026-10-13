@@ -10,4 +10,12 @@ assertion.xml
 authn.xml
 req.enc
 
+# Chapters 9 and 11
+tokens.old.json
+rpt.txt
+
 .DS_Store
+
+# Part IV: written by chapters/ch16/authn-config.sh and chapters/ch15/export-realm.sh
+k8s/kind/authn/
+k8s/local/

@@ -1,31 +1,45 @@
 # The wiki from Chapter 1, unchanged, behind a proxy that authenticates
 # for it. Chapter 17.
 #
+#   browser -> ingress (wiki.meridian.test:8443) -> oauth2-proxy -> wiki
+#
 # WARNING, and it is the point of the lab: the proxy is the only thing
 # performing authentication. Anything that can reach the wiki Service
 # directly - any pod in this cluster, by default - reaches it with no
-# authentication at all. The NetworkPolicy below is not optional
-# decoration; without it this arrangement is worse than the password
-# file it replaced.
+# authentication at all, and can set the headers the proxy would have
+# set. The NetworkPolicy that closes this is in wiki-netpol.yaml, a
+# separate file on purpose: Chapter 17 shows the hole before it closes
+# it.
+#
+# Expects the secret wiki-oauth2-proxy (client secret and cookie
+# secret), created in Chapter 17, Step 4, and meridian-ca from Chapter
+# 15.
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: wiki-conf
 data:
+  # Chapter 1's httpd, minus the password file - `Require all granted`
+  # is the whole of its access control now - plus a log line that shows
+  # what the proxy tells the application: who, by header.
   httpd.conf: |
     ServerRoot "/usr/local/apache2"
     Listen 80
     ServerName localhost
     LoadModule mpm_event_module modules/mod_mpm_event.so
     LoadModule unixd_module modules/mod_unixd.so
+    LoadModule authz_core_module modules/mod_authz_core.so
     LoadModule dir_module modules/mod_dir.so
     LoadModule log_config_module modules/mod_log_config.so
     User www-data
     Group www-data
     DocumentRoot "/usr/local/apache2/htdocs"
+    <Directory "/usr/local/apache2/htdocs">
+        Require all granted
+    </Directory>
     ErrorLog /proc/self/fd/2
-    LogFormat "%h %u %t \"%r\" %>s" common
-    CustomLog /proc/self/fd/1 common
+    LogFormat "%h user=%{X-Forwarded-Preferred-Username}i email=%{X-Forwarded-Email}i \"%r\" %>s" proxied
+    CustomLog /proc/self/fd/1 proxied
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -59,16 +73,97 @@ spec:
   selector: { app: wiki }
   ports: [{ port: 80 }]
 ---
-# Only the proxy may reach the wiki. This is half of the control.
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
+# The proxy. It runs the authorization code flow with Keycloak (client
+# `wiki`), keeps the result in an encrypted cookie, and forwards every
+# request it lets through to the wiki with X-Forwarded-* headers naming
+# the user.
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: wiki-only-from-proxy
+  name: oauth2-proxy
 spec:
-  podSelector:
-    matchLabels: { app: wiki }
-  policyTypes: [Ingress]
-  ingress:
-    - from:
-        - podSelector:
-            matchLabels: { app: oauth2-proxy }
+  replicas: 1
+  selector:
+    matchLabels: { app: oauth2-proxy }
+  template:
+    metadata:
+      labels: { app: oauth2-proxy }
+    spec:
+      containers:
+        - name: oauth2-proxy
+          image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.4
+          args:
+            - --http-address=0.0.0.0:4180
+            - --provider=keycloak-oidc
+            - --oidc-issuer-url=https://sso.meridian.test/realms/meridian
+            - --provider-ca-file=/etc/ssl/meridian/ca.crt
+            - --client-id=wiki
+            - --scope=openid profile email groups
+            - --code-challenge-method=S256
+            - --redirect-url=https://wiki.meridian.test:8443/oauth2/callback
+            - --upstream=http://wiki:80
+            - --email-domain=*
+            - --skip-provider-button=true
+            - --reverse-proxy=true
+            - --pass-user-headers=true
+            # People come from Active Directory (Chapter 12), and
+            # Keycloak marks a directory address as unverified: it did
+            # not send the mail itself. oauth2-proxy refuses such a
+            # login with "email in id_token ... isn't verified". The
+            # directory is the authority for this address, so accept it.
+            - --insecure-oidc-allow-unverified-email=true
+            # Ask Keycloak again every minute whether the session still
+            # exists. Without it, the cookie alone admits its holder
+            # until it expires - seven days by default - whatever
+            # happened to the person in the directory.
+            - --cookie-refresh=1m
+          env:
+            - name: OAUTH2_PROXY_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef: { name: wiki-oauth2-proxy, key: client-secret }
+            - name: OAUTH2_PROXY_COOKIE_SECRET
+              valueFrom:
+                secretKeyRef: { name: wiki-oauth2-proxy, key: cookie-secret }
+          ports: [{ containerPort: 4180 }]
+          volumeMounts:
+            - name: ca
+              mountPath: /etc/ssl/meridian
+              readOnly: true
+      volumes:
+        - name: ca
+          secret:
+            secretName: meridian-ca
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: oauth2-proxy
+spec:
+  selector: { app: oauth2-proxy }
+  ports: [{ port: 4180 }]
+---
+# The browser reaches the proxy, never the wiki.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: wiki
+  annotations:
+    # Keycloak's responses carry large cookies; nginx's default buffer
+    # for upstream headers is 4k.
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "16k"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: [wiki.meridian.test]
+      secretName: wiki-tls
+  rules:
+    - host: wiki.meridian.test
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: oauth2-proxy
+                port:
+                  number: 4180

@@ -2,7 +2,8 @@
 # What actually costs Keycloak anything. Chapter 21.
 #
 # Two loops, deliberately unequal:
-#   logins        hit Keycloak, do password hashing and write a session
+#   logins        hit Keycloak: check the client secret, sign a token
+#                 (a person's login adds password hashing on top)
 #   verifications hit nothing at all - a signature check, offline
 #
 # The point is not a benchmark. It is that the second number is not a

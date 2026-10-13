@@ -27,3 +27,7 @@ because build options changed, then creates its schema.
 
 Health is on 9000 and not on 443. That is not a mistake in this file;
 see the chapter.
+
+Keycloak listens on 443 inside the container too (`--https-port=443`),
+so `https://sso.meridian.test` is the same URL from your laptop, from
+the client box and for `kcadm` inside the Keycloak container.

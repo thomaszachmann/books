@@ -10,6 +10,13 @@
 # The fourth is where the work is. Grafana calls it role_attribute_path
 # and it is a JMESPath expression over the claims; ArgoCD calls it a
 # policy; Harbor calls it a group claim name. Same idea, three spellings.
+#
+# The issuer is the compose Keycloak, sso.meridian.test - the identity
+# provider of the whole book. The browser reaches it from your laptop;
+# Grafana reaches it from its pod through the name `make kind-link`
+# put on the kind network. One URL, both paths.
+#
+# The image version is pinned in k8s/VERSIONS.md.
 apiVersion: v1
 kind: Secret
 metadata:
@@ -36,7 +43,7 @@ spec:
           ports: [{ containerPort: 3000 }]
           env:
             - name: GF_SERVER_ROOT_URL
-              value: https://grafana.meridian.test
+              value: https://grafana.meridian.test:8443
             - name: GF_AUTH_GENERIC_OAUTH_ENABLED
               value: "true"
             - name: GF_AUTH_GENERIC_OAUTH_NAME
@@ -50,6 +57,16 @@ spec:
                   key: client-secret
             - name: GF_AUTH_GENERIC_OAUTH_SCOPES
               value: openid profile email groups
+            - name: GF_AUTH_GENERIC_OAUTH_USE_PKCE
+              value: "true"
+            - name: GF_AUTH_GENERIC_OAUTH_LOGIN_ATTRIBUTE_PATH
+              value: preferred_username
+            # Refresh the access token when it expires, and end the
+            # Grafana session when the refresh is refused - which is how
+            # a person disabled in the directory leaves Grafana without
+            # anybody touching Grafana (Chapter 17, the three numbers).
+            - name: GF_AUTH_GENERIC_OAUTH_USE_REFRESH_TOKEN
+              value: "true"
             - name: GF_AUTH_GENERIC_OAUTH_AUTH_URL
               value: https://sso.meridian.test/realms/meridian/protocol/openid-connect/auth
             - name: GF_AUTH_GENERIC_OAUTH_TOKEN_URL
@@ -82,3 +99,26 @@ metadata:
 spec:
   selector: { app: grafana }
   ports: [{ port: 3000 }]
+---
+# The browser's way in: https://grafana.meridian.test:8443, TLS at the
+# ingress with the certificate from Chapter 17, Step 1.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: [grafana.meridian.test]
+      secretName: grafana-tls
+  rules:
+    - host: grafana.meridian.test
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: grafana
+                port:
+                  number: 3000

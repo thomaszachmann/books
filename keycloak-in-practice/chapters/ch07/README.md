@@ -23,5 +23,9 @@ kcadm get users/<id>/role-mappings/realm --fields name
 Roles inherit downward through nested groups; membership does not
 aggregate upward. `groups/<id>/members` lists direct members only.
 
+Subgroups are listed with `groups/<id>/children`. The `subGroups` field
+of `GET groups/<id>` is empty since Keycloak 23, whatever the group
+contains.
+
 Group membership is not in the token. It takes a mapper, which is
 Chapter 8, and Chapter 16 is where it stops being optional.

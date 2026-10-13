@@ -4,12 +4,9 @@
 
 SHELL := /bin/bash
 COMPOSE := docker compose
-# kcadm laeuft ueber 'exec' INNERHALB des containers, und dort lauscht
-# Keycloak auf 8443. KC_HOSTNAME traegt den Port, unter dem der HOST es
-# erreicht (443, gemappt auf 8443) - von innen ist das 'Connection
-# refused'. Gemessen: vom host antwortet 443 mit 302 und 8443 gar nicht,
-# im container genau umgekehrt.
-KC_INTERNAL := $(KC_HOSTNAME):8443
+# kcadm runs through 'exec', inside the container. Keycloak listens on
+# 443 there as well (compose.yaml, --https-port=443), so KC_HOSTNAME is
+# the right server URL from both sides and no internal port is needed.
 KCADM := $(COMPOSE) exec -T keycloak /opt/keycloak/bin/kcadm.sh
 REALM ?= meridian
 
@@ -54,17 +51,28 @@ env:  ## Create .env and append the pinned versions to it
 	  grep -E '^[A-Z_]+=' VERSIONS.md >> .env; \
 	  echo "appended pinned versions to .env"; }
 
+# Once Chapter 15's cluster exists, a recreated keycloak or dc container
+# has lost its place on the kind network. Re-link it after every start.
+RELINK := @if docker inspect meridian-control-plane >/dev/null 2>&1; then \
+  bash chapters/ch15/kind-link.sh; fi
+
 .PHONY: up
 up: env pki  ## Start the database and Keycloak
 	$(COMPOSE) up -d db keycloak client
+	$(RELINK)
+
+# Every profile in compose.yaml. A container started under a profile
+# that is not named here survives `make down`.
+ALL_PROFILES := --profile ad --profile ch01 --profile api --profile ch08 \
+  --profile ch09 --profile vault
 
 .PHONY: down
 down:  ## Remove the containers, keep the data
-	$(COMPOSE) --profile ad --profile ch01 --profile vault down
+	$(COMPOSE) $(ALL_PROFILES) down
 
 .PHONY: clean
 clean:  ## Remove the containers AND the data. Keeps pki/
-	$(COMPOSE) --profile ad --profile ch01 --profile vault down -v
+	$(COMPOSE) $(ALL_PROFILES) down -v
 	@rm -f VERSIONS.mk tokens.json assertion.xml authn.xml req.enc
 
 .PHONY: clean-pki
@@ -75,6 +83,11 @@ clean-pki:  ## Also throw away the CA. Four trust stores to redo
 ad-up: env  ## Chapter 2 step 8, and Chapters 12 to 14
 	$(COMPOSE) --profile ad up -d --build dc client
 	@echo "The first start provisions the domain and takes a minute."
+	$(RELINK)
+
+.PHONY: kind-link
+kind-link:  ## Chapter 15: the compose names inside the kind cluster
+	@bash chapters/ch15/kind-link.sh
 
 .PHONY: ad-down
 ad-down:  ## Put the directory away again
@@ -94,7 +107,7 @@ kcadm-init:  ## Chapter 3 step 6: truststore, then log the CLI in
 .PHONY: kcadm-login
 kcadm-login:  ## Authenticate the admin CLI (prompts for the password)
 	$(COMPOSE) exec keycloak /opt/keycloak/bin/kcadm.sh \
-	  config credentials --server $(KC_INTERNAL) \
+	  config credentials --server $(KC_HOSTNAME) \
 	  --realm master --user $${KC_BOOTSTRAP_ADMIN_USERNAME:-admin}
 
 .PHONY: realm
@@ -115,6 +128,17 @@ vault-up: env  ## Part V: bring Vault up beside Keycloak
 vault-down:  ## Put Vault away again
 	$(COMPOSE) --profile vault stop vault
 
+# Name the three services. `--profile ch01 up -d` alone also starts
+# every service that has no profile - db, keycloak, client - and before
+# Chapter 2 has made pki/, Docker creates the missing certificate files
+# as root-owned directories.
 .PHONY: ch01
 ch01: env  ## Chapter 1: three applications, three user databases
-	$(COMPOSE) --profile ch01 up -d
+	$(COMPOSE) --profile ch01 up -d wiki tickets dashboard
+
+.PHONY: api
+api: env  ## Chapter 4: start the resource server that checks aud
+	$(COMPOSE) --profile api up -d api
+	@for i in $$(seq 1 20); do \
+	  curl -s -o /dev/null http://localhost:8084/ && break; sleep 0.5; done
+	@echo "api: http://localhost:8084  (reasons: docker compose logs api)"
