@@ -1,0 +1,39 @@
+# Chapter 20: Keycloak gets its database credential from Vault.
+#
+# Added to the stack by chapters/ch20/setup.sh, which appends
+#   COMPOSE_FILE=compose.yaml:chapters/ch20/compose.yaml
+# to .env - so every `docker compose` command from here on reads both
+# files, and nothing else in the book has to change. Remove that line
+# to go back to the credential in .env.
+services:
+  # Logs in to Vault with AppRole and renders the credential. It starts
+  # as root only to empty and hand over its output directory, then runs
+  # as uid 1000, Keycloak's user, so that Keycloak can read a file
+  # nobody else can.
+  vault-agent:
+    image: hashicorp/vault:${VAULT_VERSION}
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        rm -f /vault/out/db.env &&
+        chown 1000:1000 /vault/out &&
+        exec su-exec 1000:1000 vault agent -config=/vault/agent.hcl
+    volumes:
+      - ./chapters/ch20/agent.hcl:/vault/agent.hcl:ro
+      - ./vault/approle:/vault/approle:ro
+      - kc-db-cred:/vault/out
+
+  # The same Keycloak, started through kc-start.sh, which refuses to
+  # start without the rendered credential. KC_DB_USERNAME and
+  # KC_DB_PASSWORD from compose.yaml are still in the environment;
+  # kc-start.sh replaces them before Keycloak sees them.
+  keycloak:
+    restart: unless-stopped
+    entrypoint: ["/opt/kip/kc-start.sh"]
+    volumes:
+      - ./chapters/ch20/kc-start.sh:/opt/kip/kc-start.sh:ro
+      - kc-db-cred:/run/vault:ro
+
+volumes:
+  kc-db-cred:

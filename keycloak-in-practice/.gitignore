@@ -19,3 +19,6 @@ rpt.txt
 # Part IV: written by chapters/ch16/authn-config.sh and chapters/ch15/export-realm.sh
 k8s/kind/authn/
 k8s/local/
+
+# Chapter 20: the AppRole role id and secret id
+vault/
