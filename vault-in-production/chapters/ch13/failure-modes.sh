@@ -1,17 +1,15 @@
 #!/usr/bin/env bash
-# Wie schnell meldet sich welcher Ausfall?
+# How quickly does each kind of outage announce itself?
 #
-# Die dritte Zahl ist die, die entscheidet, ob eine Anwendung
-# degradiert oder mitstirbt: ein abgelehnter Verbindungsversuch
-# kehrt sofort zurueck, geschluckte Pakete lassen jeden Thread
-# in einem "dial tcp" haengen.
+# The third number decides whether an application degrades or dies
+# with Vault: a refused connection returns at once, dropped packets
+# leave every thread hanging in a "dial tcp".
 #
-# Stellt die Zustaende selbst her und raeumt hinterher auf.
-# Voraussetzung: . ./scripts/vault-env.sh ist eingelesen und der
-# Cluster laeuft entsiegelt.
+# Creates the states itself and cleans up afterwards. Needs:
+# . ./scripts/vault-env.sh sourced, cluster running and unsealed.
 set -uo pipefail
 
-cd "$(dirname "$0")/../.."
+cd "$(dirname "$0")/../.." || exit 1
 . ./scripts/engine.sh
 
 NODES=${NODES:-"vip-vault-1 vip-vault-2 vip-vault-3"}
@@ -23,20 +21,20 @@ ms(){ s=$(date +%s%N)
 
 ms "$PROBE" 'healthy (baseline)'
 
-# 1) versiegelt: der Prozess lebt und antwortet, nur nicht mit Daten
+# 1) sealed: the process is alive and answers, just not with data
 for n in $NODES; do $ENGINE exec "$n" vault operator seal >/dev/null 2>&1 || true; done
-# ein Standby laesst sich nicht versiegeln - neu starten wirkt immer
+# a standby cannot be sealed - a restart always works
 # shellcheck disable=SC2086
 $ENGINE restart $NODES >/dev/null 2>&1
 sleep 6
 ms "$PROBE" 'sealed'
 
-# 2) Prozess weg: das Betriebssystem lehnt die Verbindung ab
+# 2) process gone: the operating system refuses the connection
 # shellcheck disable=SC2086
 $ENGINE stop $NODES >/dev/null 2>&1
 ms "$PROBE" 'connection refused'
 
-# 3) Netz schluckt die Pakete: niemand antwortet, gar nicht
+# 3) the network swallows the packets: nobody answers at all
 ms "env VAULT_ADDR=https://10.255.255.1:8210 $PROBE" \
    'packets dropped'
 ms "env VAULT_ADDR=https://10.255.255.1:8210 \

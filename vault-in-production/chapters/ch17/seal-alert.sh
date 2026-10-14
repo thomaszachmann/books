@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
-# Beweist, dass der ueblich empfohlene Seal-Alarm falsch ist.
+# Proves that the commonly recommended seal alert is wrong.
+# Chapter 17.
 #
-# vault_core_unsealed == 0 feuert auf einem kerngesunden Leader,
-# weil dieser eine Restzeitreihe mit leerem cluster-Label auf 0
-# exportiert. Das Label taugt auch nicht zum Filtern: ein
-# wirklich versiegelter Knoten traegt das ECHTE label mit 0.
+# vault_core_unsealed == 0 fires on a perfectly healthy leader,
+# because it exports a leftover series with an empty cluster label
+# at 0. The label is no good for filtering either: a node that is
+# really sealed carries the REAL label with 0.
 #
-# Richtig ist nur:  max without (cluster) (vault_core_unsealed)
+# Only this is right:  max without (cluster) (vault_core_unsealed)
 set -uo pipefail
 
-cd "$(dirname "$0")/../.."
+cd "$(dirname "$0")/../.." || exit 1
 . ./scripts/engine.sh
 
 CA=${CA:-cluster/tls/cert.pem}
@@ -20,11 +21,10 @@ metrics(){ curl -s --cacert "$CA" \
 
 show(){
   for p in $PORTS; do
-    # NICHT  jq -r '.sealed // "?"'  benutzen: // ist in jq der
-    # Alternativ-Operator und behandelt false als leer, also wird
-    # aus einem entsiegelten Knoten (sealed: false) ein "?". Der
-    # Fehler laeuft genau in die Richtung, die ein Problem
-    # verdeckt - passend zum Thema dieses Kapitels.
+    # Do NOT use  jq -r '.sealed // "?"':  // is jq's alternative
+    # operator and treats false as empty, so an unsealed node
+    # (sealed: false) becomes "?". The error runs in exactly the
+    # direction that hides a problem - fitting for this chapter.
     sealed=$(VAULT_ADDR=https://127.0.0.1:$p vault status \
              -format=json 2>/dev/null \
              | jq -r 'if has("sealed") then (.sealed|tostring)
@@ -36,23 +36,23 @@ show(){
   done
 }
 
-echo "== alle drei entsiegelt =="
+echo "== all three unsealed =="
 show
 
-echo "== jetzt einen knoten versiegeln =="
+echo "== now seal one node =="
 $ENGINE restart vip-vault-3 >/dev/null 2>&1
 sleep 8
 show
 
 cat <<'TXT'
 
-  naiv:    vault_core_unsealed == 0
-           -> feuert auf dem gesunden Leader (Restzeitreihe)
-  gefiltert: vault_core_unsealed{cluster!=""} == 0
-           -> verfehlt die Standbys, trifft aber den versiegelten
-  richtig: max without (cluster) (vault_core_unsealed) == 0
+  naive:    vault_core_unsealed == 0
+            -> fires on the healthy leader (leftover series)
+  filtered: vault_core_unsealed{cluster!=""} == 0
+            -> misses the standbys, but catches the sealed one
+  right:    max without (cluster) (vault_core_unsealed) == 0
 
-  Und: ein versiegelter Knoten exportiert nur einen Bruchteil der
-  Familien. Was dort nicht mehr gemeldet wird, kann auch nicht
-  ueber einen Schwellwert feuern - dafuer braucht es absent().
+  And: a sealed node exports only a fraction of the families.
+  What is no longer reported there cannot cross a threshold
+  either - that needs absent().
 TXT

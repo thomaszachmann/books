@@ -1,6 +1,6 @@
 # Vault in Production — companion repository
 
-Book 02 of the *In Practice* series. Every command in the book runs
+Book 04 of the *In Practice* series. Every command in the book runs
 against this lab.
 
 ## The lab is a cluster
@@ -9,7 +9,11 @@ Book 1 built a single node and added a cluster in its Chapter 21. This
 book starts there: **three nodes, Raft, TLS, from Chapter 1.** Almost
 nothing in Day 2 operations is interesting on one node.
 
+Every lab starts from nothing and ends with `make reset`, so any
+chapter can be run on its own:
+
 ```bash
+make reset    # start clean
 make up       # generate certs and configs, start three nodes
 make init     # initialise, once
 make unseal   # unseal all three
@@ -36,14 +40,37 @@ tells you never to do outside a lab.
 
 ## Chapters
 
+Every lab in the book is also a script here. Each one carries its
+findings as comments, and several abort rather than report a number
+when their own preconditions are not met.
+
 | | |
 |---|---|
-| `chapters/ch01/measure.sh` | Lab 1 — the three measurements whose value is in the second reading |
+| `chapters/ch01/measure.sh` | Lab 1 — three numbers whose value is in the second reading |
+| `chapters/ch02/accept.sh` | the seven acceptance checks before the first real secret |
+| `chapters/ch10/carry.sh`, `rehearse.sh` | snapshot plus keys, then a timed restore on a clean host |
+| `chapters/ch12/` | kind cluster, Helm values, `join.sh`, snapshot CronJob, `restore.sh` |
+| `chapters/ch13/` | Postgres, two database roles, blast radius and failure modes |
+| `chapters/ch14/` | Vault Agent: the rendered file against the proxy, through an outage |
+| `chapters/ch15/audit-loop.sh` | the sole audit device that locks the cluster out |
+| `chapters/ch16/lease-growth.sh` | what a lease costs, and the disk that stays full |
+| `chapters/ch17/seal-alert.sh`, `slo.sh` | the seal alert that fires on a healthy leader; the indicator that lies |
+| `chapters/ch18/name-the-client.sh` | metrics, server log and audit device, asked who did it |
+| `chapters/ch19/bench.sh` | where the time goes, with the harness overhead stated |
+| `chapters/ch20/bench.sh`, `break.sh` | OpenBao with a SoftHSM seal: PKCS#11 calls per request and per restart |
+| `chapters/ch21/wrapping.sh` | response wrapping, the delivery receipt, and one message for three failures |
+| `scripts/readiness.sh` | Appendix G, the production readiness review |
 
-The rest arrive with their chapters.
+Appendix A lists the versions every number was measured with, Appendix
+F how to clean up after each chapter, and Appendix G is
+`scripts/readiness.sh`.
 
 ## Requirements
 
-Docker, `jq`, `openssl`, and about 2 GB of RAM for the three nodes. Two
-later chapters want kind or minikube; two more want a cloud account and
-will say so.
+- Docker, or podman run rootful (`scripts/engine.sh` picks it up; on
+  SELinux hosts every mount gets `:z`)
+- the Vault CLI 1.18.5, `jq`, `curl`, `openssl`, `make`
+- 16 GB of RAM for the chapters that run more than the three nodes
+- for Chapter 12 only: kind, kubectl and Helm
+
+Nothing needs a cloud account or costs money.

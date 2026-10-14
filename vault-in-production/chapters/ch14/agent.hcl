@@ -1,10 +1,11 @@
-# Vault Agent fuer Kapitel 14.
+# Vault Agent for Chapter 14.
 #
-# Der Punkt dieser Datei ist NICHT der Cache. "cache {}" haelt
-# Leases und Token vor, keine Antworten - bei gestopptem Vault
-# beantwortet der Proxy gar nichts mehr, auch mit
-# cache_static_secrets = true nicht. Was einen Ausfall uebersteht,
-# ist ausschliesslich die gerenderte Datei weiter unten.
+# The point of this file is NOT the cache. "cache {}" keeps leases
+# and tokens, and the responses that came with a lease - a static
+# KV read is not among them, so with Vault stopped the proxy answers
+# nothing for it. cache_static_secrets = true is a Vault Proxy
+# option (Enterprise 1.16+); the agent accepts it and ignores it.
+# What survives an outage is the rendered file further down.
 
 vault {
   address = "https://vip-vault-1:8200"
@@ -16,8 +17,8 @@ auto_auth {
     config = {
       role_id_file_path   = "/creds/role_id"
       secret_id_file_path = "/creds/secret_id"
-      # sonst ist die secret_id nach dem ersten Start weg und der
-      # Agent kommt nach einem Neustart nicht mehr hoch
+      # otherwise the secret_id is gone after the first start and
+      # the agent does not come back after a restart
       remove_secret_id_file_after_reading = false
     }
   }
@@ -25,11 +26,10 @@ auto_auth {
 }
 
 api_proxy {
-  # "force", nicht true. Bei true reicht der Agent den Token des
-  # Clients durch, falls der einen mitbringt - eine alte
-  # VAULT_TOKEN-Variable genuegt - und der Aufruf endet in einem
-  # 403 "permission denied / invalid token", der nach einem
-  # Policy-Fehler aussieht und keiner ist.
+  # "force", not true. With true the agent passes on the client's
+  # own token if it brings one - a stale VAULT_TOKEN variable is
+  # enough - and the call ends in a 403 "permission denied /
+  # invalid token" that looks like a policy error and is not.
   use_auto_auth_token = "force"
 }
 

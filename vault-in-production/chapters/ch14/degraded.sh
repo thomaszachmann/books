@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Die Datei haelt, der Proxy nicht. Beides nebeneinander durch
-# denselben Ausfall - das ist die ganze Aussage des Kapitels.
+# The file holds, the proxy does not. Both side by side through the
+# same outage - that is the whole point of the chapter.
 set -uo pipefail
 
-cd "$(dirname "$0")/../.."
+cd "$(dirname "$0")/../.." || exit 1
 . ./scripts/engine.sh
 
 WORK=${WORK:-/tmp/agent}

@@ -45,17 +45,16 @@ listener "tcp" {
   tls_cert_file = "/vault/tls/cert.pem"
   tls_key_file  = "/vault/tls/key.pem"
 
-  # Ohne diese Zeile braucht /v1/sys/metrics einen Token mit
-  # sudo-Rechten auf sys/metrics. Ein Prometheus, der einen
-  # solchen Token halten muss, ist ein weiterer Verbraucher in
-  # Kapitel 13's Tabelle - und einer, der beim Ausfall genau
-  # dann verstummt, wenn man ihn braucht.
+  # Without this line /v1/sys/metrics needs a token with read
+  # on sys/metrics. A Prometheus that has to hold such a token
+  # is one more consumer in Chapter 13's table - and one that
+  # goes quiet during an outage, exactly when it is needed.
   telemetry { unauthenticated_metrics_access = true }
 }
 
-# Ohne prometheus_retention_time > 0 liefert /v1/sys/metrics
-# im Prometheus-Format gar nichts - die Abfrage gelingt und ist
-# leer, was wie ein Scrape-Problem aussieht.
+# Without prometheus_retention_time > 0, /v1/sys/metrics in
+# Prometheus format answers HTTP 400 "prometheus is not enabled"
+# - a scraper that only counts series sees nothing at all.
 telemetry {
   prometheus_retention_time = "24h"
   disable_hostname          = true
@@ -67,7 +66,7 @@ CFG
 done
 
 . ./scripts/engine.sh
-echo "==> Laufzeit: $ENGINE_NAME"
+echo "==> runtime: $ENGINE_NAME"
 
 $COMPOSE up -d
 ./scripts/wait-for-vault.sh

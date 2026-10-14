@@ -256,7 +256,7 @@ manual decide 8.8 "Clients reuse connections, and point at the active node rathe
 manual rehearse 8.9 "Each of the ten alerts has fired against the failure it claims to detect"
 
 # --- 9 secret zero ----------------------------------------------------
-section secretzero "9 · Secret zero (Chapter 20)"
+section secretzero "9 · Secret zero (Chapter 21)"
 manual decide 9.1 "Secret zero is delivered wrapped, with a TTL matching real delivery time"
 manual decide 9.2 "The consumer checks creation_path before unwrapping"
 manual decide 9.3 "A failed unwrap is treated as compromise, not as a retry"

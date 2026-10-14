@@ -25,8 +25,9 @@ unseal() { for k in "${KEYS[@]}"; do
 
 unseal vault-0
 for p in vault-1 vault-2; do
-  # Join BEFORE unsealing. Unsealing an uninitialised pod is a
-  # no-op that reports 0/0 and does not fail.
+  # Join BEFORE unsealing. Before the join the pod is an
+  # uninitialised Vault of its own, and unsealing it fails with
+  #   Code: 400. Errors: * Vault is not initialized
   $K exec "$p" -- vault operator raft join \
       http://vault-0.vault-internal:8200
   unseal "$p"

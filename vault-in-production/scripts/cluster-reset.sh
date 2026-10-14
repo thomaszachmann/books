@@ -1,26 +1,23 @@
 #!/usr/bin/env bash
 # Stop the lab and delete its state.
 #
-# Warum das nicht einfach "rm -rf cluster/data*" ist:
+# Why this is not simply "rm -rf cluster/data*":
 #
-# Vault legt cluster/dataN/raft im Container an, als der Benutzer
-# "vault" (UID 100), mit Modus 0700. Auf dem Host gehoert das
-# Verzeichnis dann irgendeinem fremden Konto - auf Ubuntu zeigt
-# "stat" dort "dhcpcd" - und der aufrufende Benutzer darf es weder
-# betreten noch loeschen:
+# Vault creates cluster/dataN/raft inside the container, as the user
+# "vault" (UID 100), with mode 0700. On the host the directory then
+# belongs to some unrelated account - on Ubuntu "stat" shows
+# "dhcpcd" - and the calling user may neither enter nor delete it:
 #
 #   rm: cannot remove 'cluster/data1/raft': Permission denied
 #
-# Vorher brach make reset genau hier ab. Das Tueckische daran war
-# nicht der Fehler, sondern was er hinterliess: init.json war schon
-# geloescht, die Raft-Verzeichnisse nicht. "make up && make init"
-# lief danach auf altem Zustand weiter und das Labor verhielt sich
-# unerklaerlich.
+# make reset used to stop exactly here. The treacherous part was not
+# the error but what it left behind: init.json was already gone, the
+# Raft directories were not. "make up && make init" then carried on
+# with old state, and the lab behaved inexplicably.
 #
-# Geloescht wird deshalb aus einem Wegwerf-Container heraus, der als
-# root laeuft und dieselben Verzeichnisse gemountet bekommt. Das
-# braucht kein sudo auf dem Host und funktioniert unter Docker wie
-# unter rootful podman.
+# So the deletion runs from a throwaway container that runs as root
+# and gets the same directories mounted. That needs no sudo on the
+# host and works under Docker as under rootful podman.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -28,39 +25,51 @@ cd "$(dirname "$0")/.."
 
 $COMPOSE down -v >/dev/null 2>&1 || true
 
-# config gehoert dazu: cluster-up.sh ueberspringt vorhandene
-# Knoten-Konfigurationen. Bleibt sie stehen, wirkt jede Aenderung
-# an cluster-up.sh stillschweigend nicht - man aendert die
-# Telemetrie-Stanza, startet neu und misst weiter den alten Stand.
-# tls bleibt absichtlich erhalten: Zertifikate neu zu erzeugen
-# kostet Zeit und aendert an keinem Kapitel etwas.
+# config belongs on the list: cluster-up.sh skips node configurations
+# that already exist. If one is left behind, every change to
+# cluster-up.sh silently has no effect - you change the telemetry
+# stanza, restart, and keep measuring the old state.
+# tls stays on purpose: regenerating certificates costs time and
+# changes nothing in any chapter.
 TARGETS="data1 data2 data3 init.json config"
 
-# Schneller Weg: was dem Host-Benutzer gehoert, ist gleich weg.
+# Fast path: whatever belongs to the host user is gone at once.
 for t in $TARGETS; do rm -rf "cluster/$t" 2>/dev/null || true; done
 rm -rf logs/* 2>/dev/null || true
 
-# Was uebrig ist, gehoert dem Container. Aus einem Container loeschen.
+# What is left belongs to the container. Delete it from a container.
+# logs/ too: the audit log is written by UID 100 and survives the
+# fast path silently - a second run then counts every line twice.
 leftover=""
 for t in $TARGETS; do [ -e "cluster/$t" ] && leftover="$leftover $t"; done
+[ -n "$(ls -A logs 2>/dev/null)" ] && leftover="$leftover logs"
 
 if [ -n "$leftover" ]; then
   $ENGINE run --rm \
-    -v "$PWD/cluster:/reset${VAULT_MOUNT_OPT:-}" \
+    -v "$PWD/logs:/logs${VAULT_MOUNT_OPT:+:${VAULT_MOUNT_OPT#,}}" \
+    docker.io/library/alpine:3.20 sh -c 'rm -rf /logs/* /logs/.[!.]*' \
+    >/dev/null 2>&1 || true
+  # VAULT_MOUNT_OPT is ",z" on SELinux hosts, written to follow "rw".
+  # Here there is no "rw", so it becomes ":z". Appending ",z" directly
+  # makes the mount point "/reset,z", and the container finds no
+  # /reset to delete from.
+  $ENGINE run --rm \
+    -v "$PWD/cluster:/reset${VAULT_MOUNT_OPT:+:${VAULT_MOUNT_OPT#,}}" \
     docker.io/library/alpine:3.20 \
-    sh -c 'cd /reset && rm -rf data1 data2 data3 init.json' \
+    sh -c "cd /reset && rm -rf $TARGETS" \
     >/dev/null 2>&1 || true
 fi
 
-# Laut scheitern statt halb aufraeumen.
+# Fail loudly rather than clean up halfway.
 still=""
 for t in $TARGETS; do [ -e "cluster/$t" ] && still="$still cluster/$t"; done
+[ -n "$(ls -A logs 2>/dev/null)" ] && still="$still logs/*"
 
 if [ -n "$still" ]; then
-  echo "reset unvollstaendig, uebrig:$still" >&2
-  echo "Das Labor ist jetzt in einem gemischten Zustand - 'make up'" >&2
-  echo "wuerde auf altem Raft-Zustand weiterlaufen. Von Hand mit" >&2
-  echo "erhoehten Rechten entfernen, dann erneut versuchen." >&2
+  echo "reset incomplete, left over:$still" >&2
+  echo "The lab is now in a mixed state - 'make up' would carry on" >&2
+  echo "with old Raft state. Remove these by hand with elevated" >&2
+  echo "rights, then try again." >&2
   exit 1
 fi
 

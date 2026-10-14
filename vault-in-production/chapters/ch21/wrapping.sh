@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
-# Secret Zero: was Response Wrapping leistet und was nicht.
+# Secret zero: what response wrapping does and what it does not.
+# Chapter 21.
 #
-# Die wichtigste Messung ist die letzte: abgelaufen, abgefangen
-# und blanker Unsinn liefern dem Client EXAKT dieselbe Meldung.
-# Wer darauf mit "wird der TTL gewesen sein" reagiert, hat die
-# einzige Sicherheitseigenschaft des Verfahrens wieder abgeschafft.
+# The most important measurement is the last one: expired,
+# intercepted and plain nonsense give the client EXACTLY the same
+# message. Whoever answers that with "must have been the TTL" has
+# thrown away the only security property the mechanism has.
 set -uo pipefail
 
-cd "$(dirname "$0")/../.."
+cd "$(dirname "$0")/../.." || exit 1
 
 CA=${CA:-cluster/tls/cert.pem}
 ROLE=${ROLE:-app}
@@ -77,6 +78,6 @@ vault unwrap "$W3" >/dev/null 2>&1
 printf '  intercepted: '; vault unwrap "$W3" 2>&1 | err | tr -d '\n'; echo
 printf '  nonsense:    '; vault unwrap "hvs.NEVERVALID123" 2>&1 | err | tr -d '\n'; echo
 echo
-echo "  Identisch. Also muss die Antwort in allen drei Faellen"
-echo "  dieselbe sein: secret_id als kompromittiert behandeln,"
-echo "  neu ausstellen, im Audit-Log nachsehen (Kapitel 18)."
+echo "  Identical. So the response has to be the same in all"
+echo "  three cases: treat the secret_id as compromised, issue a"
+echo "  new one, and read the audit log (Chapter 18)."
