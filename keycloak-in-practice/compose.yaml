@@ -7,7 +7,9 @@
 # The network alias on keycloak is the whole of Chapter 2's argument:
 # sso.meridian.test resolves to 127.0.0.1 from your laptop through your
 # hosts file, and to this container from inside the network. One name,
-# two paths, one issuer.
+# two paths, one issuer - and one port: Keycloak listens on 443 inside
+# the container as well, so https://sso.meridian.test means the same
+# thing on both paths and no command needs a port.
 
 name: keycloak-in-practice
 
@@ -35,6 +37,11 @@ services:
     command:
       - start
       - --hostname=${KC_HOSTNAME}
+      # 443 inside as well as outside. With the default 8443, the host
+      # reaches Keycloak on 443 and every container on 8443, and each
+      # server-to-server call (kcadm, a broker, Vault) needs a port the
+      # issuer does not have.
+      - --https-port=443
       - --https-certificate-file=/opt/keycloak/conf/sso.crt
       - --https-certificate-key-file=/opt/keycloak/conf/sso.key
       - --http-enabled=false
@@ -61,25 +68,30 @@ services:
       # optional so that Chapters 1 to 12 start without it.
       - ./pki:/opt/keycloak/conf/pki:ro
       - kc-conf:/opt/keycloak/conf/local
+    # Keycloak runs as uid 1000, and a port below 1024 needs root unless
+    # the container's own network namespace says otherwise. This says
+    # otherwise, for this container only; the host is not changed.
+    sysctls:
+      net.ipv4.ip_unprivileged_port_start: 0
     ports:
-      - "${KC_HTTPS_PORT:-443}:8443"
+      - "${KC_HTTPS_PORT:-443}:443"
       - "${KC_MGMT_PORT:-9000}:9000"
     networks:
       default:
         aliases:
           - sso.meridian.test
 
-  # A Linux box with curl, kinit and jq. Chapter 3 uses it to prove the
-  # issuer is the same from inside the network; Chapter 13 uses it to
-  # hold a Kerberos ticket.
+  # A Linux box with curl, kinit and jq. Chapter 2 gets a Kerberos
+  # ticket in it, Chapter 3 uses it to prove the issuer is the same from
+  # inside the network, Chapter 13 holds a ticket in it again. It does
+  # not depend on keycloak: Chapter 2 starts it, with the directory,
+  # before Keycloak exists.
   client:
     build:
       context: ./chapters/ch02
       dockerfile: client.Dockerfile
       args:
         UBUNTU_SERIES: ${UBUNTU_SERIES:-24.04}
-    depends_on:
-      - keycloak
     volumes:
       - ./pki/ca.crt:/usr/local/share/ca-certificates/meridian.crt:ro
     command: ["sleep", "infinity"]
@@ -148,6 +160,22 @@ services:
     ports: ["8090:80"]
     volumes:
       - ./chapters/ch08/nginx.conf:/etc/nginx/nginx.conf:ro
+
+  # Chapter 4 onwards: a resource server. It accepts a bearer token only
+  # if the signature verifies against the realm's JWKS, the issuer is
+  # the one configured, it has not expired, and its audience names
+  # meridian-api. Chapter 4 is refused by it; Chapter 8 fixes the token.
+  api:
+    profiles: ["api"]
+    image: python:3.12-alpine
+    environment:
+      ISSUER: ${KC_HOSTNAME:-https://sso.meridian.test}/realms/${KC_REALM:-meridian}
+      AUDIENCE: meridian-api
+    volumes:
+      - ./chapters/ch04/api.py:/api.py:ro
+      - ./pki/ca.crt:/ca.crt:ro
+    command: ["python3", "-u", "/api.py"]
+    ports: ["8084:8084"]
 
   # Chapter 1 only: three applications, three user databases.
   wiki:

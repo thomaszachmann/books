@@ -17,6 +17,10 @@ v() { docker compose exec -T -e VAULT_ADDR -e VAULT_TOKEN vault vault "$@"; }
 
 case "${1:-create}" in
 create)
+  # Ask first: every `docker compose exec` below reads standard input,
+  # and would swallow a password piped in for the prompt.
+  echo -n "password for the break-glass account: "
+  read -rs PW; echo
   v policy write breakglass - <<'HCL'
 # Enough to repair the identity path and nothing else.
 path "sys/mounts"                { capabilities = ["read","list"] }
@@ -26,9 +30,7 @@ path "identity/group*"           { capabilities = ["read","update","list"] }
 path "database/static-creds/*"   { capabilities = ["read"] }
 path "sys/leases/revoke/*"       { capabilities = ["update"] }
 HCL
-  v auth enable userpass 2>/dev/null || echo "  userpass enabled"
-  echo -n "password for the break-glass account: "
-  read -rs PW; echo
+  v auth enable userpass </dev/null 2>/dev/null || echo "  userpass enabled"
   v write auth/userpass/users/breakglass \
     password="$PW" token_policies=breakglass token_ttl=30m
   cat <<'NEXT'

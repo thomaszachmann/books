@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Chapter 2, steps 4 to 6: a root CA and a certificate for Keycloak.
 #
+#   make pki                                    sso and dc
+#   ./chapters/ch02/make-certs.sh sso-k8s ...   one more leaf per name
+#                                               (Chapters 15 and 17)
+#
 # Idempotent. If pki/ca.crt exists it is reused, because the root is
 # installed in four trust stores and reissuing it means redoing all four.
 # `make clean-pki` is the way to start over deliberately.
@@ -21,7 +25,8 @@ else
     -subj "/O=$ORG/CN=Meridian Lab Root CA"
 fi
 
-# One leaf per name. Chapter 2 issues sso; Chapter 12 needs dc.
+# One leaf per name. Chapter 2 issues sso; Chapter 12 needs dc; Part IV
+# adds the names behind the cluster's ingress.
 issue() {
   local name="$1"
   if [ -f "$name.crt" ]; then
@@ -41,12 +46,14 @@ EXT
     -extfile "$name.ext" -out "$name.crt" 2>/dev/null
 }
 
-issue sso
-issue dc
+NAMES=(sso dc "$@")
+for n in "${NAMES[@]}"; do
+  issue "$n"
+done
 
 echo
 echo "Subject Alternative Names, which is the field that matters:"
-for c in sso dc; do
+for c in "${NAMES[@]}"; do
   printf '  %s: ' "$c"
   openssl x509 -in "$c.crt" -noout -ext subjectAltName \
     | tail -1 | sed 's/^ *//'

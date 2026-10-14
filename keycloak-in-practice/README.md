@@ -4,7 +4,7 @@ Everything the book asks you to type, plus the scripts that check your
 work. Book Three of the *In Practice* series.
 
 ```bash
-cp .env.example .env
+make env
 make check
 ```
 
@@ -22,8 +22,9 @@ make check
 
 ## Working through the book
 
-Chapter 2 builds the certificates and the names. Nothing before it needs
-this repository, and nothing after it works without it.
+Chapter 1 starts three small applications from it (`make ch01`).
+Chapter 2 builds the certificates and the names, and nothing after it
+works without them.
 
 ```bash
 make pki          # chapter 2: the CA and the server certificate

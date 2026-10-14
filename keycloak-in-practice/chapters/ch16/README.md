@@ -1,9 +1,11 @@
 # Chapter 16 — Authenticating kubectl
 
-Expects: Chapter 15's cluster, and the `groups` client scope from
-Chapter 8.
+Expects: Chapter 15's cluster, still running; the `groups` client scope
+from Chapter 8; Anna in the Active Directory group `logistics`
+(Chapter 12). For Step 3, the `oidc-login` kubectl plugin
+(`kubectl krew install oidc-login`, Appendix A).
 
-**Before you start, find your break-glass kubeconfig and test it.**
+**Before you start, make your break-glass kubeconfig and test it.**
 
 ```bash
 kind get kubeconfig --name meridian > ~/.kube/meridian-breakglass
@@ -11,29 +13,41 @@ KUBECONFIG=~/.kube/meridian-breakglass kubectl auth whoami
 ```
 
 That file authenticates with a client certificate signed by the
-cluster's own CA. It does not involve Keycloak, and it is the only way
-back from the second half of this chapter. A cluster whose break-glass
-path has never been tested does not have one.
+cluster's own CA. It does not involve Keycloak. The cluster is never
+recreated in this chapter, so the file stays valid to the end of the
+book.
 
 ## Order
 
 ```bash
-kind delete cluster --name meridian
-kind create cluster --config k8s/kind/cluster-oidc.yaml
-./chapters/ch16/trust.sh
-kubectl apply -f k8s/base/rbac.yaml
+source chapters/kcadm.sh
+# Step 1: client `kubernetes` in the compose Keycloak, groups as default
+./chapters/ch16/authn-config.sh "$ISS"       # Step 2, reloads in ~10 s
+kubectl apply -f k8s/base/rbac.yaml         # Step 5
 ```
 
-The API server reads its trust store at start, so `trust.sh` restarts
-it. Wait for the node to be ready again before concluding anything.
+`authn-config.sh` writes `k8s/kind/authn/config.yaml`, which the node
+mounts. The API server reloads it by itself and logs
+`"reloaded authentication config"`; the Meridian root travels inline as
+`certificateAuthority`, so the node's trust store is never touched and
+nothing is restarted.
+
+## Break it and back (Steps 6 to 9)
+
+```bash
+./chapters/ch16/authn-config.sh "$ISS_K8S"   # trust only the cluster's Keycloak
+kubectl delete keycloak meridian            # the outage
+KUBECONFIG=~/.kube/meridian-breakglass kubectl apply -f k8s/base/keycloak.yaml
+./chapters/ch16/authn-config.sh "$ISS"       # back to the compose Keycloak
+```
+
+Finish with the compose issuer and the cluster's Keycloak running:
+Chapters 17 to 20 use the first, 21 and 23 the second.
 
 ## The three strings that must agree
 
 | Where | What |
 |---|---|
-| `authn-config.yaml` | `issuer.url`, and it must be reachable from the API server |
-| The token | `aud` must contain `kubernetes` |
+| `k8s/kind/authn/config.yaml` | `issuer.url`, reachable from the API server |
+| The token | `aud` must contain `kubernetes`, `typ` must be `ID` |
 | `rbac.yaml` | the group name, including the `oidc:` prefix |
-
-Any one of them wrong produces "authentication failed" or a bare
-"forbidden", and neither names which.

@@ -25,6 +25,10 @@ path "secret/data/shipments/*" {
 }
 HCL
 
+echo "a secret to read, and later to be refused"
+v kv put secret/shipments/manifest \
+  vessel="MV Meridian Star" containers=42 >/dev/null
+
 echo "oidc auth method"
 v auth enable oidc 2>/dev/null || echo "  enabled"
 v write auth/oidc/config \
@@ -51,7 +55,8 @@ GID=$(v write -format=json identity/group name=logistics \
         type=external policies=shipments | \
       docker compose exec -T client jq -r .data.id)
 v write identity/group-alias name=logistics \
-  mount_accessor="$ACC" canonical_id="$GID"
+  mount_accessor="$ACC" canonical_id="$GID" 2>/dev/null \
+  || echo "  alias exists"
 
 echo "jwt auth method, for machines"
 v auth enable jwt 2>/dev/null || echo "  enabled"
@@ -59,13 +64,18 @@ v write auth/jwt/config \
   oidc_discovery_url="$ISS" \
   oidc_discovery_ca_pem=@"$CA"
 
-v write auth/jwt/role/batch \
-  role_type=jwt \
-  bound_audiences=vault \
-  bound_claims='{"azp":"meridian-batch"}' \
-  user_claim=sub \
-  policies=shipments \
-  ttl=15m
+# As JSON on standard input: bound_claims is a map, and on the command
+# line Vault takes '{"azp":...}' for a string and refuses it.
+v write auth/jwt/role/batch - <<'JSON'
+{
+  "role_type": "jwt",
+  "bound_audiences": ["vault"],
+  "bound_claims": {"azp": "meridian-batch"},
+  "user_claim": "sub",
+  "policies": ["shipments"],
+  "ttl": "15m"
+}
+JSON
 
 cat <<'NEXT'
 
@@ -73,7 +83,9 @@ Ready.
   humans    vault login -method=oidc
   machines  vault write auth/jwt/login role=batch jwt=<token>
 
-The audience is "vault" in both roles. Chapter 8's mapper is what puts
-it there; without it the token says "account" and Vault refuses it with
-a message about audiences that is, for once, accurate.
+The audience is "vault" in both roles. A person's ID token carries it
+because the client is called vault; the batch job's access token carries
+it only through the vault-audience scope from Step 2. Without that the
+token says "account" and Vault refuses it with a message about audiences
+that is, for once, accurate.
 NEXT

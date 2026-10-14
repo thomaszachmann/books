@@ -12,6 +12,7 @@ Anything assigned at the start of a line below is the source of truth.
 
 ```sh
 KEYCLOAK_VERSION=26.5.2
+KEYCLOAK_UPGRADE_VERSION=26.6.4
 POSTGRES_VERSION=17
 UBUNTU_SERIES=24.04
 KC_REALM=meridian
@@ -23,12 +24,18 @@ VAULT_VERSION=1.20.4
 
 ## Why these
 
+**Keycloak 26.6.4, for Chapter 23 only.** The upgrade chapter needs a
+version to upgrade *to*, and rehearsing an upgrade from the pin to the
+pin migrates nothing. 26.6.4 is the next minor release, latest patch,
+when the chapter was measured. Nothing else in the book runs it; after
+Chapter 23 the cluster's Keycloak does, and the compose one does not.
+
 **Keycloak 26.5.2.** Pinned to a patch release rather than a minor,
 because the book prints expected output and a minor release changes it.
 Three things in this book are specific to 26.x and would be wrong on
 older releases: `KC_BOOTSTRAP_ADMIN_USERNAME` and its password variable
 (before 26 these were `KEYCLOAK_ADMIN` and `KEYCLOAK_ADMIN_PASSWORD`),
-the hostname option taking a full URL rather than a host, and health and
+the hostname option accepting a full URL as well as a host (hostname v2), and health and
 metrics living on the management port. Chapter 3 says all three out loud
 for exactly this reason.
 
@@ -68,8 +75,10 @@ would not do that with real secrets.
 
 ## Not pinned here
 
-**kind and minikube** are pinned in `k8s/VERSIONS.md` when Part IV
-arrives, as in the two previous books.
+**kind, the Kubernetes node image, ingress-nginx, Grafana and
+oauth2-proxy** are pinned in `k8s/VERSIONS.md`, next to the manifests
+that use them. The Keycloak operator is not pinned separately: it is
+always `KEYCLOAK_VERSION`.
 
 ## When these go stale
 

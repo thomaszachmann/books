@@ -1,0 +1,19 @@
+# Only the proxy may reach the wiki. Chapter 17, On the Wire.
+#
+# This is the other half of the proxy pattern, and it is a separate file
+# so that the chapter can show the wiki answering everybody first. It
+# means something only on a cluster whose network plugin enforces
+# NetworkPolicy; kind's default plugin, kindnet, does. Test it with the
+# probe in the chapter rather than trusting that it applied.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: wiki-only-from-proxy
+spec:
+  podSelector:
+    matchLabels: { app: wiki }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: { app: oauth2-proxy }

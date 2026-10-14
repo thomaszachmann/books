@@ -19,6 +19,11 @@ applications letting the contractor in.
 
 Ports 8081, 8082, 8083.
 
+`make ch01` names the three services. `docker compose --profile ch01 up
+-d` without names would also start every service that has no profile —
+the database, Keycloak and the client box — before Chapter 2 has made
+the certificates they mount.
+
 ```bash
 docker compose --profile ch01 down
 ```

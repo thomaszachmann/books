@@ -10,4 +10,28 @@ assertion.xml
 authn.xml
 req.enc
 
+# Chapters 9 and 11
+tokens.old.json
+rpt.txt
+
 .DS_Store
+
+# Part IV: written by chapters/ch16/authn-config.sh and chapters/ch15/export-realm.sh
+k8s/kind/authn/
+k8s/local/
+
+# Chapter 20: the AppRole role id and secret id
+vault/
+
+# Chapters 9 and 22: an offline token
+refresh.txt
+
+# Chapters 22 and 23: dumps and exports hold the realm's private keys,
+# every client secret and every password hash
+backup/
+
+# Chapter 24: Terraform's state holds what the provider read, secrets
+# included
+chapters/ch24/terraform/.terraform/
+chapters/ch24/terraform/.terraform.lock.hcl
+chapters/ch24/terraform/terraform.tfstate*

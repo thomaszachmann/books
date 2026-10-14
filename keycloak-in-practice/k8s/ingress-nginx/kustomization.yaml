@@ -1,0 +1,27 @@
+# ingress-nginx for kind, pinned (k8s/VERSIONS.md), with one change:
+# the controller listens on port 8443 of the node instead of 443.
+#
+# Why: k8s/kind/cluster.yaml maps the laptop's 8443 to the node's 8443,
+# because the laptop's 443 belongs to the compose Keycloak. With the
+# controller on 8443 inside the node as well, a URL such as
+# https://sso-k8s.meridian.test:8443 means the same thing from your
+# browser, from a pod, and from the API server on the node. With the
+# stock 443 it would work from the laptop only.
+#
+#   kubectl apply -k k8s/ingress-nginx
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.15.1/deploy/static/provider/kind/deploy.yaml
+patches:
+  - target:
+      kind: Deployment
+      name: ingress-nginx-controller
+      namespace: ingress-nginx
+    patch: |-
+      - op: test
+        path: /spec/template/spec/containers/0/ports/1/name
+        value: https
+      - op: replace
+        path: /spec/template/spec/containers/0/ports/1/hostPort
+        value: 8443

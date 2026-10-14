@@ -1,6 +1,7 @@
 # Chapter 2 — Building Your Lab
 
-Expects: nothing. This is the first chapter that uses the repository.
+Expects: the repository cloned, which Chapter 1 already did. Nothing
+else from this book running.
 
 ```bash
 make pki
@@ -19,6 +20,9 @@ skip.
 `ad/` builds a Samba domain controller from Ubuntu rather than pulling a
 community image, so that it runs natively on Apple silicon. `VERSIONS.md`
 explains the reasoning.
+
+`make ad-up` starts the directory and the client box and nothing else;
+Keycloak does not exist until Chapter 3.
 
 ```bash
 make ad-up
