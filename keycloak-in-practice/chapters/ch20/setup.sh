@@ -49,6 +49,14 @@ echo "vault-agent, then Keycloak through kc-start.sh"
 docker compose up -d vault-agent
 docker compose up -d --no-deps keycloak
 
+# A new container is a new member of Docker's networks, and only of the
+# ones compose.yaml names. The cluster's applications (Chapter 17) and
+# its API server (Chapter 16) find sso.meridian.test on the kind
+# network, so put it back there.
+if docker inspect meridian-control-plane >/dev/null 2>&1; then
+  bash chapters/ch15/kind-link.sh
+fi
+
 cat <<'NEXT'
 
 Done. Keycloak's container was recreated, which forgets the admin CLI's
@@ -62,4 +70,5 @@ Keycloak now reads its database user from Vault at every start:
 To undo: delete the COMPOSE_FILE line from .env, then
   docker compose up -d --no-deps keycloak
   docker compose rm -sf vault-agent
+  make kind-link
 NEXT

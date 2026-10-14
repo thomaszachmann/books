@@ -25,6 +25,10 @@ path "secret/data/shipments/*" {
 }
 HCL
 
+echo "a secret to read, and later to be refused"
+v kv put secret/shipments/manifest \
+  vessel="MV Meridian Star" containers=42 >/dev/null
+
 echo "oidc auth method"
 v auth enable oidc 2>/dev/null || echo "  enabled"
 v write auth/oidc/config \
@@ -79,7 +83,9 @@ Ready.
   humans    vault login -method=oidc
   machines  vault write auth/jwt/login role=batch jwt=<token>
 
-The audience is "vault" in both roles. Chapter 8's mapper is what puts
-it there; without it the token says "account" and Vault refuses it with
-a message about audiences that is, for once, accurate.
+The audience is "vault" in both roles. A person's ID token carries it
+because the client is called vault; the batch job's access token carries
+it only through the vault-audience scope from Step 2. Without that the
+token says "account" and Vault refuses it with a message about audiences
+that is, for once, accurate.
 NEXT

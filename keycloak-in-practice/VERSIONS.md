@@ -12,6 +12,7 @@ Anything assigned at the start of a line below is the source of truth.
 
 ```sh
 KEYCLOAK_VERSION=26.5.2
+KEYCLOAK_UPGRADE_VERSION=26.6.4
 POSTGRES_VERSION=17
 UBUNTU_SERIES=24.04
 KC_REALM=meridian
@@ -22,6 +23,12 @@ VAULT_VERSION=1.20.4
 ```
 
 ## Why these
+
+**Keycloak 26.6.4, for Chapter 23 only.** The upgrade chapter needs a
+version to upgrade *to*, and rehearsing an upgrade from the pin to the
+pin migrates nothing. 26.6.4 is the next minor release, latest patch,
+when the chapter was measured. Nothing else in the book runs it; after
+Chapter 23 the cluster's Keycloak does, and the compose one does not.
 
 **Keycloak 26.5.2.** Pinned to a patch release rather than a minor,
 because the book prints expected output and a minor release changes it.

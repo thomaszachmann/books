@@ -3,11 +3,20 @@
 Expects: everything.
 
 ```bash
+source chapters/kcadm.sh
+GSID=$(kcadm get client-scopes -r meridian \
+  | jq -r '.[] | select(.name=="groups") | .id')
+export TF_VAR_groups_mapper_id=$(kcadm get \
+  client-scopes/$GSID/protocol-mappers/models -r meridian \
+  | jq -r '.[] | select(.name=="groups") | .id')
+export TF_VAR_admin_username=admin TF_VAR_admin_password=...  # from .env
 cd chapters/ch24/terraform
 terraform init
-terraform import keycloak_realm.meridian meridian
-terraform plan
+terraform plan     # 4 to import, 0 to add, some to change
 ```
+
+`imports.tf` adopts all four resources in `main.tf`. Importing only the
+realm leaves the portal to be created, and Keycloak answers 409.
 
 `plan` against a realm you built by hand is the most useful output in
 this chapter: everything it wants to change is drift between what you
