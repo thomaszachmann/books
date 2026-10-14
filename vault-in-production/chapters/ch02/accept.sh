@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Die sieben Bedingungen aus Kapitel 2, als Skript statt als Besprechung.
+# The seven conditions from Chapter 2, as a script instead of a meeting.
 #
-# Aufruf im Laborverzeichnis, mit gesetzter Umgebung:
+# Run in the lab directory, with the environment set:
 #   . ./scripts/vault-env.sh && ./chapters/ch02/accept.sh
 #
-# Gibt 0 zurueck, wenn alle sieben bestehen. Das Labor dieses Buches
-# besteht bewusst nur fuenf davon - siehe Kapitel 2, Schritt 2.
+# Exits 0 when all seven pass. The lab in this book deliberately passes
+# only five of them - see Chapter 2, Step 2.
 set -uo pipefail
 
 pass=0; fail=0

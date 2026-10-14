@@ -4,7 +4,8 @@
 # twenty seconds after unsealing, not during the outage.
 set -euo pipefail
 
-ENGINE=${ENGINE:-docker}
+cd "$(dirname "$0")/../.." || exit 1
+. ./scripts/engine.sh
 NODES=${NODES:-"vip-vault-1 vip-vault-2 vip-vault-3"}
 
 vault read -format=json database/creds/app       > /tmp/w1.json
@@ -43,8 +44,7 @@ $ENGINE exec blast-db psql -U postgres -d appdb -tAc \
 # shellcheck disable=SC2086
 $ENGINE start $NODES >/dev/null
 t0=$(date +%s); sleep 5
-make -C "$(git rev-parse --show-toplevel)/vault-in-production" \
-  unseal >/dev/null 2>&1 || true
+make unseal >/dev/null 2>&1 || true
 echo "-- after Vault returns --"
 for _ in $(seq 1 12); do row; sleep 10; done
 

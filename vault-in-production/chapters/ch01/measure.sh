@@ -6,6 +6,7 @@
 set -uo pipefail
 cd "$(dirname "$0")/../.." || exit 1
 . ./scripts/vault-env.sh
+. ./scripts/engine.sh
 
 # Captured before parsing: several of these commands exit non-zero for
 # reasons that are not failures, and under pipefail that would append a
@@ -14,7 +15,10 @@ raw_mounts=$(vault auth list -format=json 2>/dev/null || true)
 raw_leases=$(vault list -format=json sys/leases/lookup/ 2>/dev/null || true)
 mounts=$(printf '%s' "${raw_mounts:-{\}}" | jq 'length' 2>/dev/null || echo '?')
 leases=$(printf '%s' "${raw_leases:-{\}}" | jq 'length' 2>/dev/null || echo 0)
-size=$(du -sk cluster/data1 2>/dev/null | awk '{print $1}')
+# Measured inside the container: on the host, cluster/data1/raft
+# belongs to UID 100 with mode 0700 and a plain du counts almost nothing.
+size=$($ENGINE exec vip-vault-1 du -sk /vault/data 2>/dev/null \
+       | awk '{print $1}')
 
 printf "%s  auth_mounts=%s  lease_prefixes=%s  node1_kb=%s\n" \
   "$(date -u '+%Y-%m-%dT%H:%MZ')" "${mounts:-?}" "${leases:-0}" "${size:-?}"

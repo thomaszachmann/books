@@ -1,17 +1,16 @@
 #!/usr/bin/env bash
-# Ein inszenierter Vorfall und die drei Quellen nebeneinander.
+# A staged incident and the three sources side by side. Chapter 18.
 #
-# Zwei Clients, gleiche Arbeit: ein Geheimnis vierzigmal lesen.
-# Der eine meldet sich einmal an, der andere bei jedem Zugriff.
-# Gemessen: +1 Lease gegen +40.
+# Two clients, the same work: read one secret forty times. One logs
+# in once, the other on every access. Measured: +1 lease against +40.
 #
-# Die Pointe ist, welche Quelle den Verursacher benennt. Metriken
-# kennen keinen Client (das waere ein unbeschraenktes Label),
-# das Server-Log redet nur ueber Vault selbst, und im Audit-Device
-# ist display_name die METHODE, nicht der Client.
+# The point is which source names the culprit. Metrics know no
+# client (that would be an unbounded label), the server log talks
+# only about Vault itself, and in the audit device display_name is
+# the METHOD, not the client.
 set -uo pipefail
 
-cd "$(dirname "$0")/../.."
+cd "$(dirname "$0")/../.." || exit 1
 . ./scripts/engine.sh
 
 N=${N:-40}
@@ -19,10 +18,9 @@ NODE=${NODE:-vip-vault-1}
 CA=${CA:-cluster/tls/cert.pem}
 LOG=/vault/logs/audit.log
 
-# Das Audit-Log gehoert vault:vault mit Modus 0600 - der
-# aufrufende Benutzer kommt nicht heran. Im Labor ueber den
-# Container; in Produktion braucht es eine Gruppe, eine ACL oder
-# eine Kopie, die jemand lesen darf.
+# The audit log belongs to vault:vault with mode 0600 - the calling
+# user cannot get at it. In the lab through the container; in
+# production it takes a group, an ACL, or a copy someone may read.
 alog(){ $ENGINE exec "$NODE" sh -c "cat $LOG"; }
 
 leases(){ curl -s --cacert "$CA" \
@@ -31,13 +29,13 @@ leases(){ curl -s --cacert "$CA" \
 
 vault audit enable file file_path=/vault/logs/audit.log >/dev/null 2>&1
 vault secrets enable -path=secret -version=2 kv >/dev/null 2>&1
-vault kv put secret/app/db user=svc pass=Geheim123 >/dev/null
+vault kv put secret/app/db user=svc pass=Secret123 >/dev/null
 vault auth enable approle >/dev/null 2>&1
 vault policy write reader - >/dev/null <<'POL'
 path "secret/data/app/*" { capabilities = ["read"] }
 POL
 
-for r in wohlerzogen schlampig; do
+for r in wellbehaved sloppy; do
   vault write "auth/approle/role/$r" token_policies=reader \
     token_ttl=1h >/dev/null
 done
@@ -48,13 +46,13 @@ sid(){ vault write -f -field=secret_id \
 echo "leases before:                    $(leases)"
 
 T=$(vault write -field=token auth/approle/login \
-      role_id="$(rid wohlerzogen)" secret_id="$(sid wohlerzogen)")
+      role_id="$(rid wellbehaved)" secret_id="$(sid wellbehaved)")
 for _ in $(seq 1 "$N"); do
   VAULT_TOKEN=$T vault kv get secret/app/db >/dev/null 2>&1
 done
 echo "after $N reads, one login:        $(leases)"
 
-RS=$(rid schlampig); SS=$(sid schlampig)
+RS=$(rid sloppy); SS=$(sid sloppy)
 for _ in $(seq 1 "$N"); do
   TS=$(vault write -field=token auth/approle/login \
         role_id="$RS" secret_id="$SS" 2>/dev/null)
@@ -67,13 +65,13 @@ echo
 echo "== source 1: metrics - any client identity? =="
 curl -s --cacert "$CA" \
   "https://127.0.0.1:8210/v1/sys/metrics?format=prometheus" \
-  | grep -Ei 'schlampig|wohlerzogen' | head -3
+  | grep -Ei 'sloppy|wellbehaved' | head -3
 echo "  (nothing above = metrics do not know who)"
 
 echo "== source 2: server log =="
 echo "  lines in the last 10m: $($ENGINE logs --since 10m "$NODE" 2>&1 | wc -l)"
 echo "  mentioning either client: $($ENGINE logs --since 10m "$NODE" 2>&1 \
-        | grep -Eci 'schlampig|wohlerzogen')"
+        | grep -Eci 'sloppy|wellbehaved')"
 
 echo "== source 3: audit device =="
 echo "  by display_name (the TRAP - this is the auth method):"
@@ -93,8 +91,8 @@ echo
 echo "== searching for a value you already hold =="
 hunt(){
   h=$(vault write -field=hash sys/audit-hash/file input="$1")
-  # Ohne diesen Filter findet man IMMER zwei Treffer: die eigene
-  # Hash-Anfrage und ihre Antwort enthalten die Eingabe.
+  # Without this filter there are ALWAYS two hits: our own hash
+  # request and its response contain the input.
   n=$(alog | grep -c "$h" || true)
   k=$(alog | grep "$h" \
       | jq -r 'select(.request.path != "sys/audit-hash/file")
@@ -102,5 +100,11 @@ hunt(){
   printf '  %-16s raw hits %s, after excluding our own query %s\n' \
     "$1" "$n" "$k"
 }
-hunt "Geheim123"
-hunt "NieBenutzt999"
+hunt "Secret123"
+hunt "NeverUsed999"
+echo "  where the Secret123 hits are, by entry type and operation:"
+h=$(vault write -field=hash sys/audit-hash/file input="Secret123")
+alog | grep "$h" \
+  | jq -r 'select(.request.path != "sys/audit-hash/file")
+           | "\(.type) \(.request.operation) \(.request.path)"' \
+  2>/dev/null | sort | uniq -c | sed 's/^/    /' 

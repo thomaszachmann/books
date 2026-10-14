@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
-# Die Audit-Schleife, gemessen.
+# The audit loop, measured. Chapter 15.
 #
-# ACHTUNG: dieses Skript sperrt den Cluster absichtlich aus und
-# holt ihn wieder herein. Nur gegen das Labor laufen lassen.
+# CAREFUL: this script locks the cluster out on purpose and lets it
+# back in. Run it against the lab only, with ./scripts/vault-env.sh
+# sourced.
 #
-# Der wichtige Teil ist die DAUER. Mit einem einzigen kaputten
-# Audit-Geraet laeuft Vault noch etwa 35 Sekunden voellig normal
-# weiter - so lange, wie der Socket-Puffer traegt. Jede Messung
-# unter einer Minute meldet deshalb "alles in Ordnung", egal wie
-# es wirklich steht.
+# The important part is the DURATION. With a single broken audit
+# device Vault keeps working normally for a while - as long as the
+# socket buffer takes to fill. Any test shorter than that reports
+# "all fine", whatever the real state is.
 set -uo pipefail
 
-cd "$(dirname "$0")/../.."
+cd "$(dirname "$0")/../.." || exit 1
 . ./scripts/engine.sh
 
 NET=${NET:-vault-in-production_default}
@@ -45,6 +45,13 @@ hammer(){   # $1 = label
   echo "  over $(( $(date +%s)-t0 ))s: $ok ok, $fail failed$first"
 }
 
+echo "== 0. what the lab needs first: a KV mount and a file device =="
+vault secrets enable -path=secret -version=2 kv >/dev/null 2>&1 || true
+vault audit enable file file_path=/vault/logs/audit.log >/dev/null 2>&1 || true
+vault kv put secret/ready a=1 >/dev/null \
+  || { echo "ABORT: cannot write secret/ while healthy" >&2; exit 1; }
+echo "  $(vault audit list | tail -n +3 | awk '{print $1}' | xargs)"
+
 echo "== 1. collector up, and PROVE it collects =="
 sink_up || exit 1
 vault audit enable -path=collector socket \
@@ -68,8 +75,11 @@ echo "== 3. try to fix it from inside =="
 echo "  vault audit disable collector -> $(vault audit disable collector 2>&1 | tail -1 | tr -d '\n')"
 
 echo "== 4. fix it from outside =="
-sink_up || exit 1
+# The clock starts before the container does: what the reader
+# waits for is the collector starting AND Vault reconnecting.
 t0=$(date +%s)
+sink_up || exit 1
+echo "  collector listening after $(( $(date +%s)-t0 ))s"
 for _ in $(seq 1 30); do
   vault kv put secret/back a=1 >/dev/null 2>&1 && break
   sleep 2

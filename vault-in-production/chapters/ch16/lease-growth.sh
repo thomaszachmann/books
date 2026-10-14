@@ -1,17 +1,18 @@
 #!/usr/bin/env bash
-# Was ein Lease kostet, und was das Aufraeumen NICHT zurueckgibt.
+# What a lease costs, and what cleaning up does NOT give back.
+# Chapter 16.
 #
-# Die Kernmessung ist der Widerspruch am Ende: der Snapshot faellt
-# auf den Ausgangswert zurueck, das Verzeichnis auf der Platte
-# nicht. Freigegebene Seiten der eingebetteten Datenbank werden
-# wiederverwendet, aber nie an das Dateisystem zurueckgegeben.
+# The core measurement is the contradiction at the end: the
+# snapshot falls back to its starting value, the directory on disk
+# does not. Freed pages of the embedded database are reused, but
+# never returned to the filesystem.
 #
-# Achtung bei der Laufzeit: die Schleife unten startet die CLI je
-# einmal pro Token. Das dominiert die Dauer voellig und sagt
-# NICHTS ueber Vaults Durchsatz.
+# Mind the run time: the loop below starts the CLI once per token.
+# That dominates the duration completely and says NOTHING about
+# Vault's throughput.
 set -uo pipefail
 
-cd "$(dirname "$0")/../.."
+cd "$(dirname "$0")/../.." || exit 1
 
 N=${N:-2000}
 NBATCH=${NBATCH:-500}
@@ -58,7 +59,7 @@ echo "== $NBATCH batch tokens, same measurement =="
 vault write auth/token/roles/batchrole allowed_policies=noop \
   token_type=batch renewable=false >/dev/null 2>&1
 before=$(sz); bsnap=$(snap)
-for i in $(seq 1 "$NBATCH"); do
+for _ in $(seq 1 "$NBATCH"); do
   vault token create -role=batchrole -ttl=24h >/dev/null 2>&1
 done
 printf '  raft %s -> %s KB (delta %s)   snapshot %s -> %s B   leases %s\n' \

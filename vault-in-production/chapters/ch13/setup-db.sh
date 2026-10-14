@@ -4,9 +4,11 @@
 # unseal`, with ./scripts/vault-env.sh sourced.
 set -euo pipefail
 
+cd "$(dirname "$0")/../.." || exit 1
+. ./scripts/engine.sh
+
 NET=${NET:-vault-in-production_default}
 PGIMG=${PGIMG:-docker.io/library/postgres:16-alpine}
-ENGINE=${ENGINE:-docker}
 
 $ENGINE rm -f blast-db pgclient >/dev/null 2>&1 || true
 $ENGINE run -d --name blast-db --network "$NET" \
